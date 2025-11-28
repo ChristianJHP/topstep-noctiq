@@ -19,21 +19,25 @@ export async function GET() {
   console.log('[Account] Fetching account information...');
 
   try {
-    // Get detailed account info
-    const accountDetails = await projectx.getAccountDetails();
-
-    // Get all accounts for verification
-    const allAccounts = await projectx.getAllAccounts();
-
     // Check if using configured account ID
     const configuredAccountId = process.env.PROJECTX_ACCOUNT_ID;
 
+    // Try to get all accounts (may fail depending on API permissions)
+    let allAccounts = [];
+    try {
+      allAccounts = await projectx.getAllAccounts();
+    } catch (e) {
+      console.log('[Account] Could not fetch all accounts:', e.message);
+    }
+
+    // Get account status (more reliable)
+    const accountStatus = await projectx.getAccountStatus();
+
     const response = {
       // Primary account info
-      id: accountDetails.id,
-      name: accountDetails.name,
-      balance: accountDetails.balance,
-      canTrade: accountDetails.canTrade,
+      id: configuredAccountId || accountStatus.accountId,
+      name: configuredAccountId || 'Configured Account',
+      connected: accountStatus.connected,
 
       // Safety info
       usingConfiguredAccount: !!configuredAccountId,
