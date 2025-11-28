@@ -134,8 +134,15 @@ export async function POST(request) {
       1 // 1 contract as per user's preference
     );
 
-    // 8. Record trade in risk manager
-    riskManager.recordTrade();
+    // 8. Record trade in risk manager with details
+    const tradeRecord = riskManager.recordTrade({
+      action: action.toLowerCase(),
+      stopPrice: stop,
+      takeProfitPrice: tp,
+      entryOrder: orderResult.entry,
+      stopOrder: orderResult.stopLoss,
+      tpOrder: orderResult.takeProfit,
+    });
 
     // 9. Prepare response
     const executionTime = Date.now() - startTime;
