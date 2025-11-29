@@ -176,7 +176,26 @@ export default function Dashboard() {
   }, [])
 
   const isConnected = status?.status === 'healthy'
-  const isMarketOpen = status?.trading?.withinRTH
+  const futuresOpen = status?.futures?.isOpen
+  const hoursUntil = status?.futures?.hoursUntilOpen || 0
+  const minutesUntil = status?.futures?.minutesUntilOpen || 0
+  const nextOpenTime = status?.futures?.nextOpenTime
+  const closedReason = status?.futures?.closedReason
+
+  // Format countdown
+  const formatCountdown = () => {
+    if (futuresOpen) return null
+    if (hoursUntil === 0 && minutesUntil === 0) return null
+    if (hoursUntil > 24) {
+      const days = Math.floor(hoursUntil / 24)
+      const remainingHours = hoursUntil % 24
+      return `${days}d ${remainingHours}h`
+    }
+    if (hoursUntil > 0) {
+      return `${hoursUntil}h ${minutesUntil}m`
+    }
+    return `${minutesUntil}m`
+  }
 
   return (
     <div className="min-h-screen bg-neutral-950">
@@ -195,12 +214,26 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex items-center gap-4 text-sm">
-              <span className={`${isMarketOpen ? 'text-emerald-500' : 'text-neutral-500'}`}>
-                {isMarketOpen ? 'Market Open' : 'Market Closed'}
-              </span>
+              <div className="flex items-center gap-2">
+                <StatusIndicator active={futuresOpen} />
+                <span className={`${futuresOpen ? 'text-emerald-500' : 'text-neutral-500'}`}>
+                  {futuresOpen ? 'Futures Open' : 'Futures Closed'}
+                </span>
+              </div>
+              {!futuresOpen && formatCountdown() && (
+                <span className="text-neutral-400">
+                  Opens in {formatCountdown()}
+                </span>
+              )}
               <span className="text-neutral-600">{status?.etTime || '--:--'}</span>
             </div>
           </div>
+          {/* Show closed reason and next open time when closed */}
+          {!futuresOpen && closedReason && (
+            <div className="mt-2 text-xs text-neutral-500 text-right">
+              {closedReason} {nextOpenTime && `- Opens ${nextOpenTime}`}
+            </div>
+          )}
         </div>
       </header>
 

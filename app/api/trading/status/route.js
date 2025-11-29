@@ -13,6 +13,7 @@ import { NextResponse } from 'next/server';
 
 const projectx = require('../../../../lib/projectx');
 const riskManager = require('../../../../lib/riskManager');
+const futuresMarket = require('../../../../lib/futuresMarket');
 
 /**
  * GET handler for system status
@@ -49,7 +50,11 @@ export async function GET() {
     const rthCheck = riskManager.canExecuteTrade();
     const withinRTH = !rthCheck.reason.includes('Outside regular trading hours');
 
-    // 7. Build response
+    // 7. Get futures market status
+    const futuresStatus = futuresMarket.isFuturesOpen();
+    const timeUntilOpen = futuresMarket.getTimeUntilOpen();
+
+    // 8. Build response
     const response = {
       status: systemHealthy ? 'healthy' : 'degraded',
       timestamp: new Date().toISOString(),
@@ -64,6 +69,14 @@ export async function GET() {
         rthHours: '9:30 AM - 4:00 PM ET',
         canTrade: rthCheck.allowed,
         blockReason: rthCheck.allowed ? null : rthCheck.reason,
+      },
+      futures: {
+        isOpen: futuresStatus.open,
+        reason: futuresStatus.reason,
+        hoursUntilOpen: timeUntilOpen.hoursUntilOpen,
+        minutesUntilOpen: timeUntilOpen.minutesUntilOpen,
+        nextOpenTime: timeUntilOpen.nextOpenFormatted,
+        closedReason: timeUntilOpen.closedReason || null,
       },
       dailyStats: {
         date: dailyStats.date,
