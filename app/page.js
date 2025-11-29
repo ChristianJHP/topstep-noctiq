@@ -23,7 +23,7 @@ function TradingViewChart() {
     script.async = true
     script.innerHTML = JSON.stringify({
       autosize: true,
-      symbol: "CME_MINI:MES1!",
+      symbol: "PEPPERSTONE:US500",
       interval: "5",
       timezone: "America/New_York",
       theme: "dark",
@@ -63,7 +63,7 @@ function TradingViewTicker() {
     script.type = 'text/javascript'
     script.async = true
     script.innerHTML = JSON.stringify({
-      symbol: "CME_MINI:MES1!",
+      symbol: "PEPPERSTONE:US500",
       width: "100%",
       isTransparent: true,
       colorTheme: "dark",
