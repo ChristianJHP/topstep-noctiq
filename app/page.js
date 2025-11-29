@@ -1,10 +1,82 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 function StatusIndicator({ active }) {
   return (
     <span className={`inline-block w-2 h-2 rounded-full ${active ? 'bg-emerald-500' : 'bg-neutral-500'}`} />
+  )
+}
+
+function TradingViewChart() {
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    // Clear any existing content
+    containerRef.current.innerHTML = ''
+
+    const script = document.createElement('script')
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js'
+    script.type = 'text/javascript'
+    script.async = true
+    script.innerHTML = JSON.stringify({
+      autosize: true,
+      symbol: "CME_MINI:MES1!",
+      interval: "5",
+      timezone: "America/New_York",
+      theme: "dark",
+      style: "1",
+      locale: "en",
+      backgroundColor: "rgba(10, 10, 10, 1)",
+      gridColor: "rgba(40, 40, 40, 1)",
+      hide_top_toolbar: false,
+      hide_legend: false,
+      allow_symbol_change: false,
+      save_image: false,
+      calendar: false,
+      hide_volume: true,
+      support_host: "https://www.tradingview.com"
+    })
+
+    containerRef.current.appendChild(script)
+  }, [])
+
+  return (
+    <div className="tradingview-widget-container" style={{ height: '400px', width: '100%' }}>
+      <div ref={containerRef} style={{ height: '100%', width: '100%' }} className="tradingview-widget-container__widget" />
+    </div>
+  )
+}
+
+function TradingViewTicker() {
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    containerRef.current.innerHTML = ''
+
+    const script = document.createElement('script')
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js'
+    script.type = 'text/javascript'
+    script.async = true
+    script.innerHTML = JSON.stringify({
+      symbol: "CME_MINI:MES1!",
+      width: "100%",
+      isTransparent: true,
+      colorTheme: "dark",
+      locale: "en"
+    })
+
+    containerRef.current.appendChild(script)
+  }, [])
+
+  return (
+    <div className="tradingview-widget-container">
+      <div ref={containerRef} className="tradingview-widget-container__widget" />
+    </div>
   )
 }
 
@@ -51,9 +123,34 @@ function PositionCard({ position }) {
   )
 }
 
+function StatsCard({ dailyStats }) {
+  if (!dailyStats) return null
+
+  return (
+    <div className="border border-neutral-800 rounded-lg p-6">
+      <h2 className="text-sm font-medium text-neutral-400 uppercase tracking-wide mb-4">Today's Stats</h2>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-neutral-400">Trades</span>
+          <span className="font-mono text-white">{dailyStats.tradesExecuted} / {dailyStats.maxTrades}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-neutral-400">P&L</span>
+          <span className={`font-mono ${(dailyStats.totalProfit - dailyStats.totalLoss) >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+            ${(dailyStats.totalProfit - dailyStats.totalLoss).toFixed(2)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-neutral-400">Loss Limit</span>
+          <span className="font-mono text-white">${dailyStats.lossRemaining} left</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const [status, setStatus] = useState(null)
-  const [mesPrice, setMesPrice] = useState(null)
   const [loading, setLoading] = useState(true)
   const [lastUpdate, setLastUpdate] = useState(null)
 
@@ -63,9 +160,6 @@ export default function Dashboard() {
       if (statusRes.ok) {
         const data = await statusRes.json()
         setStatus(data)
-        if (data.position?.currentPrice) {
-          setMesPrice(data.position.currentPrice)
-        }
       }
       setLastUpdate(new Date())
     } catch (err) {
@@ -88,7 +182,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-neutral-950">
       {/* Header */}
       <header className="border-b border-neutral-800">
-        <div className="max-w-3xl mx-auto px-6 py-4">
+        <div className="max-w-5xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-lg font-semibold text-white">noctiq</span>
@@ -111,18 +205,21 @@ export default function Dashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        {/* MES Price */}
-        <div className="text-center mb-12">
-          <p className="text-sm text-neutral-500 uppercase tracking-wide mb-2">MES Price</p>
-          <p className="text-6xl font-light text-white font-mono tracking-tight">
-            {mesPrice ? mesPrice.toFixed(2) : '---.--'}
-          </p>
+      <main className="max-w-5xl mx-auto px-6 py-8">
+        {/* MES Price Ticker */}
+        <div className="mb-6">
+          <TradingViewTicker />
         </div>
 
-        {/* Position */}
-        <div className="max-w-sm mx-auto">
+        {/* Chart */}
+        <div className="border border-neutral-800 rounded-lg overflow-hidden mb-8">
+          <TradingViewChart />
+        </div>
+
+        {/* Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <PositionCard position={status?.position} />
+          <StatsCard dailyStats={status?.dailyStats} />
         </div>
 
         {/* Last Update */}
