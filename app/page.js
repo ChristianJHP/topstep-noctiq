@@ -146,48 +146,6 @@ function StatsCard({ dailyStats }) {
   )
 }
 
-function WebhookCard() {
-  const [copied, setCopied] = useState(false)
-  const [webhookUrl, setWebhookUrl] = useState('')
-
-  useEffect(() => {
-    // Get the current domain
-    if (typeof window !== 'undefined') {
-      setWebhookUrl(`${window.location.origin}/api/trading/webhook`)
-    }
-  }, [])
-
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(webhookUrl)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      console.error('Failed to copy:', err)
-    }
-  }
-
-  return (
-    <div className="border border-neutral-800 rounded-lg p-4 sm:p-6">
-      <h2 className="text-sm font-medium text-neutral-400 uppercase tracking-wide mb-4">Webhook URL</h2>
-      <div className="space-y-3">
-        <div className="bg-neutral-900 rounded p-3 font-mono text-xs text-neutral-300 break-all">
-          {webhookUrl || 'Loading...'}
-        </div>
-        <button
-          onClick={copyToClipboard}
-          className="w-full py-2 px-4 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-sm rounded transition-colors"
-        >
-          {copied ? 'Copied!' : 'Copy URL'}
-        </button>
-        <p className="text-xs text-neutral-500">
-          Use this URL in TradingView alerts. Send POST with JSON body.
-        </p>
-      </div>
-    </div>
-  )
-}
-
 function TradeHistoryCard({ trades }) {
   if (!trades || trades.length === 0) {
     return (
@@ -359,11 +317,10 @@ export default function Dashboard() {
           <TradingViewChart />
         </div>
 
-        {/* Cards Grid - 1 col mobile, 2 col tablet, 3 col desktop */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {/* Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <PositionCard position={status?.position} />
           <StatsCard dailyStats={status?.dailyStats} />
-          <WebhookCard />
         </div>
 
         {/* Trade History - Full width */}
