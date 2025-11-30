@@ -2,6 +2,78 @@
 
 import { useState, useEffect, useRef } from 'react'
 
+function LiveClock({ timezone = 'America/New_York' }) {
+  const [time, setTime] = useState('')
+
+  useEffect(() => {
+    const update = () => {
+      setTime(new Date().toLocaleTimeString('en-US', {
+        timeZone: timezone,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      }))
+    }
+    update()
+    const interval = setInterval(update, 1000)
+    return () => clearInterval(interval)
+  }, [timezone])
+
+  return <span className="font-mono">{time}</span>
+}
+
+function RTHCountdown({ withinRTH }) {
+  const [countdown, setCountdown] = useState('')
+
+  useEffect(() => {
+    const calculateCountdown = () => {
+      const now = new Date()
+      const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }))
+      const hours = et.getHours()
+      const minutes = et.getMinutes()
+      const seconds = et.getSeconds()
+      const currentSeconds = hours * 3600 + minutes * 60 + seconds
+
+      const rthStart = 9 * 3600 + 30 * 60 // 9:30 AM
+      const rthEnd = 16 * 3600 // 4:00 PM
+
+      let targetSeconds, label
+      if (currentSeconds < rthStart) {
+        // Before RTH - count to open
+        targetSeconds = rthStart - currentSeconds
+        label = 'opens'
+      } else if (currentSeconds < rthEnd) {
+        // During RTH - count to close
+        targetSeconds = rthEnd - currentSeconds
+        label = 'closes'
+      } else {
+        // After RTH - count to next day open
+        targetSeconds = (24 * 3600 - currentSeconds) + rthStart
+        label = 'opens'
+      }
+
+      const h = Math.floor(targetSeconds / 3600)
+      const m = Math.floor((targetSeconds % 3600) / 60)
+      const s = targetSeconds % 60
+
+      if (h > 0) {
+        setCountdown(`${label} in ${h}h ${m}m`)
+      } else if (m > 0) {
+        setCountdown(`${label} in ${m}m ${s}s`)
+      } else {
+        setCountdown(`${label} in ${s}s`)
+      }
+    }
+
+    calculateCountdown()
+    const interval = setInterval(calculateCountdown, 1000)
+    return () => clearInterval(interval)
+  }, [withinRTH])
+
+  return <span className="text-xs text-neutral-500">{countdown}</span>
+}
+
 function StatusDot({ status }) {
   const colors = {
     online: 'bg-emerald-500',
@@ -49,6 +121,42 @@ function TradingViewChart() {
   return (
     <div className="tradingview-widget-container" style={{ height: '400px', width: '100%' }}>
       <div ref={containerRef} style={{ height: '100%', width: '100%' }} className="tradingview-widget-container__widget" />
+    </div>
+  )
+}
+
+function MiniTickerBar() {
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    if (!containerRef.current) return
+    containerRef.current.innerHTML = ''
+
+    const script = document.createElement('script')
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js'
+    script.type = 'text/javascript'
+    script.async = true
+    script.innerHTML = JSON.stringify({
+      symbols: [
+        { proName: "PEPPERSTONE:NAS100", title: "NAS100" },
+        { proName: "PEPPERSTONE:US500", title: "S&P500" },
+        { proName: "CBOE:VIX", title: "VIX" },
+        { proName: "TVC:DXY", title: "DXY" },
+        { proName: "TVC:US10Y", title: "10Y" },
+      ],
+      showSymbolLogo: false,
+      isTransparent: true,
+      displayMode: "compact",
+      colorTheme: "dark",
+      locale: "en"
+    })
+
+    containerRef.current.appendChild(script)
+  }, [])
+
+  return (
+    <div className="tradingview-widget-container h-10 overflow-hidden">
+      <div ref={containerRef} className="tradingview-widget-container__widget" />
     </div>
   )
 }
@@ -233,21 +341,41 @@ export default function Dashboard() {
   const dailyStats = status?.dailyStats || {}
   const todayTrades = dailyStats.tradesExecuted || 0
 
+  const withinRTH = status?.trading?.withinRTH || false
+
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
+      {/* Ticker Bar */}
+      <div className="border-b border-neutral-800/30 bg-neutral-900/30">
+        <div className="max-w-6xl mx-auto">
+          <MiniTickerBar />
+        </div>
+      </div>
+
       {/* Header */}
       <header className="border-b border-neutral-800/50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <h1 className="text-xl font-semibold tracking-tight">noctiq</h1>
-              <span className="text-xs text-neutral-600 font-mono">MNQ</span>
+              <div className="hidden sm:flex items-center gap-2 text-xs">
+                <span className={`px-2 py-0.5 rounded ${withinRTH ? 'bg-emerald-500/20 text-emerald-400' : 'bg-neutral-800 text-neutral-500'}`}>
+                  {withinRTH ? 'LIVE' : 'STANDBY'}
+                </span>
+                <RTHCountdown withinRTH={withinRTH} />
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <StatusDot status={status?.status === 'healthy' ? 'online' : 'offline'} />
-              <span className="text-sm text-neutral-500">
-                {status?.status === 'healthy' ? 'Connected' : 'Disconnected'}
-              </span>
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:block text-right">
+                <p className="text-xs text-neutral-600">ET</p>
+                <p className="text-sm text-neutral-400"><LiveClock /></p>
+              </div>
+              <div className="flex items-center gap-2">
+                <StatusDot status={status?.status === 'healthy' ? 'online' : 'offline'} />
+                <span className="text-sm text-neutral-500">
+                  {status?.status === 'healthy' ? 'Online' : 'Offline'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
