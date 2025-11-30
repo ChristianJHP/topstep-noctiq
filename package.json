@@ -9,7 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^2.0.74",
     "@tailwindcss/postcss": "^4.1.17",
+    "ai": "^5.0.104",
     "autoprefixer": "^10.4.22",
     "next": "^15.0.0",
     "postcss": "^8.5.6",

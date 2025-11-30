@@ -301,6 +301,62 @@ function ActivityFeed({ trades }) {
   )
 }
 
+function MarketBrief() {
+  const [brief, setBrief] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [generatedAt, setGeneratedAt] = useState(null)
+
+  useEffect(() => {
+    const fetchBrief = async () => {
+      try {
+        const res = await fetch('/api/market/brief')
+        if (res.ok) {
+          const data = await res.json()
+          setBrief(data.brief)
+          setGeneratedAt(data.generatedAt)
+        }
+      } catch (err) {
+        console.error('Failed to fetch brief:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchBrief()
+  }, [])
+
+  const formatTime = (isoString) => {
+    if (!isoString) return ''
+    return new Date(isoString).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'America/New_York',
+    })
+  }
+
+  return (
+    <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs text-neutral-500 uppercase tracking-wider">AI Market Brief</p>
+        {generatedAt && (
+          <span className="text-xs text-neutral-700">{formatTime(generatedAt)} ET</span>
+        )}
+      </div>
+      {loading ? (
+        <div className="py-4 text-center">
+          <div className="inline-block w-4 h-4 border-2 border-neutral-700 border-t-neutral-400 rounded-full animate-spin" />
+        </div>
+      ) : brief ? (
+        <div className="text-sm text-neutral-400 leading-relaxed whitespace-pre-line">
+          {brief}
+        </div>
+      ) : (
+        <p className="text-sm text-neutral-600 text-center py-4">Brief unavailable</p>
+      )}
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const [status, setStatus] = useState(null)
   const [trades, setTrades] = useState([])
@@ -408,6 +464,11 @@ export default function Dashboard() {
         {/* Chart */}
         <div className="border border-neutral-800 rounded-lg overflow-hidden mb-6">
           <TradingViewChart />
+        </div>
+
+        {/* AI Market Brief */}
+        <div className="mb-6">
+          <MarketBrief />
         </div>
 
         {/* Activity Feed */}
