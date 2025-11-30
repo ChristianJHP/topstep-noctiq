@@ -140,9 +140,6 @@ function MiniTickerBar() {
       symbols: [
         { proName: "PEPPERSTONE:NAS100", title: "NAS100" },
         { proName: "PEPPERSTONE:US500", title: "S&P500" },
-        { proName: "CBOE:VIX", title: "VIX" },
-        { proName: "TVC:DXY", title: "DXY" },
-        { proName: "TVC:US10Y", title: "10Y" },
       ],
       showSymbolLogo: false,
       isTransparent: true,
