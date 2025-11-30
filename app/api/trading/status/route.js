@@ -2,11 +2,11 @@
  * Trading System Status Endpoint
  * Endpoint: GET /api/trading/status
  *
- * Returns:
- * - ProjectX connection status
- * - Current position (placeholder for future implementation)
- * - Today's trade count and P&L
- * - System health checks
+ * Returns public-safe status information:
+ * - System health (connected/disconnected)
+ * - Market status (open/closed)
+ * - Trading window status
+ * - Trade counts (no P&L details)
  */
 
 import { NextResponse } from 'next/server';
@@ -28,15 +28,14 @@ export async function GET() {
     // 2. Get daily trading statistics
     const dailyStats = riskManager.getDailyStats();
 
-    // 3. Check environment configuration
-    const configStatus = {
-      webhookSecretConfigured: !!process.env.WEBHOOK_SECRET,
-      projectxUsernameConfigured: !!process.env.PROJECTX_USERNAME,
-      projectxApiKeyConfigured: !!process.env.PROJECTX_API_KEY,
-    };
+    // 3. Check environment configuration (internal only)
+    const allConfigured = !!(
+      process.env.WEBHOOK_SECRET &&
+      process.env.PROJECTX_USERNAME &&
+      process.env.PROJECTX_API_KEY
+    );
 
     // 4. Calculate system health
-    const allConfigured = Object.values(configStatus).every(v => v === true);
     const systemHealthy = projectxStatus.connected && allConfigured;
 
     // 5. Get current time in ET
@@ -54,16 +53,11 @@ export async function GET() {
     const futuresStatus = futuresMarket.isFuturesOpen();
     const timeUntilOpen = futuresMarket.getTimeUntilOpen();
 
-    // 8. Build response
+    // 8. Build PUBLIC response (no sensitive data)
     const response = {
       status: systemHealthy ? 'healthy' : 'degraded',
       timestamp: new Date().toISOString(),
       etTime: etTimeString,
-      projectx: {
-        connected: projectxStatus.connected,
-        accountId: projectxStatus.accountId || null,
-        error: projectxStatus.error || null,
-      },
       trading: {
         withinRTH: withinRTH,
         rthHours: '9:30 AM - 4:00 PM ET',
@@ -83,27 +77,9 @@ export async function GET() {
         tradesExecuted: dailyStats.tradeCount,
         tradesRemaining: dailyStats.tradesRemaining,
         maxTrades: dailyStats.maxTrades,
-        totalProfit: dailyStats.totalProfit,
-        totalLoss: dailyStats.totalLoss,
-        lossRemaining: dailyStats.lossRemaining,
-        maxLoss: dailyStats.maxLoss,
         lastTradeTime: dailyStats.lastTradeTime
           ? new Date(dailyStats.lastTradeTime).toISOString()
           : null,
-      },
-      config: configStatus,
-      riskLimits: {
-        maxTradesPerDay: riskManager.RISK_LIMITS.MAX_TRADES_PER_DAY,
-        maxDailyLoss: riskManager.RISK_LIMITS.MAX_DAILY_LOSS,
-        cooldownSeconds: riskManager.RISK_LIMITS.COOLDOWN_SECONDS,
-      },
-      position: {
-        // Placeholder for future position tracking
-        active: false,
-        contracts: 0,
-        side: null,
-        entryPrice: null,
-        currentPnL: null,
       },
     };
 
@@ -116,7 +92,6 @@ export async function GET() {
 
     return NextResponse.json({
       status: 'error',
-      error: error.message,
       timestamp: new Date().toISOString(),
     }, { status: 500 });
   }

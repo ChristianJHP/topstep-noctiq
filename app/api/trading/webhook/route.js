@@ -36,7 +36,16 @@ export async function POST(request) {
 
   try {
     // 1. Parse and validate request body
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('[Webhook] Invalid JSON payload:', parseError.message);
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
     console.log('Payload:', JSON.stringify(body, null, 2));
 
     // 2. Validate webhook secret
@@ -112,7 +121,7 @@ export async function POST(request) {
     }
 
     // 5. Validate stop and take profit prices for entry orders
-    if (!stop || !tp) {
+    if (stop === undefined || stop === null || tp === undefined || tp === null) {
       console.error('[Webhook] Missing required fields: stop and/or tp');
       return NextResponse.json(
         { success: false, error: 'Missing required fields: stop and tp' },
@@ -120,18 +129,47 @@ export async function POST(request) {
       );
     }
 
+    // Validate prices are valid numbers
+    const stopNum = parseFloat(stop);
+    const tpNum = parseFloat(tp);
+
+    if (isNaN(stopNum) || isNaN(tpNum)) {
+      console.error(`[Webhook] Invalid price format: stop=${stop}, tp=${tp}`);
+      return NextResponse.json(
+        { success: false, error: 'Stop and TP must be valid numbers' },
+        { status: 400 }
+      );
+    }
+
+    if (stopNum <= 0 || tpNum <= 0) {
+      console.error(`[Webhook] Invalid price values: stop=${stopNum}, tp=${tpNum}`);
+      return NextResponse.json(
+        { success: false, error: 'Stop and TP must be positive numbers' },
+        { status: 400 }
+      );
+    }
+
+    // Sanity check: prices should be reasonable for MNQ (10000 - 50000 range)
+    if (stopNum < 10000 || stopNum > 50000 || tpNum < 10000 || tpNum > 50000) {
+      console.error(`[Webhook] Price out of expected range: stop=${stopNum}, tp=${tpNum}`);
+      return NextResponse.json(
+        { success: false, error: 'Prices appear to be outside valid MNQ range (10000-50000)' },
+        { status: 400 }
+      );
+    }
+
     // Validate stop and TP make sense based on action
     if (action.toLowerCase() === 'buy') {
-      if (stop >= tp) {
-        console.error(`[Webhook] Invalid BUY bracket: stop (${stop}) must be < tp (${tp})`);
+      if (stopNum >= tpNum) {
+        console.error(`[Webhook] Invalid BUY bracket: stop (${stopNum}) must be < tp (${tpNum})`);
         return NextResponse.json(
           { success: false, error: 'For BUY orders, stop must be below take profit' },
           { status: 400 }
         );
       }
     } else if (action.toLowerCase() === 'sell') {
-      if (stop <= tp) {
-        console.error(`[Webhook] Invalid SELL bracket: stop (${stop}) must be > tp (${tp})`);
+      if (stopNum <= tpNum) {
+        console.error(`[Webhook] Invalid SELL bracket: stop (${stopNum}) must be > tp (${tpNum})`);
         return NextResponse.json(
           { success: false, error: 'For SELL orders, stop must be above take profit' },
           { status: 400 }
@@ -176,13 +214,13 @@ export async function POST(request) {
     // 8. Execute bracket order via ProjectX API
     console.log(`[Webhook] Executing ${action.toUpperCase()} bracket order...`);
     console.log(`  Entry: Market ${action.toUpperCase()}`);
-    console.log(`  Stop Loss: ${stop}`);
-    console.log(`  Take Profit: ${tp}`);
+    console.log(`  Stop Loss: ${stopNum}`);
+    console.log(`  Take Profit: ${tpNum}`);
 
     const orderResult = await projectx.placeBracketOrder(
       action.toLowerCase(),
-      stop,
-      tp,
+      stopNum,
+      tpNum,
       1 // 1 contract as per user's preference
     );
 
@@ -190,8 +228,8 @@ export async function POST(request) {
     const tradeRecord = riskManager.recordTrade({
       webhookId: webhookId,
       action: action.toLowerCase(),
-      stopPrice: stop,
-      takeProfitPrice: tp,
+      stopPrice: stopNum,
+      takeProfitPrice: tpNum,
       entryOrder: orderResult.entry,
       stopOrder: orderResult.stopLoss,
       tpOrder: orderResult.takeProfit,
@@ -210,8 +248,8 @@ export async function POST(request) {
         takeProfit: orderResult.takeProfit,
       },
       prices: {
-        stop: stop,
-        takeProfit: tp,
+        stop: stopNum,
+        takeProfit: tpNum,
       },
       dailyStats: riskManager.getDailyStats(),
       executionTimeMs: executionTime,
@@ -263,27 +301,12 @@ export async function POST(request) {
 }
 
 /**
- * GET handler - return webhook info
+ * GET handler - minimal info for public
  */
 export async function GET() {
   return NextResponse.json({
-    endpoint: '/api/trading/webhook',
+    status: 'active',
     method: 'POST',
-    description: 'TradingView webhook handler for automated trading',
-    requiredFields: ['secret', 'action', 'stop', 'tp'],
-    actions: ['buy', 'sell', 'close'],
-    features: [
-      'Concurrent webhook protection (mutex)',
-      'Duplicate webhook detection (idempotency)',
-      'TradingView latency tolerance (10s windows)',
-      'Automatic retry with exponential backoff',
-      'Graceful partial bracket handling',
-    ],
-    example: {
-      secret: 'your-webhook-secret',
-      action: 'buy',
-      stop: 6800.00,
-      tp: 6850.00,
-    },
+    timestamp: new Date().toISOString(),
   });
 }

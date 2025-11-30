@@ -2,9 +2,14 @@
 
 import { useState, useEffect, useRef } from 'react'
 
-function StatusIndicator({ active }) {
+function StatusDot({ status }) {
+  const colors = {
+    online: 'bg-emerald-500',
+    offline: 'bg-red-500',
+    idle: 'bg-amber-500',
+  }
   return (
-    <span className={`inline-block w-2 h-2 rounded-full ${active ? 'bg-emerald-500' : 'bg-neutral-500'}`} />
+    <span className={`inline-block w-2 h-2 rounded-full ${colors[status] || 'bg-neutral-500'}`} />
   )
 }
 
@@ -28,9 +33,9 @@ function TradingViewChart() {
       style: "1",
       locale: "en",
       backgroundColor: "rgba(10, 10, 10, 1)",
-      gridColor: "rgba(40, 40, 40, 1)",
+      gridColor: "rgba(30, 30, 30, 1)",
       hide_top_toolbar: false,
-      hide_legend: false,
+      hide_legend: true,
       allow_symbol_change: false,
       save_image: false,
       calendar: false,
@@ -42,136 +47,144 @@ function TradingViewChart() {
   }, [])
 
   return (
-    <div className="tradingview-widget-container" style={{ height: '350px', width: '100%' }}>
+    <div className="tradingview-widget-container" style={{ height: '400px', width: '100%' }}>
       <div ref={containerRef} style={{ height: '100%', width: '100%' }} className="tradingview-widget-container__widget" />
     </div>
   )
 }
 
-function TradingViewTicker() {
-  const containerRef = useRef(null)
-
-  useEffect(() => {
-    if (!containerRef.current) return
-    containerRef.current.innerHTML = ''
-
-    const script = document.createElement('script')
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js'
-    script.type = 'text/javascript'
-    script.async = true
-    script.innerHTML = JSON.stringify({
-      symbol: "PEPPERSTONE:NAS100",
-      width: "100%",
-      isTransparent: true,
-      colorTheme: "dark",
-      locale: "en"
-    })
-
-    containerRef.current.appendChild(script)
-  }, [])
-
+function StatCard({ label, value, subtext, highlight }) {
   return (
-    <div className="tradingview-widget-container">
-      <div ref={containerRef} className="tradingview-widget-container__widget" />
+    <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
+      <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1">{label}</p>
+      <p className={`text-2xl font-mono font-semibold ${highlight ? 'text-emerald-500' : 'text-white'}`}>
+        {value}
+      </p>
+      {subtext && <p className="text-xs text-neutral-600 mt-1">{subtext}</p>}
     </div>
   )
 }
 
-function PositionCard({ position }) {
-  if (!position?.active) {
-    return (
-      <div className="border border-neutral-800 rounded-lg p-4 sm:p-6">
-        <h2 className="text-sm font-medium text-neutral-400 uppercase tracking-wide mb-4">Position</h2>
-        <p className="text-neutral-500 text-center py-6">No open position</p>
-      </div>
-    )
+function MarketStatusCard({ futures, etTime }) {
+  const isOpen = futures?.isOpen
+  const reason = futures?.reason || ''
+  const hoursUntil = futures?.hoursUntilOpen || 0
+  const minutesUntil = futures?.minutesUntilOpen || 0
+
+  const formatCountdown = () => {
+    if (isOpen) return null
+    if (hoursUntil === 0 && minutesUntil === 0) return null
+    if (hoursUntil > 24) {
+      const days = Math.floor(hoursUntil / 24)
+      const remainingHours = hoursUntil % 24
+      return `${days}d ${remainingHours}h`
+    }
+    if (hoursUntil > 0) {
+      return `${hoursUntil}h ${minutesUntil}m`
+    }
+    return `${minutesUntil}m`
   }
 
-  const isLong = position.side === 'BUY'
-  const pnl = position.currentPnL || 0
-  const isProfitable = pnl >= 0
-
   return (
-    <div className="border border-neutral-800 rounded-lg p-4 sm:p-6">
-      <h2 className="text-sm font-medium text-neutral-400 uppercase tracking-wide mb-4">Position</h2>
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-neutral-400 text-sm">Side</span>
-          <span className={`font-mono font-medium ${isLong ? 'text-emerald-500' : 'text-red-500'}`}>
-            {isLong ? 'LONG' : 'SHORT'}
-          </span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-neutral-400 text-sm">Contracts</span>
-          <span className="font-mono text-white">{position.contracts}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-neutral-400 text-sm">Entry</span>
-          <span className="font-mono text-white">{position.entryPrice?.toFixed(2)}</span>
-        </div>
-        <div className="flex items-center justify-between pt-3 border-t border-neutral-800">
-          <span className="text-neutral-400 text-sm">P&L</span>
-          <span className={`font-mono font-medium ${isProfitable ? 'text-emerald-500' : 'text-red-500'}`}>
-            {isProfitable ? '+' : ''}{pnl.toFixed(2)}
+    <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs text-neutral-500 uppercase tracking-wider">Futures Market</p>
+        <div className="flex items-center gap-2">
+          <StatusDot status={isOpen ? 'online' : 'offline'} />
+          <span className={`text-sm font-medium ${isOpen ? 'text-emerald-500' : 'text-neutral-500'}`}>
+            {isOpen ? 'Open' : 'Closed'}
           </span>
         </div>
       </div>
+      <p className="text-sm text-neutral-400">{reason}</p>
+      {!isOpen && formatCountdown() && (
+        <p className="text-xs text-neutral-600 mt-2">
+          Opens in {formatCountdown()}
+        </p>
+      )}
+      {etTime && (
+        <p className="text-xs text-neutral-700 mt-2 font-mono">{etTime}</p>
+      )}
     </div>
   )
 }
 
-function TradeHistoryCard({ trades }) {
+function SystemStatusCard({ status, trading }) {
+  const isHealthy = status === 'healthy'
+  const canTrade = trading?.canTrade
+  const withinRTH = trading?.withinRTH
+
+  let systemStatus = 'offline'
+  let statusText = 'Offline'
+
+  if (isHealthy) {
+    if (canTrade) {
+      systemStatus = 'online'
+      statusText = 'Active'
+    } else if (withinRTH) {
+      systemStatus = 'idle'
+      statusText = 'Ready'
+    } else {
+      systemStatus = 'idle'
+      statusText = 'Standby'
+    }
+  }
+
+  return (
+    <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs text-neutral-500 uppercase tracking-wider">System</p>
+        <div className="flex items-center gap-2">
+          <StatusDot status={systemStatus} />
+          <span className={`text-sm font-medium ${
+            systemStatus === 'online' ? 'text-emerald-500' :
+            systemStatus === 'idle' ? 'text-amber-500' : 'text-red-500'
+          }`}>
+            {statusText}
+          </span>
+        </div>
+      </div>
+      <p className="text-sm text-neutral-400">
+        {isHealthy ? 'All systems operational' : 'System unavailable'}
+      </p>
+      <p className="text-xs text-neutral-600 mt-2">
+        RTH: 9:30 AM - 4:00 PM ET
+      </p>
+    </div>
+  )
+}
+
+function ActivityFeed({ trades }) {
   if (!trades || trades.length === 0) {
     return (
-      <div className="border border-neutral-800 rounded-lg p-4 sm:p-6">
-        <h2 className="text-sm font-medium text-neutral-400 uppercase tracking-wide mb-4">Trade History</h2>
-        <p className="text-neutral-500 text-center py-6 text-sm">No trades yet</p>
+      <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
+        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Recent Activity</p>
+        <p className="text-sm text-neutral-600 text-center py-4">No activity today</p>
       </div>
     )
   }
 
   return (
-    <div className="border border-neutral-800 rounded-lg p-4 sm:p-6">
-      <h2 className="text-sm font-medium text-neutral-400 uppercase tracking-wide mb-4">
-        Trade History <span className="text-neutral-600">({trades.length})</span>
-      </h2>
-      <div className="space-y-2 max-h-64 overflow-y-auto">
-        {trades.map((trade, index) => {
+    <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
+      <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Recent Activity</p>
+      <div className="space-y-2 max-h-48 overflow-y-auto">
+        {trades.slice(0, 5).map((trade, index) => {
           const isLong = trade.action === 'buy'
           const time = new Date(trade.timestamp).toLocaleTimeString('en-US', {
             hour: 'numeric',
             minute: '2-digit',
             hour12: true
           })
-          const date = new Date(trade.timestamp).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric'
-          })
 
           return (
-            <div key={trade.id || index} className="flex items-center justify-between py-2 border-b border-neutral-800 last:border-0">
+            <div key={trade.id || index} className="flex items-center justify-between py-2 border-b border-neutral-800/50 last:border-0">
               <div className="flex items-center gap-3">
-                <span className={`text-xs font-mono font-medium px-2 py-0.5 rounded ${isLong ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
-                  {isLong ? 'BUY' : 'SELL'}
+                <span className={`w-1.5 h-1.5 rounded-full ${isLong ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                <span className="text-sm text-neutral-400">
+                  {isLong ? 'Long' : 'Short'} position opened
                 </span>
-                <div className="text-xs">
-                  <span className="text-neutral-400">{date}</span>
-                  <span className="text-neutral-600 mx-1">at</span>
-                  <span className="text-neutral-400">{time}</span>
-                </div>
               </div>
-              <div className="text-right">
-                {trade.stopPrice && (
-                  <div className="text-xs text-neutral-500">
-                    SL: {trade.stopPrice} | TP: {trade.takeProfitPrice}
-                  </div>
-                )}
-                {trade.pnl !== null && trade.pnl !== undefined && (
-                  <span className={`text-xs font-mono ${trade.pnl >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                    {trade.pnl >= 0 ? '+' : ''}{trade.pnl.toFixed(2)}
-                  </span>
-                )}
-              </div>
+              <span className="text-xs text-neutral-600 font-mono">{time}</span>
             </div>
           )
         })}
@@ -213,98 +226,92 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchData()
-    const interval = setInterval(fetchData, 5000)
+    const interval = setInterval(fetchData, 10000) // Poll every 10 seconds
     return () => clearInterval(interval)
   }, [])
 
-  const isConnected = status?.status === 'healthy'
-  const futuresOpen = status?.futures?.isOpen
-  const hoursUntil = status?.futures?.hoursUntilOpen || 0
-  const minutesUntil = status?.futures?.minutesUntilOpen || 0
-  const nextOpenTime = status?.futures?.nextOpenTime
-  const closedReason = status?.futures?.closedReason
-
-  const formatCountdown = () => {
-    if (futuresOpen) return null
-    if (hoursUntil === 0 && minutesUntil === 0) return null
-    if (hoursUntil > 24) {
-      const days = Math.floor(hoursUntil / 24)
-      const remainingHours = hoursUntil % 24
-      return `${days}d ${remainingHours}h`
-    }
-    if (hoursUntil > 0) {
-      return `${hoursUntil}h ${minutesUntil}m`
-    }
-    return `${minutesUntil}m`
-  }
+  const dailyStats = status?.dailyStats || {}
+  const todayTrades = dailyStats.tradesExecuted || 0
 
   return (
-    <div className="min-h-screen bg-neutral-950">
+    <div className="min-h-screen bg-neutral-950 text-white">
       {/* Header */}
-      <header className="border-b border-neutral-800 sticky top-0 bg-neutral-950/95 backdrop-blur z-10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
-          {/* Mobile: Stack vertically */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
-            <div className="flex items-center justify-between sm:justify-start gap-3">
-              <span className="text-lg font-semibold text-white">noctiq</span>
-              <span className="text-neutral-600 hidden sm:inline">|</span>
-              <div className="flex items-center gap-2">
-                <StatusIndicator active={isConnected} />
-                <span className="text-sm text-neutral-400">
-                  {isConnected ? 'Connected' : 'Disconnected'}
-                </span>
-              </div>
+      <header className="border-b border-neutral-800/50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-semibold tracking-tight">noctiq</h1>
+              <span className="text-xs text-neutral-600 font-mono">MNQ</span>
             </div>
-            <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <StatusIndicator active={futuresOpen} />
-                <span className={`${futuresOpen ? 'text-emerald-500' : 'text-neutral-500'}`}>
-                  {futuresOpen ? 'Open' : 'Closed'}
-                </span>
-              </div>
-              {!futuresOpen && formatCountdown() && (
-                <span className="text-neutral-400 text-xs sm:text-sm">
-                  Opens in {formatCountdown()}
-                </span>
-              )}
-              <span className="text-neutral-600 text-xs sm:text-sm">{status?.etTime || '--:--'}</span>
+            <div className="flex items-center gap-2">
+              <StatusDot status={status?.status === 'healthy' ? 'online' : 'offline'} />
+              <span className="text-sm text-neutral-500">
+                {status?.status === 'healthy' ? 'Connected' : 'Disconnected'}
+              </span>
             </div>
           </div>
-          {/* Closed reason - hidden on mobile */}
-          {!futuresOpen && closedReason && (
-            <div className="mt-2 text-xs text-neutral-500 text-right hidden sm:block">
-              {closedReason} {nextOpenTime && `- Opens ${nextOpenTime}`}
-            </div>
-          )}
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
-        {/* MNQ Price Ticker */}
-        <div className="mb-4 sm:mb-6">
-          <TradingViewTicker />
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+        {/* Status Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <StatCard
+            label="Today's Trades"
+            value={todayTrades}
+            subtext={`of ${dailyStats.maxTrades || 8} max`}
+          />
+          <StatCard
+            label="Trades Available"
+            value={dailyStats.tradesRemaining || 8}
+            highlight={dailyStats.tradesRemaining > 0}
+          />
+          <SystemStatusCard
+            status={status?.status}
+            trading={status?.trading}
+          />
+          <MarketStatusCard
+            futures={status?.futures}
+            etTime={status?.etTime}
+          />
         </div>
 
         {/* Chart */}
-        <div className="border border-neutral-800 rounded-lg overflow-hidden mb-4 sm:mb-8">
+        <div className="border border-neutral-800 rounded-lg overflow-hidden mb-6">
           <TradingViewChart />
         </div>
 
-        {/* Position Card - Full width */}
-        <div className="mb-4 sm:mb-6">
-          <PositionCard position={status?.position} />
+        {/* Activity Feed */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <ActivityFeed trades={trades} />
+          <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
+            <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Session Info</p>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-sm text-neutral-500">Strategy</span>
+                <span className="text-sm text-neutral-300">Supertrend</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-neutral-500">Instrument</span>
+                <span className="text-sm text-neutral-300">MNQ</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-neutral-500">Position Size</span>
+                <span className="text-sm text-neutral-300">1 contract</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-neutral-500">Risk:Reward</span>
+                <span className="text-sm text-neutral-300">1:6</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Trade History - Full width */}
-        <div>
-          <TradeHistoryCard trades={trades} />
-        </div>
-
-        {/* Last Update */}
+        {/* Footer */}
         {lastUpdate && (
-          <p className="text-center text-xs text-neutral-600 mt-6 sm:mt-8">
-            Updated {lastUpdate.toLocaleTimeString()}
+          <p className="text-center text-xs text-neutral-700 mt-8">
+            Last updated {lastUpdate.toLocaleTimeString()}
           </p>
         )}
       </main>
