@@ -2,12 +2,11 @@
  * AI Market Brief Endpoint
  * Endpoint: GET /api/market/brief
  *
- * Generates a daily market brief using AI
+ * Generates a daily market brief using Vercel AI Gateway
  * Cached for 4 hours to minimize API calls
  */
 
-import { createOpenAI } from '@ai-sdk/openai';
-import { generateText } from 'ai';
+import { generateText, gateway } from 'ai';
 
 // In-memory cache for the market brief
 let briefCache = {
@@ -36,21 +35,13 @@ export async function GET() {
   }
 
   // Check if API key is configured
-  const apiKey = process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    console.error('[MarketBrief] No AI API key configured');
+  if (!process.env.AI_GATEWAY_API_KEY) {
+    console.error('[MarketBrief] AI_GATEWAY_API_KEY not configured');
     return Response.json({
       brief: 'Market brief not configured.',
       error: 'API key missing',
     }, { status: 500 });
   }
-
-  // Configure OpenAI - uses gateway URL if provided, otherwise standard OpenAI
-  const baseURL = process.env.AI_GATEWAY_URL || undefined;
-  const openai = createOpenAI({
-    apiKey,
-    baseURL,
-  });
 
   console.log('[MarketBrief] Generating new brief...');
 
@@ -97,8 +88,9 @@ Provide a brief (4-5 bullet points max) covering:
 
 Keep it under 150 words total. Be direct, no fluff. Use plain text with bullet points (use - for bullets).`;
 
+    // Use Vercel AI Gateway with GPT-5
     const { text } = await generateText({
-      model: openai('gpt-4o-mini'),
+      model: gateway('openai/gpt-5'),
       prompt,
       maxTokens: 300,
     });
