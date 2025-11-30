@@ -138,6 +138,57 @@ function StatCard({ label, value, subtext, highlight }) {
   )
 }
 
+function BalanceCard() {
+  const [balance, setBalance] = useState(null)
+  const [revealed, setRevealed] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        const res = await fetch('/api/trading/balance')
+        if (res.ok) {
+          const data = await res.json()
+          setBalance(data.balance)
+        }
+      } catch (err) {
+        console.error('Failed to fetch balance:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchBalance()
+  }, [])
+
+  const formatBalance = (val) => {
+    if (val === null || val === undefined) return '--'
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+    }).format(val)
+  }
+
+  const maskedBalance = '******'
+
+  return (
+    <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
+      <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1">Account Value</p>
+      <div className="flex items-center justify-between">
+        <p className="text-2xl font-mono font-semibold text-white">
+          {loading ? '...' : revealed ? formatBalance(balance) : maskedBalance}
+        </p>
+        <button
+          onClick={() => setRevealed(!revealed)}
+          className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors px-2 py-1"
+        >
+          {revealed ? 'hide' : 'show'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function MarketStatusCard({ futures, etTime }) {
   const isOpen = futures?.isOpen
   const reason = futures?.reason || ''
@@ -398,7 +449,8 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         {/* Status Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          <BalanceCard />
           <StatCard
             label="Today's Trades"
             value={todayTrades}
