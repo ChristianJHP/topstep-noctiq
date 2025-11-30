@@ -125,38 +125,6 @@ function TradingViewChart() {
   )
 }
 
-function MiniTickerBar() {
-  const containerRef = useRef(null)
-
-  useEffect(() => {
-    if (!containerRef.current) return
-    containerRef.current.innerHTML = ''
-
-    const script = document.createElement('script')
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js'
-    script.type = 'text/javascript'
-    script.async = true
-    script.innerHTML = JSON.stringify({
-      symbols: [
-        { proName: "PEPPERSTONE:NAS100", title: "NAS100" },
-        { proName: "PEPPERSTONE:US500", title: "S&P500" },
-      ],
-      showSymbolLogo: false,
-      isTransparent: true,
-      displayMode: "compact",
-      colorTheme: "dark",
-      locale: "en"
-    })
-
-    containerRef.current.appendChild(script)
-  }, [])
-
-  return (
-    <div className="tradingview-widget-container h-10 overflow-hidden">
-      <div ref={containerRef} className="tradingview-widget-container__widget" />
-    </div>
-  )
-}
 
 function StatCard({ label, value, subtext, highlight }) {
   return (
@@ -398,13 +366,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
-      {/* Ticker Bar */}
-      <div className="border-b border-neutral-800/30 bg-neutral-900/30">
-        <div className="max-w-6xl mx-auto">
-          <MiniTickerBar />
-        </div>
-      </div>
-
       {/* Header */}
       <header className="border-b border-neutral-800/50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
