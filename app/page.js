@@ -21,7 +21,7 @@ function TradingViewChart() {
     script.async = true
     script.innerHTML = JSON.stringify({
       autosize: true,
-      symbol: "PEPPERSTONE:US500",
+      symbol: "PEPPERSTONE:NAS100",
       interval: "5",
       timezone: "America/New_York",
       theme: "dark",
@@ -60,7 +60,7 @@ function TradingViewTicker() {
     script.type = 'text/javascript'
     script.async = true
     script.innerHTML = JSON.stringify({
-      symbol: "PEPPERSTONE:US500",
+      symbol: "PEPPERSTONE:NAS100",
       width: "100%",
       isTransparent: true,
       colorTheme: "dark",
@@ -281,7 +281,7 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
-        {/* MES Price Ticker */}
+        {/* MNQ Price Ticker */}
         <div className="mb-4 sm:mb-6">
           <TradingViewTicker />
         </div>

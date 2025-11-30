@@ -2,6 +2,13 @@
  * TradingView Webhook Handler
  * Endpoint: POST /api/trading/webhook
  *
+ * EDGE CASES HANDLED:
+ * - Concurrent webhook protection (mutex lock)
+ * - Duplicate webhook detection (idempotency)
+ * - TradingView latency tolerance (webhook ID based on 10s windows)
+ * - Comprehensive error logging
+ * - Graceful degradation on partial bracket failure
+ *
  * Expected payload from TradingView:
  * {
  *   "secret": "your-webhook-secret",
@@ -21,6 +28,8 @@ const riskManager = require('../../../../lib/riskManager');
  */
 export async function POST(request) {
   const startTime = Date.now();
+  let lockAcquired = false;
+  let webhookId = null;
 
   console.log('\n=== WEBHOOK RECEIVED ===');
   console.log(`Timestamp: ${new Date().toISOString()}`);
@@ -130,8 +139,28 @@ export async function POST(request) {
       }
     }
 
-    // 6. Risk management checks
-    const riskCheck = riskManager.canExecuteTrade();
+    // 5.5 Generate webhook ID for idempotency
+    // Uses 10-second windows to handle TradingView's potential latency
+    webhookId = riskManager.generateWebhookId(body);
+    console.log(`[Webhook] Generated webhook ID: ${webhookId}`);
+
+    // 6. Acquire lock for concurrent protection
+    console.log('[Webhook] Acquiring trade lock...');
+    try {
+      await riskManager.acquireLock(5000); // 5 second timeout
+      lockAcquired = true;
+      console.log('[Webhook] Trade lock acquired');
+    } catch (lockError) {
+      console.error('[Webhook] Failed to acquire trade lock:', lockError.message);
+      return NextResponse.json({
+        success: false,
+        error: 'System busy - another trade is being processed',
+        reason: lockError.message,
+      }, { status: 503 });
+    }
+
+    // 7. Risk management checks (with idempotency check)
+    const riskCheck = riskManager.canExecuteTrade(webhookId);
     if (!riskCheck.allowed) {
       console.warn(`[Webhook] Trade blocked by risk management: ${riskCheck.reason}`);
       return NextResponse.json({
@@ -144,7 +173,7 @@ export async function POST(request) {
 
     console.log(`[Webhook] Risk check passed: ${riskCheck.reason}`);
 
-    // 7. Execute bracket order via ProjectX API
+    // 8. Execute bracket order via ProjectX API
     console.log(`[Webhook] Executing ${action.toUpperCase()} bracket order...`);
     console.log(`  Entry: Market ${action.toUpperCase()}`);
     console.log(`  Stop Loss: ${stop}`);
@@ -157,17 +186,19 @@ export async function POST(request) {
       1 // 1 contract as per user's preference
     );
 
-    // 8. Record trade in risk manager with details
+    // 9. Record trade in risk manager with details
     const tradeRecord = riskManager.recordTrade({
+      webhookId: webhookId,
       action: action.toLowerCase(),
       stopPrice: stop,
       takeProfitPrice: tp,
       entryOrder: orderResult.entry,
       stopOrder: orderResult.stopLoss,
       tpOrder: orderResult.takeProfit,
+      partial: orderResult.partial || false,
     });
 
-    // 9. Prepare response
+    // 10. Prepare response
     const executionTime = Date.now() - startTime;
     const response = {
       success: true,
@@ -187,6 +218,13 @@ export async function POST(request) {
       timestamp: new Date().toISOString(),
     };
 
+    // Add warning if bracket was partial (TP failed but SL in place)
+    if (orderResult.partial) {
+      response.warning = orderResult.warning;
+      response.tpError = orderResult.tpError;
+      console.warn(`[Webhook] Partial bracket: ${orderResult.warning}`);
+    }
+
     console.log('[Webhook] Order executed successfully');
     console.log(`Execution time: ${executionTime}ms`);
     console.log('=== WEBHOOK COMPLETE ===\n');
@@ -197,11 +235,30 @@ export async function POST(request) {
     console.error('[Webhook] Error:', error);
     console.error('Stack trace:', error.stack);
 
+    // Check if this is an unprotected position error
+    if (error.message?.includes('UNPROTECTED POSITION')) {
+      console.error('[Webhook] CRITICAL: Unprotected position detected!');
+      return NextResponse.json({
+        success: false,
+        error: error.message,
+        critical: true,
+        action: 'MANUAL_INTERVENTION_REQUIRED',
+        timestamp: new Date().toISOString(),
+      }, { status: 500 });
+    }
+
     return NextResponse.json({
       success: false,
       error: error.message || 'Internal server error',
       timestamp: new Date().toISOString(),
     }, { status: 500 });
+
+  } finally {
+    // Always release lock
+    if (lockAcquired) {
+      riskManager.releaseLock();
+      console.log('[Webhook] Trade lock released');
+    }
   }
 }
 
@@ -215,6 +272,13 @@ export async function GET() {
     description: 'TradingView webhook handler for automated trading',
     requiredFields: ['secret', 'action', 'stop', 'tp'],
     actions: ['buy', 'sell', 'close'],
+    features: [
+      'Concurrent webhook protection (mutex)',
+      'Duplicate webhook detection (idempotency)',
+      'TradingView latency tolerance (10s windows)',
+      'Automatic retry with exponential backoff',
+      'Graceful partial bracket handling',
+    ],
     example: {
       secret: 'your-webhook-secret',
       action: 'buy',
