@@ -23,56 +23,6 @@ function LiveClock({ timezone = 'America/New_York' }) {
   return <span className="font-mono">{time}</span>
 }
 
-function RTHCountdown({ withinRTH }) {
-  const [countdown, setCountdown] = useState('')
-
-  useEffect(() => {
-    const calculateCountdown = () => {
-      const now = new Date()
-      const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }))
-      const hours = et.getHours()
-      const minutes = et.getMinutes()
-      const seconds = et.getSeconds()
-      const currentSeconds = hours * 3600 + minutes * 60 + seconds
-
-      const rthStart = 9 * 3600 + 30 * 60 // 9:30 AM
-      const rthEnd = 16 * 3600 // 4:00 PM
-
-      let targetSeconds, label
-      if (currentSeconds < rthStart) {
-        // Before RTH - count to open
-        targetSeconds = rthStart - currentSeconds
-        label = 'opens'
-      } else if (currentSeconds < rthEnd) {
-        // During RTH - count to close
-        targetSeconds = rthEnd - currentSeconds
-        label = 'closes'
-      } else {
-        // After RTH - count to next day open
-        targetSeconds = (24 * 3600 - currentSeconds) + rthStart
-        label = 'opens'
-      }
-
-      const h = Math.floor(targetSeconds / 3600)
-      const m = Math.floor((targetSeconds % 3600) / 60)
-      const s = targetSeconds % 60
-
-      if (h > 0) {
-        setCountdown(`${label} in ${h}h ${m}m`)
-      } else if (m > 0) {
-        setCountdown(`${label} in ${m}m ${s}s`)
-      } else {
-        setCountdown(`${label} in ${s}s`)
-      }
-    }
-
-    calculateCountdown()
-    const interval = setInterval(calculateCountdown, 1000)
-    return () => clearInterval(interval)
-  }, [withinRTH])
-
-  return <span className="text-xs text-neutral-500">{countdown}</span>
-}
 
 function StatusDot({ status }) {
   const colors = {
@@ -233,10 +183,10 @@ function MarketStatusCard({ futures, etTime }) {
   )
 }
 
-function SystemStatusCard({ status, trading }) {
+function SystemStatusCard({ status, trading, futures }) {
   const isHealthy = status === 'healthy'
   const canTrade = trading?.canTrade
-  const withinRTH = trading?.withinRTH
+  const futuresOpen = futures?.isOpen
 
   let systemStatus = 'offline'
   let statusText = 'Offline'
@@ -245,7 +195,7 @@ function SystemStatusCard({ status, trading }) {
     if (canTrade) {
       systemStatus = 'online'
       statusText = 'Active'
-    } else if (withinRTH) {
+    } else if (futuresOpen) {
       systemStatus = 'idle'
       statusText = 'Ready'
     } else {
@@ -270,9 +220,6 @@ function SystemStatusCard({ status, trading }) {
       </div>
       <p className="text-sm text-neutral-400">
         {isHealthy ? 'All systems operational' : 'System unavailable'}
-      </p>
-      <p className="text-xs text-neutral-600 mt-2">
-        RTH: 9:30 AM - 4:00 PM ET
       </p>
     </div>
   )
@@ -413,7 +360,7 @@ export default function Dashboard() {
   const dailyStats = status?.dailyStats || {}
   const todayTrades = dailyStats.tradesExecuted || 0
 
-  const withinRTH = status?.trading?.withinRTH || false
+  const futuresOpen = status?.futures?.isOpen || false
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
@@ -424,10 +371,9 @@ export default function Dashboard() {
             <div className="flex items-center gap-4">
               <h1 className="text-xl font-semibold tracking-tight">noctiq</h1>
               <div className="hidden sm:flex items-center gap-2 text-xs">
-                <span className={`px-2 py-0.5 rounded ${withinRTH ? 'bg-emerald-500/20 text-emerald-400' : 'bg-neutral-800 text-neutral-500'}`}>
-                  {withinRTH ? 'LIVE' : 'STANDBY'}
+                <span className={`px-2 py-0.5 rounded ${futuresOpen ? 'bg-emerald-500/20 text-emerald-400' : 'bg-neutral-800 text-neutral-500'}`}>
+                  {futuresOpen ? 'LIVE' : 'CLOSED'}
                 </span>
-                <RTHCountdown withinRTH={withinRTH} />
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -464,6 +410,7 @@ export default function Dashboard() {
           <SystemStatusCard
             status={status?.status}
             trading={status?.trading}
+            futures={status?.futures}
           />
           <MarketStatusCard
             futures={status?.futures}

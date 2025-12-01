@@ -45,9 +45,8 @@ export async function GET() {
       hour12: true,
     });
 
-    // 6. Check if within RTH
-    const rthCheck = riskManager.canExecuteTrade();
-    const withinRTH = !rthCheck.reason.includes('Outside regular trading hours');
+    // 6. Check if can trade (futures open + risk checks)
+    const tradeCheck = riskManager.canExecuteTrade();
 
     // 7. Get futures market status
     const futuresStatus = futuresMarket.isFuturesOpen();
@@ -59,10 +58,8 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       etTime: etTimeString,
       trading: {
-        withinRTH: withinRTH,
-        rthHours: '9:30 AM - 4:00 PM ET',
-        canTrade: rthCheck.allowed,
-        blockReason: rthCheck.allowed ? null : rthCheck.reason,
+        canTrade: tradeCheck.allowed,
+        blockReason: tradeCheck.allowed ? null : tradeCheck.reason,
       },
       futures: {
         isOpen: futuresStatus.open,
