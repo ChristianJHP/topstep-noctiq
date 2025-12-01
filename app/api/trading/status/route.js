@@ -51,6 +51,7 @@ export async function GET() {
     // 7. Get futures market status
     const futuresStatus = futuresMarket.isFuturesOpen();
     const timeUntilOpen = futuresMarket.getTimeUntilOpen();
+    const timeUntilClose = futuresMarket.getTimeUntilClose();
 
     // 8. Build PUBLIC response (no sensitive data)
     const response = {
@@ -68,6 +69,9 @@ export async function GET() {
         minutesUntilOpen: timeUntilOpen.minutesUntilOpen,
         nextOpenTime: timeUntilOpen.nextOpenFormatted,
         closedReason: timeUntilOpen.closedReason || null,
+        hoursUntilClose: timeUntilClose.hoursUntilClose,
+        minutesUntilClose: timeUntilClose.minutesUntilClose,
+        nextCloseTime: timeUntilClose.nextCloseFormatted || null,
       },
       dailyStats: {
         date: dailyStats.date,

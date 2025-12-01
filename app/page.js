@@ -76,87 +76,25 @@ function TradingViewChart() {
 }
 
 
-function StatCard({ label, value, subtext, highlight }) {
-  return (
-    <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
-      <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1">{label}</p>
-      <p className={`text-2xl font-mono font-semibold ${highlight ? 'text-emerald-500' : 'text-white'}`}>
-        {value}
-      </p>
-      {subtext && <p className="text-xs text-neutral-600 mt-1">{subtext}</p>}
-    </div>
-  )
-}
-
-function BalanceCard() {
-  const [balance, setBalance] = useState(null)
-  const [revealed, setRevealed] = useState(false)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchBalance = async () => {
-      try {
-        const res = await fetch('/api/trading/balance')
-        if (res.ok) {
-          const data = await res.json()
-          setBalance(data.balance)
-        }
-      } catch (err) {
-        console.error('Failed to fetch balance:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchBalance()
-  }, [])
-
-  const formatBalance = (val) => {
-    if (val === null || val === undefined) return '--'
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(val)
-  }
-
-  const maskedBalance = '******'
-
-  return (
-    <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
-      <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1">Account Value</p>
-      <div className="flex items-center justify-between">
-        <p className="text-2xl font-mono font-semibold text-white">
-          {loading ? '...' : revealed ? formatBalance(balance) : maskedBalance}
-        </p>
-        <button
-          onClick={() => setRevealed(!revealed)}
-          className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors px-2 py-1"
-        >
-          {revealed ? 'hide' : 'show'}
-        </button>
-      </div>
-    </div>
-  )
-}
-
 function MarketStatusCard({ futures, etTime }) {
   const isOpen = futures?.isOpen
   const reason = futures?.reason || ''
-  const hoursUntil = futures?.hoursUntilOpen || 0
-  const minutesUntil = futures?.minutesUntilOpen || 0
+  const hoursUntilOpen = futures?.hoursUntilOpen || 0
+  const minutesUntilOpen = futures?.minutesUntilOpen || 0
+  const hoursUntilClose = futures?.hoursUntilClose || 0
+  const minutesUntilClose = futures?.minutesUntilClose || 0
 
-  const formatCountdown = () => {
-    if (isOpen) return null
-    if (hoursUntil === 0 && minutesUntil === 0) return null
-    if (hoursUntil > 24) {
-      const days = Math.floor(hoursUntil / 24)
-      const remainingHours = hoursUntil % 24
+  const formatCountdown = (hours, minutes) => {
+    if (hours === 0 && minutes === 0) return null
+    if (hours > 24) {
+      const days = Math.floor(hours / 24)
+      const remainingHours = hours % 24
       return `${days}d ${remainingHours}h`
     }
-    if (hoursUntil > 0) {
-      return `${hoursUntil}h ${minutesUntil}m`
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`
     }
-    return `${minutesUntil}m`
+    return `${minutes}m`
   }
 
   return (
@@ -171,9 +109,14 @@ function MarketStatusCard({ futures, etTime }) {
         </div>
       </div>
       <p className="text-sm text-neutral-400">{reason}</p>
-      {!isOpen && formatCountdown() && (
+      {isOpen && formatCountdown(hoursUntilClose, minutesUntilClose) && (
         <p className="text-xs text-neutral-600 mt-2">
-          Opens in {formatCountdown()}
+          Closes in {formatCountdown(hoursUntilClose, minutesUntilClose)}
+        </p>
+      )}
+      {!isOpen && formatCountdown(hoursUntilOpen, minutesUntilOpen) && (
+        <p className="text-xs text-neutral-600 mt-2">
+          Opens in {formatCountdown(hoursUntilOpen, minutesUntilOpen)}
         </p>
       )}
       {etTime && (
@@ -225,35 +168,70 @@ function SystemStatusCard({ status, trading, futures }) {
   )
 }
 
-function ActivityFeed({ trades }) {
+function AlertsFeed({ trades }) {
+  const getActionLabel = (action) => {
+    switch (action) {
+      case 'buy': return { text: 'LONG', color: 'bg-emerald-500/20 text-emerald-400' }
+      case 'sell': return { text: 'SHORT', color: 'bg-red-500/20 text-red-400' }
+      case 'close': return { text: 'CLOSE', color: 'bg-amber-500/20 text-amber-400' }
+      default: return { text: action?.toUpperCase() || 'ALERT', color: 'bg-neutral-500/20 text-neutral-400' }
+    }
+  }
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'success': return { text: 'filled', color: 'text-emerald-500' }
+      case 'failed': return { text: 'failed', color: 'text-red-500' }
+      case 'pending': return { text: 'pending', color: 'text-amber-500' }
+      default: return { text: status || '', color: 'text-neutral-500' }
+    }
+  }
+
+  const getAccountLabel = (account) => {
+    if (!account || account === 'default') return { text: 'TSX', color: 'text-blue-400' }
+    if (account === 'tfd') return { text: 'TFD', color: 'text-purple-400' }
+    return { text: account.toUpperCase().slice(0, 3), color: 'text-neutral-400' }
+  }
+
   if (!trades || trades.length === 0) {
     return (
       <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
-        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Recent Activity</p>
-        <p className="text-sm text-neutral-600 text-center py-4">No activity today</p>
+        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">MNQ Alerts</p>
+        <p className="text-sm text-neutral-600 text-center py-8">No alerts received</p>
+        <p className="text-xs text-neutral-700 text-center">Waiting for TradingView webhooks...</p>
       </div>
     )
   }
 
   return (
     <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
-      <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Recent Activity</p>
-      <div className="space-y-2 max-h-48 overflow-y-auto">
-        {trades.slice(0, 5).map((trade, index) => {
-          const isLong = trade.action === 'buy'
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs text-neutral-500 uppercase tracking-wider">MNQ Alerts</p>
+        <span className="text-xs text-neutral-600">{trades.length} today</span>
+      </div>
+      <div className="space-y-2 max-h-64 overflow-y-auto">
+        {trades.slice(0, 10).map((trade, index) => {
+          const action = getActionLabel(trade.action)
+          const status = getStatusBadge(trade.status)
+          const account = getAccountLabel(trade.account)
           const time = new Date(trade.timestamp).toLocaleTimeString('en-US', {
             hour: 'numeric',
             minute: '2-digit',
+            second: '2-digit',
             hour12: true
           })
 
           return (
             <div key={trade.id || index} className="flex items-center justify-between py-2 border-b border-neutral-800/50 last:border-0">
-              <div className="flex items-center gap-3">
-                <span className={`w-1.5 h-1.5 rounded-full ${isLong ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                <span className="text-sm text-neutral-400">
-                  {isLong ? 'Long' : 'Short'} position opened
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-mono ${account.color}`}>{account.text}</span>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${action.color}`}>
+                  {action.text}
                 </span>
+                <span className="text-sm text-neutral-300">MNQ</span>
+                {status.text && (
+                  <span className={`text-xs ${status.color}`}>{status.text}</span>
+                )}
               </div>
               <span className="text-xs text-neutral-600 font-mono">{time}</span>
             </div>
@@ -357,9 +335,6 @@ export default function Dashboard() {
     return () => clearInterval(interval)
   }, [])
 
-  const dailyStats = status?.dailyStats || {}
-  const todayTrades = dailyStats.tradesExecuted || 0
-
   const futuresOpen = status?.futures?.isOpen || false
 
   return (
@@ -395,18 +370,7 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         {/* Status Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          <BalanceCard />
-          <StatCard
-            label="Today's Trades"
-            value={todayTrades}
-            subtext={`of ${dailyStats.maxTrades || 8} max`}
-          />
-          <StatCard
-            label="Trades Available"
-            value={dailyStats.tradesRemaining || 8}
-            highlight={dailyStats.tradesRemaining > 0}
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <SystemStatusCard
             status={status?.status}
             trading={status?.trading}
@@ -423,32 +387,48 @@ export default function Dashboard() {
           <TradingViewChart />
         </div>
 
-        {/* AI Market Brief */}
-        <div className="mb-6">
+        {/* Alerts and Brief */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <AlertsFeed trades={trades} />
           <MarketBrief />
         </div>
 
-        {/* Activity Feed */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <ActivityFeed trades={trades} />
-          <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
-            <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Session Info</p>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-neutral-500">Strategy</span>
-                <span className="text-sm text-neutral-300">Supertrend</span>
+        {/* Active Accounts */}
+        <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
+          <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Active Accounts</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* TopStepX Account */}
+            <div className="bg-neutral-800/30 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-mono text-blue-400">TSX</span>
+                <span className="text-sm text-neutral-300">TopStepX</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-neutral-500">Instrument</span>
-                <span className="text-sm text-neutral-300">MNQ</span>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-neutral-600">Strategy</span>
+                  <p className="text-neutral-400">Supertrend</p>
+                </div>
+                <div>
+                  <span className="text-neutral-600">R:R</span>
+                  <p className="text-neutral-400">1:6</p>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-neutral-500">Position Size</span>
-                <span className="text-sm text-neutral-300">1 contract</span>
+            </div>
+            {/* The Futures Desk Account */}
+            <div className="bg-neutral-800/30 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-mono text-purple-400">TFD</span>
+                <span className="text-sm text-neutral-300">The Futures Desk</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-neutral-500">Risk:Reward</span>
-                <span className="text-sm text-neutral-300">1:6</span>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-neutral-600">Strategy</span>
+                  <p className="text-neutral-400">ORB</p>
+                </div>
+                <div>
+                  <span className="text-neutral-600">R:R</span>
+                  <p className="text-neutral-400">ATR-based</p>
+                </div>
               </div>
             </div>
           </div>
