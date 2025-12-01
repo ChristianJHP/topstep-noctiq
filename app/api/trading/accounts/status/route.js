@@ -25,11 +25,23 @@ export async function GET() {
         const status = await brokerClient.getAccountStatus();
         const dailyStats = riskManager.getDailyStats(account.id);
 
+        // Try to get balance (may fail if not connected)
+        let balance = null;
+        try {
+          if (status.connected) {
+            const details = await brokerClient.getAccountDetails();
+            balance = details.balance;
+          }
+        } catch (e) {
+          console.warn(`[AccountStatus] Could not fetch balance for ${account.id}:`, e.message);
+        }
+
         return {
           id: account.id,
           name: account.name,
           broker: account.broker,
           connected: status.connected,
+          balance: balance,
           error: status.error || null,
           dailyStats: {
             tradeCount: dailyStats.tradeCount,
@@ -44,6 +56,7 @@ export async function GET() {
           name: account.name,
           broker: account.broker,
           connected: false,
+          balance: null,
           error: error.message,
           dailyStats: null,
         };
@@ -60,11 +73,23 @@ export async function GET() {
         const status = await brokerClient.getAccountStatus();
         const dailyStats = riskManager.getDailyStats('default');
 
+        // Try to get balance
+        let balance = null;
+        try {
+          if (status.connected) {
+            const details = await brokerClient.getAccountDetails();
+            balance = details.balance;
+          }
+        } catch (e) {
+          console.warn('[AccountStatus] Could not fetch balance for default:', e.message);
+        }
+
         statuses.unshift({
           id: 'default',
           name: defaultAccount.name,
           broker: defaultAccount.broker,
           connected: status.connected,
+          balance: balance,
           error: status.error || null,
           dailyStats: {
             tradeCount: dailyStats.tradeCount,
@@ -79,6 +104,7 @@ export async function GET() {
           name: defaultAccount.name,
           broker: defaultAccount.broker,
           connected: false,
+          balance: null,
           error: error.message,
           dailyStats: null,
         });

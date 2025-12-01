@@ -408,6 +408,11 @@ export default function Dashboard() {
             {(() => {
               const tsxStatus = accountsStatus.find(a => a.id === 'default') || {}
               const isConnected = tsxStatus.connected
+              const balance = tsxStatus.balance
+              const formatBalance = (bal) => {
+                if (bal === null || bal === undefined) return '--'
+                return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(bal)
+              }
               return (
                 <div className={`rounded-lg p-3 border ${isConnected ? 'bg-blue-500/5 border-blue-500/20' : 'bg-neutral-800/30 border-neutral-700/30'}`}>
                   <div className="flex items-center justify-between mb-2">
@@ -422,7 +427,12 @@ export default function Dashboard() {
                       </span>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
+                  {isConnected && balance !== null && (
+                    <div className="mb-2">
+                      <span className="text-lg font-semibold text-blue-400">{formatBalance(balance)}</span>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-4 gap-2 text-xs">
                     <div>
                       <span className="text-neutral-600">Strategy</span>
                       <p className="text-neutral-400">Supertrend</p>
@@ -435,6 +445,18 @@ export default function Dashboard() {
                       <span className="text-neutral-600">Trades</span>
                       <p className="text-blue-400">{tsxStatus.dailyStats?.tradeCount || 0}/8</p>
                     </div>
+                    <div>
+                      <span className="text-neutral-600">Today P&L</span>
+                      <p className={tsxStatus.dailyStats?.totalProfit > tsxStatus.dailyStats?.totalLoss ? 'text-emerald-400' : tsxStatus.dailyStats?.totalLoss > 0 ? 'text-red-400' : 'text-neutral-400'}>
+                        {(() => {
+                          const profit = tsxStatus.dailyStats?.totalProfit || 0
+                          const loss = tsxStatus.dailyStats?.totalLoss || 0
+                          const net = profit - loss
+                          if (net === 0) return '--'
+                          return net > 0 ? `+$${net}` : `-$${Math.abs(net)}`
+                        })()}
+                      </p>
+                    </div>
                   </div>
                 </div>
               )
@@ -443,6 +465,11 @@ export default function Dashboard() {
             {(() => {
               const tfdStatus = accountsStatus.find(a => a.id === 'tfd') || {}
               const isConnected = tfdStatus.connected
+              const balance = tfdStatus.balance
+              const formatBalance = (bal) => {
+                if (bal === null || bal === undefined) return '--'
+                return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(bal)
+              }
               return (
                 <div className={`rounded-lg p-3 border ${isConnected ? 'bg-purple-500/5 border-purple-500/20' : 'bg-neutral-800/30 border-neutral-700/30'}`}>
                   <div className="flex items-center justify-between mb-2">
@@ -457,7 +484,12 @@ export default function Dashboard() {
                       </span>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
+                  {isConnected && balance !== null && (
+                    <div className="mb-2">
+                      <span className="text-lg font-semibold text-purple-400">{formatBalance(balance)}</span>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-4 gap-2 text-xs">
                     <div>
                       <span className="text-neutral-600">Strategy</span>
                       <p className="text-neutral-400">ORB</p>
@@ -469,6 +501,18 @@ export default function Dashboard() {
                     <div>
                       <span className="text-neutral-600">Trades</span>
                       <p className="text-purple-400">{tfdStatus.dailyStats?.tradeCount || 0}/8</p>
+                    </div>
+                    <div>
+                      <span className="text-neutral-600">Today P&L</span>
+                      <p className={tfdStatus.dailyStats?.totalProfit > tfdStatus.dailyStats?.totalLoss ? 'text-emerald-400' : tfdStatus.dailyStats?.totalLoss > 0 ? 'text-red-400' : 'text-neutral-400'}>
+                        {(() => {
+                          const profit = tfdStatus.dailyStats?.totalProfit || 0
+                          const loss = tfdStatus.dailyStats?.totalLoss || 0
+                          const net = profit - loss
+                          if (net === 0) return '--'
+                          return net > 0 ? `+$${net}` : `-$${Math.abs(net)}`
+                        })()}
+                      </p>
                     </div>
                   </div>
                 </div>
