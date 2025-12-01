@@ -529,7 +529,7 @@ export async function POST(request) {
         actionTaken: actionToTake,
         wasReversal: wasReversal,
       },
-      dailyStats: riskManager.getDailyStats(),
+      dailyStats: riskManager.getDailyStats(targetAccount.id),
       executionTimeMs: executionTime,
       timestamp: new Date().toISOString(),
     };
