@@ -89,14 +89,15 @@ Provide a brief (4-5 bullet points max) covering:
 
 Keep it under 150 words total. Be direct, no fluff. Use plain text with bullet points (use - for bullets).`;
 
-    // Create OpenAI client with the gateway API key
-    const openai = createOpenAI({
+    // Create OpenAI-compatible client via Vercel AI Gateway
+    const gateway = createOpenAI({
+      baseURL: 'https://gateway.ai.vercel.app/v1',
       apiKey: process.env.AI_GATEWAY_API_KEY,
     });
 
-    // Generate text using Vercel AI SDK
+    // Generate text using Vercel AI SDK through gateway
     const { text } = await generateText({
-      model: openai('gpt-4o-mini'),
+      model: gateway('openai/gpt-4o-mini'),
       prompt,
       maxTokens: 300,
     });
