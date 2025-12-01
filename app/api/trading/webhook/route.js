@@ -13,8 +13,9 @@
  * {
  *   "secret": "your-webhook-secret",
  *   "action": "buy|sell|close",
- *   "stop": 6800.00,
- *   "tp": 6850.00
+ *   "symbol": "MNQ",
+ *   "stop": 25350.00,
+ *   "tp": 25500.00
  * }
  */
 
@@ -90,7 +91,12 @@ export async function POST(request) {
     console.log(`[Webhook] Account safety check passed: ${configuredAccountId}`);
 
     // 3. Validate required fields
-    const { action, stop, tp } = body;
+    const { action, symbol, stop, tp } = body;
+
+    // Log symbol if provided
+    if (symbol) {
+      console.log(`[Webhook] Symbol: ${symbol}`);
+    }
 
     if (!action) {
       console.error('[Webhook] Missing required field: action');
@@ -228,6 +234,7 @@ export async function POST(request) {
     const tradeRecord = riskManager.recordTrade({
       webhookId: webhookId,
       action: action.toLowerCase(),
+      symbol: symbol || 'MNQ',
       stopPrice: stopNum,
       takeProfitPrice: tpNum,
       entryOrder: orderResult.entry,
