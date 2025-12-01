@@ -202,7 +202,9 @@ function AlertsFeed({ trades }) {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'success': return { text: 'filled', color: 'text-emerald-500' }
+      case 'partial': return { text: 'partial', color: 'text-amber-500' }
       case 'failed': return { text: 'failed', color: 'text-red-500' }
+      case 'blocked': return { text: 'blocked', color: 'text-orange-500' }
       case 'pending': return { text: 'pending', color: 'text-amber-500' }
       default: return { text: status || '', color: 'text-neutral-500' }
     }

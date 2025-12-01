@@ -41,6 +41,8 @@ export async function POST(request) {
   const startTime = Date.now();
   let lockAcquired = false;
   let webhookId = null;
+  let targetAccount = null;
+  let parsedBody = null;
 
   console.log('\n=== WEBHOOK RECEIVED ===');
   console.log(`Timestamp: ${new Date().toISOString()}`);
@@ -50,8 +52,17 @@ export async function POST(request) {
     let body;
     try {
       body = await request.json();
+      parsedBody = body;
     } catch (parseError) {
       console.error('[Webhook] Invalid JSON payload:', parseError.message);
+      // Save failed alert
+      await alertStorage.saveAlert({
+        action: 'unknown',
+        symbol: 'MNQ',
+        account: 'unknown',
+        status: 'failed',
+        error: 'Invalid JSON payload',
+      });
       return NextResponse.json(
         { success: false, error: 'Invalid JSON payload' },
         { status: 400 }
@@ -61,7 +72,7 @@ export async function POST(request) {
 
     // 2. Validate webhook secret and resolve account
     // First try to find account by secret (multi-account mode)
-    let targetAccount = accounts.getAccountBySecret(body.secret);
+    targetAccount = accounts.getAccountBySecret(body.secret);
 
     // Fallback to legacy single-account mode
     if (!targetAccount) {
@@ -206,6 +217,14 @@ export async function POST(request) {
     // 5. Validate stop and take profit prices for entry orders
     if (stop === undefined || stop === null || tp === undefined || tp === null) {
       console.error('[Webhook] Missing required fields: stop and/or tp');
+      // Save failed alert
+      await alertStorage.saveAlert({
+        action: action?.toLowerCase() || 'unknown',
+        symbol: symbol || 'MNQ',
+        account: targetAccount?.id || 'unknown',
+        status: 'failed',
+        error: 'Missing stop and/or tp prices',
+      });
       return NextResponse.json(
         { success: false, error: 'Missing required fields: stop and tp' },
         { status: 400 }
@@ -284,6 +303,16 @@ export async function POST(request) {
     const riskCheck = riskManager.canExecuteTrade(webhookId, targetAccount.id);
     if (!riskCheck.allowed) {
       console.warn(`[Webhook] Trade blocked by risk management: ${riskCheck.reason}`);
+      // Save blocked alert
+      await alertStorage.saveAlert({
+        action: action?.toLowerCase() || 'unknown',
+        symbol: symbol || 'MNQ',
+        account: targetAccount.id,
+        status: 'blocked',
+        stop: stopNum,
+        tp: tpNum,
+        error: `Risk management: ${riskCheck.reason}`,
+      });
       return NextResponse.json({
         success: false,
         error: 'Trade blocked by risk management',
@@ -371,6 +400,21 @@ export async function POST(request) {
   } catch (error) {
     console.error('[Webhook] Error:', error);
     console.error('Stack trace:', error.stack);
+
+    // Save failed alert with error details
+    try {
+      await alertStorage.saveAlert({
+        action: parsedBody?.action?.toLowerCase() || 'unknown',
+        symbol: parsedBody?.symbol || 'MNQ',
+        account: targetAccount?.id || 'unknown',
+        status: 'failed',
+        stop: parsedBody?.stop,
+        tp: parsedBody?.tp,
+        error: error.message,
+      });
+    } catch (saveError) {
+      console.error('[Webhook] Failed to save error alert:', saveError.message);
+    }
 
     // Check if this is an unprotected position error
     if (error.message?.includes('UNPROTECTED POSITION')) {
