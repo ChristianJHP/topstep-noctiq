@@ -79,21 +79,22 @@ function TradingViewChart() {
 function MarketStatusCard({ futures, etTime }) {
   const isOpen = futures?.isOpen
   const reason = futures?.reason || ''
-  const hoursUntil = futures?.hoursUntilOpen || 0
-  const minutesUntil = futures?.minutesUntilOpen || 0
+  const hoursUntilOpen = futures?.hoursUntilOpen || 0
+  const minutesUntilOpen = futures?.minutesUntilOpen || 0
+  const hoursUntilClose = futures?.hoursUntilClose || 0
+  const minutesUntilClose = futures?.minutesUntilClose || 0
 
-  const formatCountdown = () => {
-    if (isOpen) return null
-    if (hoursUntil === 0 && minutesUntil === 0) return null
-    if (hoursUntil > 24) {
-      const days = Math.floor(hoursUntil / 24)
-      const remainingHours = hoursUntil % 24
+  const formatCountdown = (hours, minutes) => {
+    if (hours === 0 && minutes === 0) return null
+    if (hours > 24) {
+      const days = Math.floor(hours / 24)
+      const remainingHours = hours % 24
       return `${days}d ${remainingHours}h`
     }
-    if (hoursUntil > 0) {
-      return `${hoursUntil}h ${minutesUntil}m`
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`
     }
-    return `${minutesUntil}m`
+    return `${minutes}m`
   }
 
   return (
@@ -108,9 +109,14 @@ function MarketStatusCard({ futures, etTime }) {
         </div>
       </div>
       <p className="text-sm text-neutral-400">{reason}</p>
-      {!isOpen && formatCountdown() && (
+      {isOpen && formatCountdown(hoursUntilClose, minutesUntilClose) && (
         <p className="text-xs text-neutral-600 mt-2">
-          Opens in {formatCountdown()}
+          Closes in {formatCountdown(hoursUntilClose, minutesUntilClose)}
+        </p>
+      )}
+      {!isOpen && formatCountdown(hoursUntilOpen, minutesUntilOpen) && (
+        <p className="text-xs text-neutral-600 mt-2">
+          Opens in {formatCountdown(hoursUntilOpen, minutesUntilOpen)}
         </p>
       )}
       {etTime && (
