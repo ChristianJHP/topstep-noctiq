@@ -67,28 +67,16 @@ export async function POST(request) {
       );
     }
 
-    // 2.5 CRITICAL SAFETY CHECK: Verify correct account is configured
-    // This prevents accidentally trading on a funded account
-    const REQUIRED_ACCOUNT_ID = '50KTC-V2-426662-38795180';
-    const configuredAccountId = process.env.PROJECTX_ACCOUNT_ID;
-
-    if (!configuredAccountId) {
-      console.error('[Webhook] CRITICAL: PROJECTX_ACCOUNT_ID not configured - blocking all trades');
+    // 2.5 Verify ProjectX credentials are configured
+    if (!process.env.PROJECTX_API_KEY || !process.env.PROJECTX_USERNAME) {
+      console.error('[Webhook] CRITICAL: ProjectX credentials not configured');
       return NextResponse.json(
-        { success: false, error: 'Account ID not configured - trades blocked for safety' },
+        { success: false, error: 'Trading credentials not configured' },
         { status: 500 }
       );
     }
 
-    if (configuredAccountId !== REQUIRED_ACCOUNT_ID) {
-      console.error(`[Webhook] CRITICAL: Wrong account configured! Expected ${REQUIRED_ACCOUNT_ID}, got ${configuredAccountId}`);
-      return NextResponse.json(
-        { success: false, error: 'Wrong account configured - trades blocked for safety' },
-        { status: 500 }
-      );
-    }
-
-    console.log(`[Webhook] Account safety check passed: ${configuredAccountId}`);
+    console.log('[Webhook] Credentials configured');
 
     // 3. Validate required fields
     const { action, symbol, stop, tp } = body;
