@@ -76,147 +76,6 @@ function TradingViewChart() {
 }
 
 
-function PositionsCard() {
-  const [positions, setPositions] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchPositions = async () => {
-      try {
-        const res = await fetch('/api/trading/positions')
-        if (res.ok) {
-          const data = await res.json()
-          setPositions(data.positions || [])
-        }
-      } catch (err) {
-        console.error('Failed to fetch positions:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchPositions()
-    const interval = setInterval(fetchPositions, 5000) // Poll every 5 seconds
-    return () => clearInterval(interval)
-  }, [])
-
-  const formatPnL = (pnl) => {
-    if (pnl === null || pnl === undefined) return '--'
-    const formatted = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(Math.abs(pnl))
-    return pnl >= 0 ? `+${formatted}` : `-${formatted}`
-  }
-
-  if (loading) {
-    return (
-      <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
-        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Open Positions</p>
-        <div className="py-4 text-center">
-          <div className="inline-block w-4 h-4 border-2 border-neutral-700 border-t-neutral-400 rounded-full animate-spin" />
-        </div>
-      </div>
-    )
-  }
-
-  if (!positions || positions.length === 0) {
-    return (
-      <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
-        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Open Positions</p>
-        <p className="text-sm text-neutral-600 text-center py-2">No open positions</p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
-      <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Open Positions</p>
-      <div className="space-y-3">
-        {positions.map((pos, index) => {
-          const isLong = pos.qty > 0 || pos.side === 'long' || pos.side === 0
-          const qty = Math.abs(pos.qty || pos.quantity || pos.size || 1)
-          const symbol = pos.symbol || pos.contractName || 'MNQ'
-          const pnl = pos.pnl || pos.unrealizedPnl || pos.openPnl || null
-          const avgPrice = pos.avgPrice || pos.averagePrice || pos.entryPrice || null
-
-          return (
-            <div key={pos.id || index} className="flex items-center justify-between py-2 border-b border-neutral-800/50 last:border-0">
-              <div className="flex items-center gap-3">
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${isLong ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                  {isLong ? 'LONG' : 'SHORT'}
-                </span>
-                <span className="text-sm text-neutral-300">{qty} {symbol}</span>
-              </div>
-              <div className="text-right">
-                {avgPrice && (
-                  <p className="text-xs text-neutral-500 font-mono">{avgPrice.toFixed(2)}</p>
-                )}
-                {pnl !== null && (
-                  <p className={`text-sm font-mono ${pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {formatPnL(pnl)}
-                  </p>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function BalanceCard() {
-  const [balance, setBalance] = useState(null)
-  const [revealed, setRevealed] = useState(false)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchBalance = async () => {
-      try {
-        const res = await fetch('/api/trading/balance')
-        if (res.ok) {
-          const data = await res.json()
-          setBalance(data.balance)
-        }
-      } catch (err) {
-        console.error('Failed to fetch balance:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchBalance()
-  }, [])
-
-  const formatBalance = (val) => {
-    if (val === null || val === undefined) return '--'
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(val)
-  }
-
-  const maskedBalance = '******'
-
-  return (
-    <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
-      <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1">Account Value</p>
-      <div className="flex items-center justify-between">
-        <p className="text-2xl font-mono font-semibold text-white">
-          {loading ? '...' : revealed ? formatBalance(balance) : maskedBalance}
-        </p>
-        <button
-          onClick={() => setRevealed(!revealed)}
-          className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors px-2 py-1"
-        >
-          {revealed ? 'hide' : 'show'}
-        </button>
-      </div>
-    </div>
-  )
-}
-
 function MarketStatusCard({ futures, etTime }) {
   const isOpen = futures?.isOpen
   const reason = futures?.reason || ''
@@ -303,35 +162,62 @@ function SystemStatusCard({ status, trading, futures }) {
   )
 }
 
-function ActivityFeed({ trades }) {
+function AlertsFeed({ trades }) {
+  const getActionLabel = (action) => {
+    switch (action) {
+      case 'buy': return { text: 'LONG', color: 'bg-emerald-500/20 text-emerald-400' }
+      case 'sell': return { text: 'SHORT', color: 'bg-red-500/20 text-red-400' }
+      case 'close': return { text: 'CLOSE', color: 'bg-amber-500/20 text-amber-400' }
+      default: return { text: action?.toUpperCase() || 'ALERT', color: 'bg-neutral-500/20 text-neutral-400' }
+    }
+  }
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'success': return { text: 'filled', color: 'text-emerald-500' }
+      case 'failed': return { text: 'failed', color: 'text-red-500' }
+      case 'pending': return { text: 'pending', color: 'text-amber-500' }
+      default: return { text: status || '', color: 'text-neutral-500' }
+    }
+  }
+
   if (!trades || trades.length === 0) {
     return (
       <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
-        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Recent Activity</p>
-        <p className="text-sm text-neutral-600 text-center py-4">No activity today</p>
+        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">MNQ Alerts</p>
+        <p className="text-sm text-neutral-600 text-center py-8">No alerts received</p>
+        <p className="text-xs text-neutral-700 text-center">Waiting for TradingView webhooks...</p>
       </div>
     )
   }
 
   return (
     <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
-      <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Recent Activity</p>
-      <div className="space-y-2 max-h-48 overflow-y-auto">
-        {trades.slice(0, 5).map((trade, index) => {
-          const isLong = trade.action === 'buy'
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs text-neutral-500 uppercase tracking-wider">MNQ Alerts</p>
+        <span className="text-xs text-neutral-600">{trades.length} today</span>
+      </div>
+      <div className="space-y-2 max-h-64 overflow-y-auto">
+        {trades.slice(0, 10).map((trade, index) => {
+          const action = getActionLabel(trade.action)
+          const status = getStatusBadge(trade.status)
           const time = new Date(trade.timestamp).toLocaleTimeString('en-US', {
             hour: 'numeric',
             minute: '2-digit',
+            second: '2-digit',
             hour12: true
           })
 
           return (
             <div key={trade.id || index} className="flex items-center justify-between py-2 border-b border-neutral-800/50 last:border-0">
               <div className="flex items-center gap-3">
-                <span className={`w-1.5 h-1.5 rounded-full ${isLong ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                <span className="text-sm text-neutral-400">
-                  {isLong ? 'Long' : 'Short'} position opened
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${action.color}`}>
+                  {action.text}
                 </span>
+                <span className="text-sm text-neutral-300">MNQ</span>
+                {status.text && (
+                  <span className={`text-xs ${status.color}`}>{status.text}</span>
+                )}
               </div>
               <span className="text-xs text-neutral-600 font-mono">{time}</span>
             </div>
@@ -470,9 +356,7 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         {/* Status Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <BalanceCard />
-          <PositionsCard />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <SystemStatusCard
             status={status?.status}
             trading={status?.trading}
@@ -489,33 +373,31 @@ export default function Dashboard() {
           <TradingViewChart />
         </div>
 
-        {/* AI Market Brief */}
-        <div className="mb-6">
+        {/* Alerts and Brief */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <AlertsFeed trades={trades} />
           <MarketBrief />
         </div>
 
-        {/* Activity Feed */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <ActivityFeed trades={trades} />
-          <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
-            <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Session Info</p>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-neutral-500">Strategy</span>
-                <span className="text-sm text-neutral-300">Supertrend</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-neutral-500">Instrument</span>
-                <span className="text-sm text-neutral-300">MNQ</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-neutral-500">Position Size</span>
-                <span className="text-sm text-neutral-300">1 contract</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-neutral-500">Risk:Reward</span>
-                <span className="text-sm text-neutral-300">1:6</span>
-              </div>
+        {/* Session Info */}
+        <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
+          <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Session Info</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <span className="text-xs text-neutral-600">Strategy</span>
+              <p className="text-sm text-neutral-300">Supertrend</p>
+            </div>
+            <div>
+              <span className="text-xs text-neutral-600">Instrument</span>
+              <p className="text-sm text-neutral-300">MNQ</p>
+            </div>
+            <div>
+              <span className="text-xs text-neutral-600">Position Size</span>
+              <p className="text-sm text-neutral-300">1 contract</p>
+            </div>
+            <div>
+              <span className="text-xs text-neutral-600">Risk:Reward</span>
+              <p className="text-sm text-neutral-300">1:6</p>
             </div>
           </div>
         </div>
