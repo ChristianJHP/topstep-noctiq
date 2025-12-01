@@ -187,6 +187,12 @@ function AlertsFeed({ trades }) {
     }
   }
 
+  const getAccountLabel = (account) => {
+    if (!account || account === 'default') return { text: 'TSX', color: 'text-blue-400' }
+    if (account === 'tfd') return { text: 'TFD', color: 'text-purple-400' }
+    return { text: account.toUpperCase().slice(0, 3), color: 'text-neutral-400' }
+  }
+
   if (!trades || trades.length === 0) {
     return (
       <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
@@ -207,6 +213,7 @@ function AlertsFeed({ trades }) {
         {trades.slice(0, 10).map((trade, index) => {
           const action = getActionLabel(trade.action)
           const status = getStatusBadge(trade.status)
+          const account = getAccountLabel(trade.account)
           const time = new Date(trade.timestamp).toLocaleTimeString('en-US', {
             hour: 'numeric',
             minute: '2-digit',
@@ -216,7 +223,8 @@ function AlertsFeed({ trades }) {
 
           return (
             <div key={trade.id || index} className="flex items-center justify-between py-2 border-b border-neutral-800/50 last:border-0">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-mono ${account.color}`}>{account.text}</span>
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${action.color}`}>
                   {action.text}
                 </span>
@@ -385,25 +393,43 @@ export default function Dashboard() {
           <MarketBrief />
         </div>
 
-        {/* Session Info */}
+        {/* Active Accounts */}
         <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
-          <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Session Info</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div>
-              <span className="text-xs text-neutral-600">Strategy</span>
-              <p className="text-sm text-neutral-300">Supertrend</p>
+          <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Active Accounts</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* TopStepX Account */}
+            <div className="bg-neutral-800/30 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-mono text-blue-400">TSX</span>
+                <span className="text-sm text-neutral-300">TopStepX</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-neutral-600">Strategy</span>
+                  <p className="text-neutral-400">Supertrend</p>
+                </div>
+                <div>
+                  <span className="text-neutral-600">R:R</span>
+                  <p className="text-neutral-400">1:6</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <span className="text-xs text-neutral-600">Instrument</span>
-              <p className="text-sm text-neutral-300">MNQ</p>
-            </div>
-            <div>
-              <span className="text-xs text-neutral-600">Position Size</span>
-              <p className="text-sm text-neutral-300">1 contract</p>
-            </div>
-            <div>
-              <span className="text-xs text-neutral-600">Risk:Reward</span>
-              <p className="text-sm text-neutral-300">1:6</p>
+            {/* The Futures Desk Account */}
+            <div className="bg-neutral-800/30 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-mono text-purple-400">TFD</span>
+                <span className="text-sm text-neutral-300">The Futures Desk</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-neutral-600">Strategy</span>
+                  <p className="text-neutral-400">ORB</p>
+                </div>
+                <div>
+                  <span className="text-neutral-600">R:R</span>
+                  <p className="text-neutral-400">ATR-based</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
