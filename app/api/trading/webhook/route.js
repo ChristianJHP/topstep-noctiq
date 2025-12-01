@@ -265,12 +265,12 @@ export async function POST(request) {
     webhookId = riskManager.generateWebhookId(body);
     console.log(`[Webhook] Generated webhook ID: ${webhookId}`);
 
-    // 6. Acquire lock for concurrent protection
-    console.log('[Webhook] Acquiring trade lock...');
+    // 6. Acquire lock for concurrent protection (per account)
+    console.log(`[Webhook] Acquiring trade lock for ${targetAccount.id}...`);
     try {
-      await riskManager.acquireLock(5000); // 5 second timeout
+      await riskManager.acquireLock(5000, targetAccount.id); // 5 second timeout, per account
       lockAcquired = true;
-      console.log('[Webhook] Trade lock acquired');
+      console.log(`[Webhook] Trade lock acquired for ${targetAccount.id}`);
     } catch (lockError) {
       console.error('[Webhook] Failed to acquire trade lock:', lockError.message);
       return NextResponse.json({
@@ -280,15 +280,15 @@ export async function POST(request) {
       }, { status: 503 });
     }
 
-    // 7. Risk management checks (with idempotency check)
-    const riskCheck = riskManager.canExecuteTrade(webhookId);
+    // 7. Risk management checks (with idempotency check, per account)
+    const riskCheck = riskManager.canExecuteTrade(webhookId, targetAccount.id);
     if (!riskCheck.allowed) {
       console.warn(`[Webhook] Trade blocked by risk management: ${riskCheck.reason}`);
       return NextResponse.json({
         success: false,
         error: 'Trade blocked by risk management',
         reason: riskCheck.reason,
-        dailyStats: riskManager.getDailyStats(),
+        dailyStats: riskManager.getDailyStats(targetAccount.id),
       }, { status: 403 });
     }
 
@@ -340,7 +340,7 @@ export async function POST(request) {
         stop: stopNum,
         takeProfit: tpNum,
       },
-      dailyStats: riskManager.getDailyStats(),
+      dailyStats: riskManager.getDailyStats(targetAccount.id),
       executionTimeMs: executionTime,
       timestamp: new Date().toISOString(),
     };
@@ -391,10 +391,11 @@ export async function POST(request) {
     }, { status: 500 });
 
   } finally {
-    // Always release lock
+    // Always release lock (need targetAccount.id, but it might not be defined if error occurred early)
     if (lockAcquired) {
-      riskManager.releaseLock();
-      console.log('[Webhook] Trade lock released');
+      // targetAccount is defined if we acquired the lock
+      riskManager.releaseLock(targetAccount?.id || 'default');
+      console.log(`[Webhook] Trade lock released for ${targetAccount?.id || 'default'}`);
     }
   }
 }

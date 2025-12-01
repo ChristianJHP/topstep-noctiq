@@ -301,14 +301,16 @@ function MarketBrief() {
 export default function Dashboard() {
   const [status, setStatus] = useState(null)
   const [trades, setTrades] = useState([])
+  const [accountsStatus, setAccountsStatus] = useState([])
   const [loading, setLoading] = useState(true)
   const [lastUpdate, setLastUpdate] = useState(null)
 
   const fetchData = async () => {
     try {
-      const [statusRes, tradesRes] = await Promise.all([
+      const [statusRes, tradesRes, accountsRes] = await Promise.all([
         fetch('/api/trading/status'),
-        fetch('/api/trading/trades')
+        fetch('/api/trading/trades'),
+        fetch('/api/trading/accounts/status')
       ])
 
       if (statusRes.ok) {
@@ -319,6 +321,11 @@ export default function Dashboard() {
       if (tradesRes.ok) {
         const data = await tradesRes.json()
         setTrades(data.trades || [])
+      }
+
+      if (accountsRes.ok) {
+        const data = await accountsRes.json()
+        setAccountsStatus(data.accounts || [])
       }
 
       setLastUpdate(new Date())
@@ -398,39 +405,75 @@ export default function Dashboard() {
           <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Active Accounts</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* TopStepX Account */}
-            <div className="bg-neutral-800/30 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-mono text-blue-400">TSX</span>
-                <span className="text-sm text-neutral-300">TopStepX</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <span className="text-neutral-600">Strategy</span>
-                  <p className="text-neutral-400">Supertrend</p>
+            {(() => {
+              const tsxStatus = accountsStatus.find(a => a.id === 'default') || {}
+              const isConnected = tsxStatus.connected
+              return (
+                <div className={`rounded-lg p-3 border ${isConnected ? 'bg-blue-500/5 border-blue-500/20' : 'bg-neutral-800/30 border-neutral-700/30'}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-blue-400">TSX</span>
+                      <span className="text-sm text-neutral-300">TopStepX</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-blue-400' : 'bg-neutral-600'}`} />
+                      <span className={`text-xs ${isConnected ? 'text-blue-400' : 'text-neutral-600'}`}>
+                        {isConnected ? 'Connected' : 'Offline'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                      <span className="text-neutral-600">Strategy</span>
+                      <p className="text-neutral-400">Supertrend</p>
+                    </div>
+                    <div>
+                      <span className="text-neutral-600">R:R</span>
+                      <p className="text-neutral-400">1:6</p>
+                    </div>
+                    <div>
+                      <span className="text-neutral-600">Trades</span>
+                      <p className="text-blue-400">{tsxStatus.dailyStats?.tradeCount || 0}/8</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-neutral-600">R:R</span>
-                  <p className="text-neutral-400">1:6</p>
-                </div>
-              </div>
-            </div>
+              )
+            })()}
             {/* The Futures Desk Account */}
-            <div className="bg-neutral-800/30 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-mono text-purple-400">TFD</span>
-                <span className="text-sm text-neutral-300">The Futures Desk</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <span className="text-neutral-600">Strategy</span>
-                  <p className="text-neutral-400">ORB</p>
+            {(() => {
+              const tfdStatus = accountsStatus.find(a => a.id === 'tfd') || {}
+              const isConnected = tfdStatus.connected
+              return (
+                <div className={`rounded-lg p-3 border ${isConnected ? 'bg-purple-500/5 border-purple-500/20' : 'bg-neutral-800/30 border-neutral-700/30'}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-purple-400">TFD</span>
+                      <span className="text-sm text-neutral-300">The Futures Desk</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-purple-400' : 'bg-neutral-600'}`} />
+                      <span className={`text-xs ${isConnected ? 'text-purple-400' : 'text-neutral-600'}`}>
+                        {isConnected ? 'Connected' : 'Offline'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                      <span className="text-neutral-600">Strategy</span>
+                      <p className="text-neutral-400">ORB</p>
+                    </div>
+                    <div>
+                      <span className="text-neutral-600">R:R</span>
+                      <p className="text-neutral-400">ATR-based</p>
+                    </div>
+                    <div>
+                      <span className="text-neutral-600">Trades</span>
+                      <p className="text-purple-400">{tfdStatus.dailyStats?.tradeCount || 0}/8</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-neutral-600">R:R</span>
-                  <p className="text-neutral-400">ATR-based</p>
-                </div>
-              </div>
-            </div>
+              )
+            })()}
           </div>
         </div>
 
