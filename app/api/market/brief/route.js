@@ -35,9 +35,10 @@ export async function GET() {
     });
   }
 
-  // Check if API key is configured
-  if (!process.env.AI_GATEWAY_API_KEY) {
-    console.error('[MarketBrief] AI_GATEWAY_API_KEY not configured');
+  // Check if API key is configured - prefer OPENAI_API_KEY for direct access
+  const apiKey = process.env.OPENAI_API_KEY || process.env.AI_GATEWAY_API_KEY;
+  if (!apiKey) {
+    console.error('[MarketBrief] No API key configured (OPENAI_API_KEY or AI_GATEWAY_API_KEY)');
     return Response.json({
       brief: 'Market brief not configured.',
       error: 'API key missing',
@@ -89,15 +90,14 @@ Provide a brief (4-5 bullet points max) covering:
 
 Keep it under 150 words total. Be direct, no fluff. Use plain text with bullet points (use - for bullets).`;
 
-    // Create OpenAI-compatible client via Vercel AI Gateway
-    const gateway = createOpenAI({
-      baseURL: 'https://gateway.ai.vercel.app/v1',
-      apiKey: process.env.AI_GATEWAY_API_KEY,
+    // Create OpenAI client using Vercel AI SDK
+    const openai = createOpenAI({
+      apiKey: apiKey,
     });
 
-    // Generate text using Vercel AI SDK through gateway
+    // Generate text using Vercel AI SDK
     const { text } = await generateText({
-      model: gateway('openai/gpt-4o-mini'),
+      model: openai('gpt-4o-mini'),
       prompt,
       maxTokens: 300,
     });
