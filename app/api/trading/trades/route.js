@@ -1,57 +1,49 @@
 /**
- * Trade History Endpoint
+ * Alert History Endpoint
  * Endpoint: GET /api/trading/trades
  *
- * Returns public-safe trade activity:
- * - Trade timestamps and direction only
- * - No prices, P&L, or order IDs exposed
+ * Returns webhook alerts history from persistent storage
  */
 
 import { NextResponse } from 'next/server';
 
-const riskManager = require('../../../../lib/riskManager');
+const alertStorage = require('../../../../lib/alertStorage');
 
 /**
- * GET handler for trade history
+ * GET handler for alert history
  */
 export async function GET(request) {
-  console.log('[Trades] Fetching trade history...');
+  console.log('[Alerts] Fetching alert history...');
 
   try {
-    // Get limit from query params (default 10, max 20 for public)
+    // Get limit from query params (default 20, max 50)
     const { searchParams } = new URL(request.url);
-    const requestedLimit = parseInt(searchParams.get('limit') || '10', 10);
-    const limit = Math.min(requestedLimit, 20); // Cap at 20 for public display
+    const requestedLimit = parseInt(searchParams.get('limit') || '20', 10);
+    const limit = Math.min(requestedLimit, 50);
 
-    const allTrades = riskManager.getTradeHistory(limit);
-    const dailyStats = riskManager.getDailyStats();
+    // Get alerts from persistent storage
+    const alerts = await alertStorage.getAlerts(limit);
 
-    // Sanitize trades - only expose timestamp and direction
-    const trades = allTrades.map(trade => ({
-      id: trade.id,
-      timestamp: trade.timestamp,
-      action: trade.action,
-      status: trade.status,
-    }));
+    // Get today's count
+    const todayAlerts = await alertStorage.getTodayAlerts();
 
     const response = {
-      trades: trades,
-      count: trades.length,
-      dailyStats: {
-        date: dailyStats.date,
-        tradesExecuted: dailyStats.tradeCount,
-      },
+      trades: alerts, // Keep as 'trades' for frontend compatibility
+      count: alerts.length,
+      todayCount: todayAlerts.length,
       timestamp: new Date().toISOString(),
     };
 
-    console.log(`[Trades] Returned ${trades.length} trades (sanitized)`);
+    console.log(`[Alerts] Returned ${alerts.length} alerts`);
     return NextResponse.json(response, { status: 200 });
 
   } catch (error) {
-    console.error('[Trades] Error fetching trade history:', error);
+    console.error('[Alerts] Error fetching alert history:', error);
 
     return NextResponse.json({
       trades: [],
+      count: 0,
+      error: error.message,
       timestamp: new Date().toISOString(),
     }, { status: 500 });
   }

@@ -32,6 +32,7 @@ const projectx = require('../../../../lib/projectx');
 const riskManager = require('../../../../lib/riskManager');
 const accounts = require('../../../../lib/accounts');
 const brokers = require('../../../../lib/brokers');
+const alertStorage = require('../../../../lib/alertStorage');
 
 /**
  * POST handler for TradingView webhooks
@@ -158,6 +159,15 @@ export async function POST(request) {
 
         console.log(`[Webhook] Close result: ${JSON.stringify(closeResult)}`);
 
+        // Save alert to persistent storage
+        await alertStorage.saveAlert({
+          action: 'close',
+          symbol: symbol || 'MNQ',
+          account: targetAccount.id,
+          status: closeResult.success ? 'success' : 'failed',
+          closedPositions: closeResult.closedPositions,
+        });
+
         return NextResponse.json({
           success: closeResult.success,
           message: closeResult.closedPositions > 0
@@ -173,6 +183,16 @@ export async function POST(request) {
         });
       } catch (closeError) {
         console.error('[Webhook] Error closing positions:', closeError);
+
+        // Save failed alert
+        await alertStorage.saveAlert({
+          action: 'close',
+          symbol: symbol || 'MNQ',
+          account: targetAccount.id,
+          status: 'failed',
+          error: closeError.message,
+        });
+
         return NextResponse.json({
           success: false,
           error: `Failed to close positions: ${closeError.message}`,
@@ -331,6 +351,16 @@ export async function POST(request) {
       response.tpError = orderResult.tpError;
       console.warn(`[Webhook] Partial bracket: ${orderResult.warning}`);
     }
+
+    // Save alert to persistent storage
+    await alertStorage.saveAlert({
+      action: action.toLowerCase(),
+      symbol: symbol || 'MNQ',
+      account: targetAccount.id,
+      status: orderResult.partial ? 'partial' : 'success',
+      stop: stopNum,
+      tp: tpNum,
+    });
 
     console.log('[Webhook] Order executed successfully');
     console.log(`Execution time: ${executionTime}ms`);
