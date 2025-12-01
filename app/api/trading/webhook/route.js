@@ -323,18 +323,169 @@ export async function POST(request) {
 
     console.log(`[Webhook] Risk check passed: ${riskCheck.reason}`);
 
+    // 7.5 POSITION STATE RECONCILIATION
+    // Query current position and reconcile with intended action
+    // This handles TradingView's strategy.entry() behavior where signals assume auto-reversal
+    console.log('[Webhook] Checking current position state...');
+
+    let currentPosition = null;
+    let positionSize = 0;
+    let positionSide = 'flat'; // 'long', 'short', or 'flat'
+
+    try {
+      const positions = await brokerClient.getPositions();
+      console.log(`[Webhook] Current positions: ${JSON.stringify(positions)}`);
+
+      // Find position for this symbol
+      const targetSymbol = symbol || 'MNQ';
+      currentPosition = positions.find(p =>
+        p.contractName?.includes(targetSymbol) ||
+        p.symbol?.includes(targetSymbol) ||
+        p.name?.includes(targetSymbol)
+      );
+
+      if (currentPosition) {
+        positionSize = currentPosition.netPos || currentPosition.size || currentPosition.quantity || 0;
+        positionSide = positionSize > 0 ? 'long' : positionSize < 0 ? 'short' : 'flat';
+        console.log(`[Webhook] Current position: ${positionSide} ${Math.abs(positionSize)} contract(s)`);
+      } else {
+        console.log('[Webhook] No current position (flat)');
+      }
+    } catch (posError) {
+      console.error('[Webhook] Failed to fetch current position:', posError.message);
+      // Continue anyway - bracket order will handle cleanup
+      console.log('[Webhook] Proceeding without position state (will use bracket order cleanup)');
+    }
+
+    const intendedAction = action.toLowerCase();
+    const intendedSide = intendedAction === 'buy' ? 'long' : 'short';
+
+    // Determine what action to take based on current state
+    let actionToTake = 'execute'; // 'execute', 'skip', 'reverse'
+    let skipReason = null;
+
+    if (positionSide === intendedSide) {
+      // Already in the same direction - skip this signal
+      actionToTake = 'skip';
+      skipReason = `Already ${positionSide} ${Math.abs(positionSize)} contract(s) - skipping duplicate ${intendedAction} signal`;
+    } else if (positionSide !== 'flat' && positionSide !== intendedSide) {
+      // Need to reverse - flatten first, then enter new direction
+      actionToTake = 'reverse';
+    }
+
+    console.log(`[Webhook] Position reconciliation: current=${positionSide}, intended=${intendedSide}, action=${actionToTake}`);
+
+    // Handle skip case - already in correct position
+    if (actionToTake === 'skip') {
+      console.log(`[Webhook] ${skipReason}`);
+
+      await alertStorage.saveAlert({
+        action: intendedAction,
+        symbol: symbol || 'MNQ',
+        account: targetAccount.id,
+        status: 'skipped',
+        reason: skipReason,
+        currentPosition: positionSide,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: skipReason,
+        action: intendedAction,
+        skipped: true,
+        currentPosition: {
+          side: positionSide,
+          size: Math.abs(positionSize),
+        },
+        account: targetAccount.id,
+        broker: targetAccount.broker,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Handle reverse case - need to flatten first, then enter new position
+    if (actionToTake === 'reverse') {
+      console.log(`[Webhook] REVERSAL: Flattening ${positionSide} position before entering ${intendedSide}...`);
+
+      try {
+        // Step 1: Flatten current position
+        const flattenResult = await brokerClient.closeAllPositions(symbol || 'MNQ');
+        console.log(`[Webhook] Flatten result: ${JSON.stringify(flattenResult)}`);
+
+        if (!flattenResult.success && flattenResult.closedPositions === 0 && positionSize !== 0) {
+          throw new Error('Failed to flatten position before reversal');
+        }
+
+        // Step 2: Wait for position to settle (300-500ms delay)
+        const settlementDelay = 400;
+        console.log(`[Webhook] Waiting ${settlementDelay}ms for position settlement...`);
+        await new Promise(resolve => setTimeout(resolve, settlementDelay));
+
+        // Step 3: Verify position is flat before proceeding
+        try {
+          const verifyPositions = await brokerClient.getPositions();
+          const verifyPosition = verifyPositions.find(p =>
+            p.contractName?.includes(symbol || 'MNQ') ||
+            p.symbol?.includes(symbol || 'MNQ')
+          );
+          const verifySize = verifyPosition?.netPos || verifyPosition?.size || 0;
+
+          if (verifySize !== 0) {
+            console.warn(`[Webhook] Position not fully flat after close: ${verifySize}`);
+            // Add another small delay and continue
+            await new Promise(resolve => setTimeout(resolve, 200));
+          } else {
+            console.log('[Webhook] Position verified flat, proceeding with new entry');
+          }
+        } catch (verifyError) {
+          console.warn('[Webhook] Could not verify position state, proceeding anyway:', verifyError.message);
+        }
+
+        console.log(`[Webhook] Reversal flatten complete, now entering ${intendedAction}...`);
+
+      } catch (flattenError) {
+        console.error('[Webhook] REVERSAL FAILED at flatten stage:', flattenError.message);
+
+        await alertStorage.saveAlert({
+          action: intendedAction,
+          symbol: symbol || 'MNQ',
+          account: targetAccount.id,
+          status: 'failed',
+          error: `Reversal failed: ${flattenError.message}`,
+          attemptedReversal: true,
+          fromPosition: positionSide,
+        });
+
+        return NextResponse.json({
+          success: false,
+          error: `Failed to flatten ${positionSide} position before ${intendedAction}: ${flattenError.message}`,
+          action: intendedAction,
+          attemptedReversal: true,
+          fromPosition: positionSide,
+          account: targetAccount.id,
+          timestamp: new Date().toISOString(),
+        }, { status: 500 });
+      }
+    }
+
     // 8. Execute bracket order via broker client
+    // If we already handled position reconciliation (reverse or execute from flat),
+    // tell the bracket order to skip its own cleanup phase
+    const skipCleanup = actionToTake === 'reverse'; // Already flattened above
+
     console.log(`[Webhook] Executing ${action.toUpperCase()} bracket order on ${targetAccount.id}...`);
     console.log(`  Account: ${targetAccount.id} (${targetAccount.broker})`);
     console.log(`  Entry: Market ${action.toUpperCase()}`);
     console.log(`  Stop Loss: ${stopNum}`);
     console.log(`  Take Profit: ${tpNum}`);
+    console.log(`  Skip cleanup: ${skipCleanup} (already handled: ${actionToTake})`);
 
     const orderResult = await brokerClient.placeBracketOrder(
       action.toLowerCase(),
       stopNum,
       tpNum,
-      1 // 1 contract as per user's preference
+      1, // 1 contract as per user's preference
+      { skipCleanup } // Pass options to bracket order
     );
 
     // 9. Record trade in risk manager with details
@@ -354,9 +505,12 @@ export async function POST(request) {
 
     // 10. Prepare response
     const executionTime = Date.now() - startTime;
+    const wasReversal = actionToTake === 'reverse';
     const response = {
       success: true,
-      message: `${action.toUpperCase()} order executed successfully`,
+      message: wasReversal
+        ? `Reversed from ${positionSide} to ${intendedSide} successfully`
+        : `${action.toUpperCase()} order executed successfully`,
       action: action.toLowerCase(),
       account: targetAccount.id,
       broker: targetAccount.broker,
@@ -369,7 +523,13 @@ export async function POST(request) {
         stop: stopNum,
         takeProfit: tpNum,
       },
-      dailyStats: riskManager.getDailyStats(targetAccount.id),
+      positionReconciliation: {
+        previousPosition: positionSide,
+        intendedPosition: intendedSide,
+        actionTaken: actionToTake,
+        wasReversal: wasReversal,
+      },
+      dailyStats: riskManager.getDailyStats(),
       executionTimeMs: executionTime,
       timestamp: new Date().toISOString(),
     };
