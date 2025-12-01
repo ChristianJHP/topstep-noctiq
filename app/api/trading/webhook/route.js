@@ -8,6 +8,7 @@
  * - TradingView latency tolerance (webhook ID based on 10s windows)
  * - Comprehensive error logging
  * - Graceful degradation on partial bracket failure
+ * - Multi-account routing via webhook secret
  *
  * Expected payload from TradingView:
  * {
@@ -15,14 +16,22 @@
  *   "action": "buy|sell|close",
  *   "symbol": "MNQ",
  *   "stop": 25350.00,
- *   "tp": 25500.00
+ *   "tp": 25500.00,
+ *   "account": "optional-account-id"
  * }
+ *
+ * MULTI-ACCOUNT SUPPORT:
+ * - Each webhook secret maps to a specific account
+ * - Alternatively, specify "account" field to target specific account
+ * - Supports TopStepX/ProjectX, Futures Desk, and more
  */
 
 import { NextResponse } from 'next/server';
 
 const projectx = require('../../../../lib/projectx');
 const riskManager = require('../../../../lib/riskManager');
+const accounts = require('../../../../lib/accounts');
+const brokers = require('../../../../lib/brokers');
 
 /**
  * POST handler for TradingView webhooks
@@ -49,34 +58,71 @@ export async function POST(request) {
     }
     console.log('Payload:', JSON.stringify(body, null, 2));
 
-    // 2. Validate webhook secret
-    const webhookSecret = process.env.WEBHOOK_SECRET;
-    if (!webhookSecret) {
-      console.error('[Webhook] WEBHOOK_SECRET not configured');
-      return NextResponse.json(
-        { success: false, error: 'Webhook not configured' },
-        { status: 500 }
-      );
+    // 2. Validate webhook secret and resolve account
+    // First try to find account by secret (multi-account mode)
+    let targetAccount = accounts.getAccountBySecret(body.secret);
+
+    // Fallback to legacy single-account mode
+    if (!targetAccount) {
+      const webhookSecret = process.env.WEBHOOK_SECRET;
+      if (webhookSecret && body.secret === webhookSecret) {
+        targetAccount = accounts.getAccount('default');
+      }
     }
 
-    if (body.secret !== webhookSecret) {
-      console.error('[Webhook] Invalid webhook secret');
+    // If explicit account specified in payload, use that
+    if (body.account) {
+      const explicitAccount = accounts.getAccount(body.account);
+      if (explicitAccount) {
+        // Verify secret matches this account (security check)
+        if (explicitAccount.webhookSecret && explicitAccount.webhookSecret !== body.secret) {
+          console.error(`[Webhook] Secret mismatch for account ${body.account}`);
+          return NextResponse.json(
+            { success: false, error: 'Unauthorized for specified account' },
+            { status: 401 }
+          );
+        }
+        targetAccount = explicitAccount;
+      } else {
+        console.error(`[Webhook] Account not found: ${body.account}`);
+        return NextResponse.json(
+          { success: false, error: `Account not found: ${body.account}` },
+          { status: 404 }
+        );
+      }
+    }
+
+    if (!targetAccount) {
+      console.error('[Webhook] Invalid webhook secret or no account configured');
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    // 2.5 Verify ProjectX credentials are configured
-    if (!process.env.PROJECTX_API_KEY || !process.env.PROJECTX_USERNAME) {
-      console.error('[Webhook] CRITICAL: ProjectX credentials not configured');
+    if (!targetAccount.enabled) {
+      console.error(`[Webhook] Account ${targetAccount.id} is disabled`);
       return NextResponse.json(
-        { success: false, error: 'Trading credentials not configured' },
+        { success: false, error: 'Account is disabled' },
+        { status: 403 }
+      );
+    }
+
+    console.log(`[Webhook] Routing to account: ${targetAccount.id} (${targetAccount.broker})`);
+
+    // Get broker client for this account
+    let brokerClient;
+    try {
+      brokerClient = brokers.getBrokerClient(targetAccount);
+    } catch (brokerError) {
+      console.error(`[Webhook] Failed to get broker client: ${brokerError.message}`);
+      return NextResponse.json(
+        { success: false, error: 'Trading service unavailable' },
         { status: 500 }
       );
     }
 
-    console.log('[Webhook] Credentials configured');
+    console.log(`[Webhook] Using broker: ${brokerClient.name}`);
 
     // 3. Validate required fields
     const { action, symbol, stop, tp } = body;
@@ -105,13 +151,36 @@ export async function POST(request) {
 
     // 4. Handle CLOSE action (close all positions)
     if (action.toLowerCase() === 'close') {
-      console.log('[Webhook] CLOSE action received - not yet implemented');
-      return NextResponse.json({
-        success: true,
-        message: 'Close action acknowledged (implementation pending)',
-        action: 'close',
-        timestamp: new Date().toISOString(),
-      });
+      console.log('[Webhook] CLOSE action received - closing all positions');
+
+      try {
+        const closeResult = await brokerClient.closeAllPositions(symbol || 'MNQ');
+
+        console.log(`[Webhook] Close result: ${JSON.stringify(closeResult)}`);
+
+        return NextResponse.json({
+          success: closeResult.success,
+          message: closeResult.closedPositions > 0
+            ? `Closed ${closeResult.closedPositions} position(s)`
+            : 'No open positions to close',
+          action: 'close',
+          symbol: symbol || 'MNQ',
+          account: targetAccount.id,
+          broker: targetAccount.broker,
+          closedPositions: closeResult.closedPositions,
+          errors: closeResult.errors,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (closeError) {
+        console.error('[Webhook] Error closing positions:', closeError);
+        return NextResponse.json({
+          success: false,
+          error: `Failed to close positions: ${closeError.message}`,
+          action: 'close',
+          account: targetAccount.id,
+          timestamp: new Date().toISOString(),
+        }, { status: 500 });
+      }
     }
 
     // 5. Validate stop and take profit prices for entry orders
@@ -205,13 +274,14 @@ export async function POST(request) {
 
     console.log(`[Webhook] Risk check passed: ${riskCheck.reason}`);
 
-    // 8. Execute bracket order via ProjectX API
-    console.log(`[Webhook] Executing ${action.toUpperCase()} bracket order...`);
+    // 8. Execute bracket order via broker client
+    console.log(`[Webhook] Executing ${action.toUpperCase()} bracket order on ${targetAccount.id}...`);
+    console.log(`  Account: ${targetAccount.id} (${targetAccount.broker})`);
     console.log(`  Entry: Market ${action.toUpperCase()}`);
     console.log(`  Stop Loss: ${stopNum}`);
     console.log(`  Take Profit: ${tpNum}`);
 
-    const orderResult = await projectx.placeBracketOrder(
+    const orderResult = await brokerClient.placeBracketOrder(
       action.toLowerCase(),
       stopNum,
       tpNum,
@@ -223,6 +293,8 @@ export async function POST(request) {
       webhookId: webhookId,
       action: action.toLowerCase(),
       symbol: symbol || 'MNQ',
+      accountId: targetAccount.id,
+      broker: targetAccount.broker,
       stopPrice: stopNum,
       takeProfitPrice: tpNum,
       entryOrder: orderResult.entry,
@@ -237,6 +309,8 @@ export async function POST(request) {
       success: true,
       message: `${action.toUpperCase()} order executed successfully`,
       action: action.toLowerCase(),
+      account: targetAccount.id,
+      broker: targetAccount.broker,
       orders: {
         entry: orderResult.entry,
         stopLoss: orderResult.stopLoss,
