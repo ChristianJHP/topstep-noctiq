@@ -740,17 +740,16 @@ export default function Dashboard() {
             {(() => {
               const tsxStatus = accountsStatus.find(a => a.id === 'default') || {}
               const isConnected = tsxStatus.connected
-              const balance = tsxStatus.balance
-              const formatBalance = (bal) => {
-                if (bal === null || bal === undefined) return '--'
-                return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(bal)
-              }
+              // Get today's P&L percentage from the API (includes open positions)
+              const todayPnlPct = tsxStatus.todayPnlPercent
+              const hasPnl = todayPnlPct !== null && todayPnlPct !== undefined
+              const isPositive = todayPnlPct >= 0
               return (
-                <div className={`rounded-lg p-3 border ${isConnected ? 'bg-blue-500/5 border-blue-500/20' : 'bg-neutral-800/30 border-neutral-700/30'}`}>
-                  <div className="flex items-center justify-between mb-2">
+                <div className={`rounded-lg p-4 border ${isConnected ? 'bg-blue-500/5 border-blue-500/20' : 'bg-neutral-800/30 border-neutral-700/30'}`}>
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-blue-400">TSX</span>
-                      <span className="text-sm text-neutral-300">TopStepX</span>
+                      <span className="text-sm font-mono text-blue-400">TSX</span>
+                      <span className="text-sm text-neutral-400">TopStepX</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-blue-400' : 'bg-neutral-600'}`} />
@@ -759,41 +758,11 @@ export default function Dashboard() {
                       </span>
                     </div>
                   </div>
-                  {isConnected && balance !== null && (
-                    <div className="mb-2">
-                      <span className="text-lg font-semibold text-blue-400">{formatBalance(balance)}</span>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                    <div>
-                      <span className="text-neutral-600 text-[10px] sm:text-xs">Strategy</span>
-                      <p className="text-neutral-400">Supertrend</p>
-                    </div>
-                    <div>
-                      <span className="text-neutral-600 text-[10px] sm:text-xs">R:R</span>
-                      <p className="text-neutral-400">1:6</p>
-                    </div>
-                    <div>
-                      <span className="text-neutral-600 text-[10px] sm:text-xs">Trades</span>
-                      <p className="text-blue-400">{tsxStatus.dailyStats?.tradeCount || 0}/8</p>
-                    </div>
-                    <div>
-                      <span className="text-neutral-600 text-[10px] sm:text-xs">Today P&L</span>
-                      <p className={tsxStatus.dailyStats?.totalProfit > tsxStatus.dailyStats?.totalLoss ? 'text-emerald-400' : tsxStatus.dailyStats?.totalLoss > 0 ? 'text-red-400' : 'text-neutral-400'}>
-                        {(() => {
-                          const profit = tsxStatus.dailyStats?.totalProfit || 0
-                          const loss = tsxStatus.dailyStats?.totalLoss || 0
-                          const net = profit - loss
-                          const currentBalance = tsxStatus.balance || 0
-                          if (net === 0 || currentBalance === 0) return '--'
-                          // Starting balance = current - net P&L
-                          const startingBalance = currentBalance - net
-                          if (startingBalance <= 0) return net > 0 ? `+$${net}` : `-$${Math.abs(net)}`
-                          const pct = ((net / startingBalance) * 100).toFixed(2)
-                          return net > 0 ? `+${pct}%` : `${pct}%`
-                        })()}
-                      </p>
-                    </div>
+                  <div className="text-center">
+                    <p className="text-xs text-neutral-600 mb-1">Today's P&L</p>
+                    <p className={`text-2xl font-semibold ${hasPnl ? (isPositive ? 'text-emerald-400' : 'text-red-400') : 'text-neutral-500'}`}>
+                      {hasPnl ? `${isPositive ? '+' : ''}${todayPnlPct.toFixed(2)}%` : '--'}
+                    </p>
                   </div>
                 </div>
               )
@@ -802,17 +771,16 @@ export default function Dashboard() {
             {(() => {
               const tfdStatus = accountsStatus.find(a => a.id === 'tfd') || {}
               const isConnected = tfdStatus.connected
-              const balance = tfdStatus.balance
-              const formatBalance = (bal) => {
-                if (bal === null || bal === undefined) return '--'
-                return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(bal)
-              }
+              // Get today's P&L percentage from the API (includes open positions)
+              const todayPnlPct = tfdStatus.todayPnlPercent
+              const hasPnl = todayPnlPct !== null && todayPnlPct !== undefined
+              const isPositive = todayPnlPct >= 0
               return (
-                <div className={`rounded-lg p-3 border ${isConnected ? 'bg-purple-500/5 border-purple-500/20' : 'bg-neutral-800/30 border-neutral-700/30'}`}>
-                  <div className="flex items-center justify-between mb-2">
+                <div className={`rounded-lg p-4 border ${isConnected ? 'bg-purple-500/5 border-purple-500/20' : 'bg-neutral-800/30 border-neutral-700/30'}`}>
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-purple-400">TFD</span>
-                      <span className="text-sm text-neutral-300">The Futures Desk</span>
+                      <span className="text-sm font-mono text-purple-400">TFD</span>
+                      <span className="text-sm text-neutral-400">The Futures Desk</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-purple-400' : 'bg-neutral-600'}`} />
@@ -821,41 +789,11 @@ export default function Dashboard() {
                       </span>
                     </div>
                   </div>
-                  {isConnected && balance !== null && (
-                    <div className="mb-2">
-                      <span className="text-lg font-semibold text-purple-400">{formatBalance(balance)}</span>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                    <div>
-                      <span className="text-neutral-600 text-[10px] sm:text-xs">Strategy</span>
-                      <p className="text-neutral-400">ORB</p>
-                    </div>
-                    <div>
-                      <span className="text-neutral-600 text-[10px] sm:text-xs">R:R</span>
-                      <p className="text-neutral-400">ATR-based</p>
-                    </div>
-                    <div>
-                      <span className="text-neutral-600 text-[10px] sm:text-xs">Trades</span>
-                      <p className="text-purple-400">{tfdStatus.dailyStats?.tradeCount || 0}/8</p>
-                    </div>
-                    <div>
-                      <span className="text-neutral-600 text-[10px] sm:text-xs">Today P&L</span>
-                      <p className={tfdStatus.dailyStats?.totalProfit > tfdStatus.dailyStats?.totalLoss ? 'text-emerald-400' : tfdStatus.dailyStats?.totalLoss > 0 ? 'text-red-400' : 'text-neutral-400'}>
-                        {(() => {
-                          const profit = tfdStatus.dailyStats?.totalProfit || 0
-                          const loss = tfdStatus.dailyStats?.totalLoss || 0
-                          const net = profit - loss
-                          const currentBalance = tfdStatus.balance || 0
-                          if (net === 0 || currentBalance === 0) return '--'
-                          // Starting balance = current - net P&L
-                          const startingBalance = currentBalance - net
-                          if (startingBalance <= 0) return net > 0 ? `+$${net}` : `-$${Math.abs(net)}`
-                          const pct = ((net / startingBalance) * 100).toFixed(2)
-                          return net > 0 ? `+${pct}%` : `${pct}%`
-                        })()}
-                      </p>
-                    </div>
+                  <div className="text-center">
+                    <p className="text-xs text-neutral-600 mb-1">Today's P&L</p>
+                    <p className={`text-2xl font-semibold ${hasPnl ? (isPositive ? 'text-emerald-400' : 'text-red-400') : 'text-neutral-500'}`}>
+                      {hasPnl ? `${isPositive ? '+' : ''}${todayPnlPct.toFixed(2)}%` : '--'}
+                    </p>
                   </div>
                 </div>
               )
