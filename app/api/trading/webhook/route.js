@@ -325,12 +325,13 @@ export async function POST(request) {
 
     // 7.5 POSITION STATE RECONCILIATION
     // Query current position and reconcile with intended action
-    // This handles TradingView's strategy.entry() behavior where signals assume auto-reversal
+    // NOTE: Position API may not be available on all brokers (TopStepX returns 404)
     console.log('[Webhook] Checking current position state...');
 
     let currentPosition = null;
     let positionSize = 0;
     let positionSide = 'flat'; // 'long', 'short', or 'flat'
+    let positionApiAvailable = true;
 
     try {
       const positions = await brokerClient.getPositions();
@@ -352,25 +353,31 @@ export async function POST(request) {
         console.log('[Webhook] No current position (flat)');
       }
     } catch (posError) {
-      console.error('[Webhook] Failed to fetch current position:', posError.message);
-      // Continue anyway - bracket order will handle cleanup
-      console.log('[Webhook] Proceeding without position state (will use bracket order cleanup)');
+      console.warn('[Webhook] Position API not available:', posError.message);
+      console.log('[Webhook] Proceeding with trade - assuming flat position');
+      positionApiAvailable = false;
+      // Assume flat and proceed - the bracket order will execute fresh
     }
 
     const intendedAction = action.toLowerCase();
     const intendedSide = intendedAction === 'buy' ? 'long' : 'short';
 
     // Determine what action to take based on current state
+    // If position API not available, always execute (can't check current state)
     let actionToTake = 'execute'; // 'execute', 'skip', 'reverse'
     let skipReason = null;
 
-    if (positionSide === intendedSide) {
-      // Already in the same direction - skip this signal
-      actionToTake = 'skip';
-      skipReason = `Already ${positionSide} ${Math.abs(positionSize)} contract(s) - skipping duplicate ${intendedAction} signal`;
-    } else if (positionSide !== 'flat' && positionSide !== intendedSide) {
-      // Need to reverse - flatten first, then enter new direction
-      actionToTake = 'reverse';
+    if (positionApiAvailable) {
+      if (positionSide === intendedSide) {
+        // Already in the same direction - skip this signal
+        actionToTake = 'skip';
+        skipReason = `Already ${positionSide} ${Math.abs(positionSize)} contract(s) - skipping duplicate ${intendedAction} signal`;
+      } else if (positionSide !== 'flat' && positionSide !== intendedSide) {
+        // Need to reverse - flatten first, then enter new direction
+        actionToTake = 'reverse';
+      }
+    } else {
+      console.log('[Webhook] Position API unavailable - executing trade without position reconciliation');
     }
 
     console.log(`[Webhook] Position reconciliation: current=${positionSide}, intended=${intendedSide}, action=${actionToTake}`);
