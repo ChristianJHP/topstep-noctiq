@@ -324,39 +324,45 @@ export async function POST(request) {
     console.log(`[Webhook] Risk check passed: ${riskCheck.reason}`);
 
     // 7.5 POSITION STATE RECONCILIATION
-    // Query current position and reconcile with intended action
-    // NOTE: Position API may not be available on all brokers (TopStepX returns 404)
-    console.log('[Webhook] Checking current position state...');
+    // Query current position state by checking open orders (Position API returns 404 on TopStepX)
+    // If there are working SL/TP orders, we're in a position
+    console.log('[Webhook] Checking current position state via open orders...');
 
-    let currentPosition = null;
     let positionSize = 0;
     let positionSide = 'flat'; // 'long', 'short', or 'flat'
     let positionApiAvailable = true;
 
     try {
-      const positions = await brokerClient.getPositions();
-      console.log(`[Webhook] Current positions: ${JSON.stringify(positions)}`);
+      const openOrders = await brokerClient.getOpenOrders();
+      console.log(`[Webhook] Open orders: ${JSON.stringify(openOrders)}`);
 
-      // Find position for this symbol
+      // Find MNQ stop orders - these indicate we have a position
+      // If we have a SELL stop (side=1), we're LONG (stop protects long position)
+      // If we have a BUY stop (side=0), we're SHORT (stop protects short position)
       const targetSymbol = symbol || 'MNQ';
-      currentPosition = positions.find(p =>
-        p.contractName?.includes(targetSymbol) ||
-        p.symbol?.includes(targetSymbol) ||
-        p.name?.includes(targetSymbol)
+      const mnqStopOrders = openOrders.filter(o =>
+        (o.type === 4 || o.type === 'Stop') && // Stop order
+        (o.contractId?.includes('MNQ') || o.contractName?.includes('MNQ') || o.symbol?.includes(targetSymbol))
       );
 
-      if (currentPosition) {
-        positionSize = currentPosition.netPos || currentPosition.size || currentPosition.quantity || 0;
-        positionSide = positionSize > 0 ? 'long' : positionSize < 0 ? 'short' : 'flat';
-        console.log(`[Webhook] Current position: ${positionSide} ${Math.abs(positionSize)} contract(s)`);
+      if (mnqStopOrders.length > 0) {
+        const stopOrder = mnqStopOrders[0];
+        // side: 0 = Buy, 1 = Sell
+        if (stopOrder.side === 1 || stopOrder.side === 'Sell') {
+          positionSide = 'long';
+          positionSize = stopOrder.size || 1;
+        } else if (stopOrder.side === 0 || stopOrder.side === 'Buy') {
+          positionSide = 'short';
+          positionSize = stopOrder.size || 1;
+        }
+        console.log(`[Webhook] Detected ${positionSide} position from open stop order`);
       } else {
-        console.log('[Webhook] No current position (flat)');
+        console.log('[Webhook] No open stop orders - assuming flat position');
       }
-    } catch (posError) {
-      console.warn('[Webhook] Position API not available:', posError.message);
+    } catch (orderError) {
+      console.warn('[Webhook] Could not fetch open orders:', orderError.message);
       console.log('[Webhook] Proceeding with trade - assuming flat position');
       positionApiAvailable = false;
-      // Assume flat and proceed - the bracket order will execute fresh
     }
 
     const intendedAction = action.toLowerCase();
