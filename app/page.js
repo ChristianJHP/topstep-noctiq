@@ -611,8 +611,22 @@ export default function Dashboard() {
   const [accountsStatus, setAccountsStatus] = useState([])
   const [pnlHistory, setPnlHistory] = useState([])
   const [pnlLoading, setPnlLoading] = useState(true)
+  const [realPnl, setRealPnl] = useState(null)
   const [loading, setLoading] = useState(true)
   const [lastUpdate, setLastUpdate] = useState(null)
+
+  // Fetch real P&L from TopStepX Trade/search
+  const fetchRealPnl = async () => {
+    try {
+      const res = await fetch('/api/trading/pnl?days=30')
+      if (res.ok) {
+        const data = await res.json()
+        setRealPnl(data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch real P&L:', err)
+    }
+  }
 
   // Fetch P&L history (less frequently)
   const fetchPnlHistory = async () => {
@@ -663,11 +677,14 @@ export default function Dashboard() {
   useEffect(() => {
     fetchData()
     fetchPnlHistory()
+    fetchRealPnl()
     const interval = setInterval(fetchData, 10000) // Poll every 10 seconds
     const pnlInterval = setInterval(fetchPnlHistory, 60000) // P&L history every minute
+    const realPnlInterval = setInterval(fetchRealPnl, 30000) // Real P&L every 30 seconds
     return () => {
       clearInterval(interval)
       clearInterval(pnlInterval)
+      clearInterval(realPnlInterval)
     }
   }, [])
 
@@ -734,73 +751,77 @@ export default function Dashboard() {
           <StrategyComparison pnlData={pnlHistory} accountsStatus={accountsStatus} />
         </div>
 
-        {/* Active Accounts */}
+        {/* Active Accounts - Real P&L from TopStepX */}
         <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
-          <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Active Accounts</p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs text-neutral-500 uppercase tracking-wider">Account P&L</p>
+            {realPnl?.account && (
+              <span className="text-xs text-neutral-600 font-mono">{realPnl.account.name?.split('-').slice(-1)[0]}</span>
+            )}
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* TopStepX Account */}
+            {/* Today's P&L */}
             {(() => {
-              const tsxStatus = accountsStatus.find(a => a.id === 'default') || {}
-              const isConnected = tsxStatus.connected
-              // Get today's P&L percentage from the API (includes open positions)
-              const todayPnlPct = tsxStatus.todayPnlPercent
-              const hasPnl = todayPnlPct !== null && todayPnlPct !== undefined
-              const isPositive = todayPnlPct >= 0
+              const todayPnl = realPnl?.today?.pnlPercent
+              const hasPnl = todayPnl !== null && todayPnl !== undefined
+              const isPositive = todayPnl >= 0
+              const trades = realPnl?.today?.trades || 0
               return (
-                <div className={`rounded-lg p-4 border ${isConnected ? 'bg-blue-500/5 border-blue-500/20' : 'bg-neutral-800/30 border-neutral-700/30'}`}>
+                <div className="rounded-lg p-4 border bg-blue-500/5 border-blue-500/20">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-mono text-blue-400">TSX</span>
-                      <span className="text-sm text-neutral-400">TopStepX</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-blue-400' : 'bg-neutral-600'}`} />
-                      <span className={`text-xs ${isConnected ? 'text-blue-400' : 'text-neutral-600'}`}>
-                        {isConnected ? 'Connected' : 'Offline'}
-                      </span>
-                    </div>
+                    <span className="text-sm text-neutral-400">Today</span>
+                    <span className="text-xs text-neutral-600">{trades} trades</span>
                   </div>
                   <div className="text-center">
-                    <p className="text-xs text-neutral-600 mb-1">Today's P&L</p>
-                    <p className={`text-2xl font-semibold ${hasPnl ? (isPositive ? 'text-emerald-400' : 'text-red-400') : 'text-neutral-500'}`}>
-                      {hasPnl ? `${isPositive ? '+' : ''}${todayPnlPct.toFixed(2)}%` : '--'}
+                    <p className={`text-3xl font-semibold ${hasPnl ? (isPositive ? 'text-emerald-400' : 'text-red-400') : 'text-neutral-500'}`}>
+                      {hasPnl ? `${isPositive ? '+' : ''}${todayPnl.toFixed(2)}%` : '--'}
                     </p>
                   </div>
                 </div>
               )
             })()}
-            {/* The Futures Desk Account */}
+            {/* Period P&L (30 days) */}
             {(() => {
-              const tfdStatus = accountsStatus.find(a => a.id === 'tfd') || {}
-              const isConnected = tfdStatus.connected
-              // Get today's P&L percentage from the API (includes open positions)
-              const todayPnlPct = tfdStatus.todayPnlPercent
-              const hasPnl = todayPnlPct !== null && todayPnlPct !== undefined
-              const isPositive = todayPnlPct >= 0
+              const periodPnl = realPnl?.period?.pnlPercent
+              const hasPnl = periodPnl !== null && periodPnl !== undefined
+              const isPositive = periodPnl >= 0
+              const trades = realPnl?.period?.trades || 0
+              const days = realPnl?.period?.days || 30
               return (
-                <div className={`rounded-lg p-4 border ${isConnected ? 'bg-purple-500/5 border-purple-500/20' : 'bg-neutral-800/30 border-neutral-700/30'}`}>
+                <div className="rounded-lg p-4 border bg-neutral-800/30 border-neutral-700/30">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-mono text-purple-400">TFD</span>
-                      <span className="text-sm text-neutral-400">The Futures Desk</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-purple-400' : 'bg-neutral-600'}`} />
-                      <span className={`text-xs ${isConnected ? 'text-purple-400' : 'text-neutral-600'}`}>
-                        {isConnected ? 'Connected' : 'Offline'}
-                      </span>
-                    </div>
+                    <span className="text-sm text-neutral-400">{days} Day</span>
+                    <span className="text-xs text-neutral-600">{trades} trades</span>
                   </div>
                   <div className="text-center">
-                    <p className="text-xs text-neutral-600 mb-1">Today's P&L</p>
-                    <p className={`text-2xl font-semibold ${hasPnl ? (isPositive ? 'text-emerald-400' : 'text-red-400') : 'text-neutral-500'}`}>
-                      {hasPnl ? `${isPositive ? '+' : ''}${todayPnlPct.toFixed(2)}%` : '--'}
+                    <p className={`text-3xl font-semibold ${hasPnl ? (isPositive ? 'text-emerald-400' : 'text-red-400') : 'text-neutral-500'}`}>
+                      {hasPnl ? `${isPositive ? '+' : ''}${periodPnl.toFixed(2)}%` : '--'}
                     </p>
                   </div>
                 </div>
               )
             })()}
           </div>
+          {/* Daily breakdown mini chart */}
+          {realPnl?.daily && realPnl.daily.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-neutral-800">
+              <div className="flex items-center gap-1 overflow-x-auto pb-2">
+                {realPnl.daily.slice(-14).map((day, i) => {
+                  const isPos = day.pnlPercent >= 0
+                  const height = Math.min(Math.abs(day.pnlPercent) * 10, 40) + 4
+                  return (
+                    <div key={day.date} className="flex flex-col items-center gap-1 min-w-[20px]" title={`${day.date}: ${day.pnlPercent >= 0 ? '+' : ''}${day.pnlPercent.toFixed(2)}%`}>
+                      <div
+                        className={`w-3 rounded-sm ${isPos ? 'bg-emerald-500/60' : 'bg-red-500/60'}`}
+                        style={{ height: `${height}px` }}
+                      />
+                      <span className="text-[8px] text-neutral-700">{day.date.slice(-2)}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
