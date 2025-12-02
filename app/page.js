@@ -751,75 +751,99 @@ export default function Dashboard() {
           <StrategyComparison pnlData={pnlHistory} accountsStatus={accountsStatus} />
         </div>
 
-        {/* Active Accounts - Real P&L from TopStepX */}
+        {/* Account P&L - Both TSX and TFD */}
         <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs text-neutral-500 uppercase tracking-wider">Account P&L</p>
-            {realPnl?.account && (
-              <span className="text-xs text-neutral-600 font-mono">{realPnl.account.name?.split('-').slice(-1)[0]}</span>
+            {realPnl?.combined && (
+              <span className="text-xs text-neutral-600">{realPnl.combined.activeBrokers} broker(s) connected</span>
             )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Today's P&L */}
+            {/* TopStepX Account */}
             {(() => {
-              const todayPnl = realPnl?.today?.pnlPercent
-              const hasPnl = todayPnl !== null && todayPnl !== undefined
+              const tsx = realPnl?.brokers?.tsx
+              const todayPnl = tsx?.today?.pnlPercent
+              const hasPnl = tsx?.connected && todayPnl !== null && todayPnl !== undefined
               const isPositive = todayPnl >= 0
-              const trades = realPnl?.today?.trades || 0
+              const trades = tsx?.today?.trades || 0
+              const accountName = tsx?.account?.name?.split('-').slice(-1)[0] || ''
               return (
-                <div className="rounded-lg p-4 border bg-blue-500/5 border-blue-500/20">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm text-neutral-400">Today</span>
-                    <span className="text-xs text-neutral-600">{trades} trades</span>
+                <div className={`rounded-lg p-4 border ${tsx?.connected ? 'bg-blue-500/5 border-blue-500/20' : 'bg-neutral-800/30 border-neutral-700/30'}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-mono text-blue-400">TSX</span>
+                      <span className="text-xs text-neutral-500">TopStepX</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className={`w-1.5 h-1.5 rounded-full ${tsx?.connected ? 'bg-blue-400' : 'bg-neutral-600'}`} />
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <p className={`text-3xl font-semibold ${hasPnl ? (isPositive ? 'text-emerald-400' : 'text-red-400') : 'text-neutral-500'}`}>
-                      {hasPnl ? `${isPositive ? '+' : ''}${todayPnl.toFixed(2)}%` : '--'}
-                    </p>
+                  {accountName && <p className="text-[10px] text-neutral-600 font-mono mb-2">{accountName}</p>}
+                  <div className="flex items-baseline justify-between">
+                    <div>
+                      <p className="text-[10px] text-neutral-600">Today</p>
+                      <p className={`text-xl font-semibold ${hasPnl ? (isPositive ? 'text-emerald-400' : 'text-red-400') : 'text-neutral-500'}`}>
+                        {hasPnl ? `${isPositive ? '+' : ''}${todayPnl.toFixed(2)}%` : '--'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] text-neutral-600">30 Day</p>
+                      <p className={`text-sm ${tsx?.connected ? (tsx?.period?.pnlPercent >= 0 ? 'text-emerald-400/70' : 'text-red-400/70') : 'text-neutral-600'}`}>
+                        {tsx?.connected ? `${tsx?.period?.pnlPercent >= 0 ? '+' : ''}${tsx?.period?.pnlPercent?.toFixed(2)}%` : '--'}
+                      </p>
+                    </div>
                   </div>
+                  <p className="text-[10px] text-neutral-700 mt-1">{trades} trades today</p>
                 </div>
               )
             })()}
-            {/* Period P&L (30 days) */}
+            {/* The Futures Desk Account */}
             {(() => {
-              const periodPnl = realPnl?.period?.pnlPercent
-              const hasPnl = periodPnl !== null && periodPnl !== undefined
-              const isPositive = periodPnl >= 0
-              const trades = realPnl?.period?.trades || 0
-              const days = realPnl?.period?.days || 30
+              const tfd = realPnl?.brokers?.tfd
+              const todayPnl = tfd?.today?.pnlPercent
+              const hasPnl = tfd?.connected && todayPnl !== null && todayPnl !== undefined
+              const isPositive = todayPnl >= 0
+              const trades = tfd?.today?.trades || 0
+              const accountName = tfd?.account?.name?.split('-').slice(-1)[0] || ''
               return (
-                <div className="rounded-lg p-4 border bg-neutral-800/30 border-neutral-700/30">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm text-neutral-400">{days} Day</span>
-                    <span className="text-xs text-neutral-600">{trades} trades</span>
+                <div className={`rounded-lg p-4 border ${tfd?.connected ? 'bg-purple-500/5 border-purple-500/20' : 'bg-neutral-800/30 border-neutral-700/30'}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-mono text-purple-400">TFD</span>
+                      <span className="text-xs text-neutral-500">Futures Desk</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className={`w-1.5 h-1.5 rounded-full ${tfd?.connected ? 'bg-purple-400' : 'bg-neutral-600'}`} />
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <p className={`text-3xl font-semibold ${hasPnl ? (isPositive ? 'text-emerald-400' : 'text-red-400') : 'text-neutral-500'}`}>
-                      {hasPnl ? `${isPositive ? '+' : ''}${periodPnl.toFixed(2)}%` : '--'}
-                    </p>
+                  {accountName && <p className="text-[10px] text-neutral-600 font-mono mb-2">{accountName}</p>}
+                  <div className="flex items-baseline justify-between">
+                    <div>
+                      <p className="text-[10px] text-neutral-600">Today</p>
+                      <p className={`text-xl font-semibold ${hasPnl ? (isPositive ? 'text-emerald-400' : 'text-red-400') : 'text-neutral-500'}`}>
+                        {hasPnl ? `${isPositive ? '+' : ''}${todayPnl.toFixed(2)}%` : '--'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] text-neutral-600">30 Day</p>
+                      <p className={`text-sm ${tfd?.connected ? (tfd?.period?.pnlPercent >= 0 ? 'text-emerald-400/70' : 'text-red-400/70') : 'text-neutral-600'}`}>
+                        {tfd?.connected ? `${tfd?.period?.pnlPercent >= 0 ? '+' : ''}${tfd?.period?.pnlPercent?.toFixed(2)}%` : '--'}
+                      </p>
+                    </div>
                   </div>
+                  <p className="text-[10px] text-neutral-700 mt-1">{trades} trades today</p>
                 </div>
               )
             })()}
           </div>
-          {/* Daily breakdown mini chart */}
-          {realPnl?.daily && realPnl.daily.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-neutral-800">
-              <div className="flex items-center gap-1 overflow-x-auto pb-2">
-                {realPnl.daily.slice(-14).map((day, i) => {
-                  const isPos = day.pnlPercent >= 0
-                  const height = Math.min(Math.abs(day.pnlPercent) * 10, 40) + 4
-                  return (
-                    <div key={day.date} className="flex flex-col items-center gap-1 min-w-[20px]" title={`${day.date}: ${day.pnlPercent >= 0 ? '+' : ''}${day.pnlPercent.toFixed(2)}%`}>
-                      <div
-                        className={`w-3 rounded-sm ${isPos ? 'bg-emerald-500/60' : 'bg-red-500/60'}`}
-                        style={{ height: `${height}px` }}
-                      />
-                      <span className="text-[8px] text-neutral-700">{day.date.slice(-2)}</span>
-                    </div>
-                  )
-                })}
-              </div>
+          {/* Combined totals */}
+          {realPnl?.combined && realPnl.combined.activeBrokers > 1 && (
+            <div className="mt-3 pt-3 border-t border-neutral-800 flex justify-between text-xs">
+              <span className="text-neutral-500">Combined</span>
+              <span className={realPnl.combined.today.pnlPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                {realPnl.combined.today.pnlPercent >= 0 ? '+' : ''}{realPnl.combined.today.pnlPercent.toFixed(2)}% today
+              </span>
             </div>
           )}
         </div>
