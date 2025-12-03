@@ -497,7 +497,7 @@ export async function POST(request) {
       action.toLowerCase(),
       stopNum,
       tpNum,
-      1, // 1 contract as per user's preference
+      3, // Scaled up to 3 contracts
       { skipCleanup } // Pass options to bracket order
     );
 
