@@ -350,12 +350,12 @@ export async function POST(request) {
         // side: 0 = Buy, 1 = Sell
         if (stopOrder.side === 1 || stopOrder.side === 'Sell') {
           positionSide = 'long';
-          positionSize = stopOrder.size || 1;
+          positionSize = stopOrder.size || 3;
         } else if (stopOrder.side === 0 || stopOrder.side === 'Buy') {
           positionSide = 'short';
-          positionSize = stopOrder.size || 1;
+          positionSize = stopOrder.size || 3;
         }
-        console.log(`[Webhook] Detected ${positionSide} position from open stop order`);
+        console.log(`[Webhook] Detected ${positionSide} position (${positionSize} contracts) from open stop order`);
       } else {
         console.log('[Webhook] No open stop orders - assuming flat position');
       }
