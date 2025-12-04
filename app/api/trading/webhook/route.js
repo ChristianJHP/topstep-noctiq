@@ -521,19 +521,25 @@ export async function POST(request) {
     // tell the bracket order to skip its own cleanup phase
     const skipCleanup = actionToTake === 'reverse'; // Already flattened above
 
+    // Runner strategy: Entry 3, TP 2, Runner 1 (closes on next signal)
+    const entryQuantity = 3;
+    const tpQuantity = 2;
+    const runnerQuantity = entryQuantity - tpQuantity;
+
     console.log(`[Webhook] Executing ${action.toUpperCase()} bracket order on ${targetAccount.id}...`);
     console.log(`  Account: ${targetAccount.id} (${targetAccount.broker})`);
-    console.log(`  Entry: Market ${action.toUpperCase()}`);
-    console.log(`  Stop Loss: ${stopRounded}`);
-    console.log(`  Take Profit: ${tpRounded}`);
+    console.log(`  Entry: Market ${action.toUpperCase()} x${entryQuantity}`);
+    console.log(`  Stop Loss: ${stopRounded} (protects all ${entryQuantity} contracts)`);
+    console.log(`  Take Profit: ${tpRounded} (exits ${tpQuantity} contracts)`);
+    console.log(`  Runner: ${runnerQuantity} contract(s) run until next signal`);
     console.log(`  Skip cleanup: ${skipCleanup} (already handled: ${actionToTake})`);
 
     const orderResult = await brokerClient.placeBracketOrder(
       action.toLowerCase(),
       stopRounded,
       tpRounded,
-      3, // Scaled up to 3 contracts
-      { skipCleanup } // Pass options to bracket order
+      entryQuantity,
+      { skipCleanup, tpQuantity } // Runner strategy: TP only 2 of 3 contracts
     );
 
     // 9. Record trade in risk manager with details
