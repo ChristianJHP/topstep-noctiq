@@ -35,6 +35,30 @@ const brokers = require('../../../../lib/brokers');
 const alertStorage = require('../../../../lib/alertStorage');
 
 /**
+ * Tick sizes for supported symbols
+ * Prices must be rounded to these increments for valid orders
+ */
+const TICK_SIZES = {
+  MNQ: 0.25,
+  MES: 0.25,
+  MCL: 0.01,
+};
+
+/**
+ * Round a price to the nearest valid tick size for the given symbol
+ * @param {number} price - The price to round
+ * @param {string} symbol - The trading symbol (MNQ, MES, MCL)
+ * @returns {number} - Price rounded to nearest tick
+ */
+function roundToTick(price, symbol) {
+  const tickSize = TICK_SIZES[symbol] || TICK_SIZES.MNQ; // Default to MNQ tick size
+  const rounded = Math.round(price / tickSize) * tickSize;
+  // Fix floating point precision issues
+  const decimals = tickSize === 0.01 ? 2 : 2;
+  return parseFloat(rounded.toFixed(decimals));
+}
+
+/**
  * POST handler for TradingView webhooks
  */
 export async function POST(request) {
@@ -279,7 +303,18 @@ export async function POST(request) {
       }
     }
 
-    // 5.5 Generate webhook ID for idempotency
+    // 5.5 Round prices to valid tick size for the symbol
+    const tradingSymbol = symbol || 'MNQ';
+    const stopRounded = roundToTick(stopNum, tradingSymbol);
+    const tpRounded = roundToTick(tpNum, tradingSymbol);
+
+    if (stopRounded !== stopNum || tpRounded !== tpNum) {
+      console.log(`[Webhook] Tick rounding applied for ${tradingSymbol}:`);
+      console.log(`  Stop: ${stopNum} → ${stopRounded}`);
+      console.log(`  TP: ${tpNum} → ${tpRounded}`);
+    }
+
+    // 5.6 Generate webhook ID for idempotency
     // Uses 10-second windows to handle TradingView's potential latency
     webhookId = riskManager.generateWebhookId(body);
     console.log(`[Webhook] Generated webhook ID: ${webhookId}`);
@@ -309,8 +344,8 @@ export async function POST(request) {
         symbol: symbol || 'MNQ',
         account: targetAccount.id,
         status: 'blocked',
-        stop: stopNum,
-        tp: tpNum,
+        stop: stopRounded,
+        tp: tpRounded,
         error: `Risk management: ${riskCheck.reason}`,
       });
       return NextResponse.json({
@@ -489,14 +524,14 @@ export async function POST(request) {
     console.log(`[Webhook] Executing ${action.toUpperCase()} bracket order on ${targetAccount.id}...`);
     console.log(`  Account: ${targetAccount.id} (${targetAccount.broker})`);
     console.log(`  Entry: Market ${action.toUpperCase()}`);
-    console.log(`  Stop Loss: ${stopNum}`);
-    console.log(`  Take Profit: ${tpNum}`);
+    console.log(`  Stop Loss: ${stopRounded}`);
+    console.log(`  Take Profit: ${tpRounded}`);
     console.log(`  Skip cleanup: ${skipCleanup} (already handled: ${actionToTake})`);
 
     const orderResult = await brokerClient.placeBracketOrder(
       action.toLowerCase(),
-      stopNum,
-      tpNum,
+      stopRounded,
+      tpRounded,
       3, // Scaled up to 3 contracts
       { skipCleanup } // Pass options to bracket order
     );
@@ -508,8 +543,8 @@ export async function POST(request) {
       symbol: symbol || 'MNQ',
       accountId: targetAccount.id,
       broker: targetAccount.broker,
-      stopPrice: stopNum,
-      takeProfitPrice: tpNum,
+      stopPrice: stopRounded,
+      takeProfitPrice: tpRounded,
       entryOrder: orderResult.entry,
       stopOrder: orderResult.stopLoss,
       tpOrder: orderResult.takeProfit,
@@ -533,8 +568,8 @@ export async function POST(request) {
         takeProfit: orderResult.takeProfit,
       },
       prices: {
-        stop: stopNum,
-        takeProfit: tpNum,
+        stop: stopRounded,
+        takeProfit: tpRounded,
       },
       positionReconciliation: {
         previousPosition: positionSide,
@@ -560,8 +595,8 @@ export async function POST(request) {
       symbol: symbol || 'MNQ',
       account: targetAccount.id,
       status: orderResult.partial ? 'partial' : 'success',
-      stop: stopNum,
-      tp: tpNum,
+      stop: stopRounded,
+      tp: tpRounded,
     });
 
     console.log('[Webhook] Order executed successfully');
