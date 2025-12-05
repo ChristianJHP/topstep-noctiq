@@ -77,12 +77,16 @@ async function fetchNQData() {
 
 /**
  * GET handler for market brief
+ * Query params:
+ *   - refresh=true: Force regenerate the brief, bypassing cache
  */
-export async function GET() {
+export async function GET(request) {
   const now = Date.now();
+  const { searchParams } = new URL(request.url);
+  const forceRefresh = searchParams.get('refresh') === 'true';
 
-  // Return cached brief if still valid
-  if (briefCache.content && briefCache.expiresAt && now < briefCache.expiresAt) {
+  // Return cached brief if still valid (unless force refresh requested)
+  if (!forceRefresh && briefCache.content && briefCache.expiresAt && now < briefCache.expiresAt) {
     console.log('[MarketBrief] Returning cached brief');
     return Response.json({
       brief: briefCache.content,
@@ -91,6 +95,10 @@ export async function GET() {
       cached: true,
       expiresIn: Math.round((briefCache.expiresAt - now) / 1000 / 60),
     });
+  }
+
+  if (forceRefresh) {
+    console.log('[MarketBrief] Force refresh requested');
   }
 
   // Check if AI Gateway API key is configured

@@ -45,6 +45,28 @@ const TICK_SIZES = {
 };
 
 /**
+ * Copy Trading Configuration
+ * Maps master account IDs to follower account IDs
+ * When master receives a signal, followers automatically copy the trade
+ */
+const COPY_TRADE_CONFIG = {
+  // 'default' (TopStep) is the master, 'futuresdesk' copies its trades
+  'default': ['futuresdesk'],
+  // Add more mappings as needed:
+  // 'topstep2': ['futuresdesk2', 'futuresdesk3'],
+};
+
+/**
+ * Get accounts that should copy trades from a master account
+ */
+function getCopyTradeAccounts(masterAccountId) {
+  const followerIds = COPY_TRADE_CONFIG[masterAccountId] || [];
+  return followerIds
+    .map(id => accounts.getAccount(id))
+    .filter(account => account && account.enabled);
+}
+
+/**
  * Round a price to the nearest valid tick size for the given symbol
  * @param {number} price - The price to round
  * @param {string} symbol - The trading symbol (MNQ, MES, MCL)
@@ -94,7 +116,7 @@ export async function POST(request) {
     }
     console.log('Payload:', JSON.stringify(body, null, 2));
 
-    // 2. Validate webhook secret and resolve account
+    // 2. Validate webhook secret and resolve account(s)
     // First try to find account by secret (multi-account mode)
     targetAccount = accounts.getAccountBySecret(body.secret);
 
@@ -145,6 +167,12 @@ export async function POST(request) {
     }
 
     console.log(`[Webhook] Routing to account: ${targetAccount.id} (${targetAccount.broker})`);
+
+    // COPY TRADING: Get accounts that should copy this account's trades
+    const copyTradeAccounts = getCopyTradeAccounts(targetAccount.id);
+    if (copyTradeAccounts.length > 0) {
+      console.log(`[Webhook] Copy trading enabled: ${copyTradeAccounts.map(a => a.id).join(', ')} will copy ${targetAccount.id}`);
+    }
 
     // Get broker client for this account
     let brokerClient;
@@ -203,6 +231,42 @@ export async function POST(request) {
           closedPositions: closeResult.closedPositions,
         });
 
+        // COPY TRADING: Close positions on follower accounts too
+        const copyCloseResults = [];
+        if (copyTradeAccounts.length > 0) {
+          console.log(`[Webhook] Closing positions on ${copyTradeAccounts.length} follower account(s)...`);
+
+          for (const followerAccount of copyTradeAccounts) {
+            try {
+              const followerBrokerClient = brokers.getBrokerClient(followerAccount);
+              const followerCloseResult = await followerBrokerClient.closeAllPositions(symbol || 'MNQ');
+
+              copyCloseResults.push({
+                account: followerAccount.id,
+                success: followerCloseResult.success,
+                closedPositions: followerCloseResult.closedPositions,
+              });
+
+              await alertStorage.saveAlert({
+                action: 'close',
+                symbol: symbol || 'MNQ',
+                account: followerAccount.id,
+                status: followerCloseResult.success ? 'success' : 'failed',
+                closedPositions: followerCloseResult.closedPositions,
+                copiedFrom: targetAccount.id,
+              });
+
+            } catch (copyCloseError) {
+              console.error(`[Webhook] Failed to close positions on ${followerAccount.id}:`, copyCloseError.message);
+              copyCloseResults.push({
+                account: followerAccount.id,
+                success: false,
+                error: copyCloseError.message,
+              });
+            }
+          }
+        }
+
         return NextResponse.json({
           success: closeResult.success,
           message: closeResult.closedPositions > 0
@@ -214,6 +278,7 @@ export async function POST(request) {
           broker: targetAccount.broker,
           closedPositions: closeResult.closedPositions,
           errors: closeResult.errors,
+          copyTrades: copyCloseResults.length > 0 ? copyCloseResults : undefined,
           timestamp: new Date().toISOString(),
         });
       } catch (closeError) {
@@ -545,6 +610,101 @@ export async function POST(request) {
 
     console.log('[Webhook] Order executed successfully');
     console.log(`Execution time: ${executionTime}ms`);
+
+    // COPY TRADING: Execute same trade on follower accounts
+    const copyResults = [];
+    if (copyTradeAccounts.length > 0) {
+      console.log(`[Webhook] Executing copy trades on ${copyTradeAccounts.length} follower account(s)...`);
+
+      for (const followerAccount of copyTradeAccounts) {
+        try {
+          console.log(`[Webhook] Copy trading to ${followerAccount.id}...`);
+
+          const followerBrokerClient = brokers.getBrokerClient(followerAccount);
+
+          // Get follower's current position state
+          let followerPositionSide = 'flat';
+          let followerPositionSize = 0;
+          try {
+            const followerOrders = await followerBrokerClient.getOpenOrders();
+            const followerStopOrders = followerOrders.filter(o =>
+              (o.type === 4 || o.type === 'Stop') &&
+              (o.contractName?.includes('MNQ') || o.symbol?.includes('MNQ'))
+            );
+            if (followerStopOrders.length > 0) {
+              const stopOrder = followerStopOrders[0];
+              if (stopOrder.side === 1 || stopOrder.side === 'Sell') {
+                followerPositionSide = 'long';
+                followerPositionSize = stopOrder.size || 3;
+              } else if (stopOrder.side === 0 || stopOrder.side === 'Buy') {
+                followerPositionSide = 'short';
+                followerPositionSize = stopOrder.size || 3;
+              }
+            }
+          } catch (e) {
+            console.warn(`[Webhook] Could not detect follower position: ${e.message}`);
+          }
+
+          // Determine if follower needs to reverse
+          const followerIntendedSide = action.toLowerCase() === 'buy' ? 'long' : 'short';
+          const followerNeedsReverse = followerPositionSide !== 'flat' && followerPositionSide !== followerIntendedSide;
+
+          const copyResult = await followerBrokerClient.placeBracketOrder(
+            action.toLowerCase(),
+            stopRounded,
+            tpRounded,
+            3,
+            {
+              skipCleanup: false,
+              detectedSide: followerNeedsReverse ? followerPositionSide : null,
+              detectedSize: followerNeedsReverse ? followerPositionSize : 0,
+              useTrailingStop: true
+            }
+          );
+
+          copyResults.push({
+            account: followerAccount.id,
+            success: copyResult.success,
+            partial: copyResult.partial || false,
+          });
+
+          console.log(`[Webhook] Copy trade to ${followerAccount.id} successful`);
+
+          // Save alert for follower
+          await alertStorage.saveAlert({
+            action: action.toLowerCase(),
+            symbol: symbol || 'MNQ',
+            account: followerAccount.id,
+            status: copyResult.partial ? 'partial' : 'success',
+            stop: stopRounded,
+            tp: tpRounded,
+            copiedFrom: targetAccount.id,
+          });
+
+        } catch (copyError) {
+          console.error(`[Webhook] Copy trade to ${followerAccount.id} FAILED:`, copyError.message);
+          copyResults.push({
+            account: followerAccount.id,
+            success: false,
+            error: copyError.message,
+          });
+
+          // Save failed alert for follower
+          await alertStorage.saveAlert({
+            action: action.toLowerCase(),
+            symbol: symbol || 'MNQ',
+            account: followerAccount.id,
+            status: 'failed',
+            error: copyError.message,
+            copiedFrom: targetAccount.id,
+          });
+        }
+      }
+
+      response.copyTrades = copyResults;
+      console.log(`[Webhook] Copy trading complete: ${copyResults.filter(r => r.success).length}/${copyResults.length} successful`);
+    }
+
     console.log('=== WEBHOOK COMPLETE ===\n');
 
     return NextResponse.json(response, { status: 200 });
