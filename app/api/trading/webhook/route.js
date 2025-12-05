@@ -451,89 +451,31 @@ export async function POST(request) {
       });
     }
 
-    // Handle reverse case - need to flatten first, then enter new position
-    if (actionToTake === 'reverse') {
-      console.log(`[Webhook] REVERSAL: Flattening ${positionSide} position before entering ${intendedSide}...`);
-
-      try {
-        // Step 1: Flatten current position
-        const flattenResult = await brokerClient.closeAllPositions(symbol || 'MNQ');
-        console.log(`[Webhook] Flatten result: ${JSON.stringify(flattenResult)}`);
-
-        if (!flattenResult.success && flattenResult.closedPositions === 0 && positionSize !== 0) {
-          throw new Error('Failed to flatten position before reversal');
-        }
-
-        // Step 2: Wait for position to settle (300-500ms delay)
-        const settlementDelay = 400;
-        console.log(`[Webhook] Waiting ${settlementDelay}ms for position settlement...`);
-        await new Promise(resolve => setTimeout(resolve, settlementDelay));
-
-        // Step 3: Verify position is flat before proceeding
-        try {
-          const verifyPositions = await brokerClient.getPositions();
-          const verifyPosition = verifyPositions.find(p =>
-            p.contractName?.includes(symbol || 'MNQ') ||
-            p.symbol?.includes(symbol || 'MNQ')
-          );
-          const verifySize = verifyPosition?.netPos || verifyPosition?.size || 0;
-
-          if (verifySize !== 0) {
-            console.warn(`[Webhook] Position not fully flat after close: ${verifySize}`);
-            // Add another small delay and continue
-            await new Promise(resolve => setTimeout(resolve, 200));
-          } else {
-            console.log('[Webhook] Position verified flat, proceeding with new entry');
-          }
-        } catch (verifyError) {
-          console.warn('[Webhook] Could not verify position state, proceeding anyway:', verifyError.message);
-        }
-
-        console.log(`[Webhook] Reversal flatten complete, now entering ${intendedAction}...`);
-
-      } catch (flattenError) {
-        console.error('[Webhook] REVERSAL FAILED at flatten stage:', flattenError.message);
-
-        await alertStorage.saveAlert({
-          action: intendedAction,
-          symbol: symbol || 'MNQ',
-          account: targetAccount.id,
-          status: 'failed',
-          error: `Reversal failed: ${flattenError.message}`,
-          attemptedReversal: true,
-          fromPosition: positionSide,
-        });
-
-        return NextResponse.json({
-          success: false,
-          error: `Failed to flatten ${positionSide} position before ${intendedAction}: ${flattenError.message}`,
-          action: intendedAction,
-          attemptedReversal: true,
-          fromPosition: positionSide,
-          account: targetAccount.id,
-          timestamp: new Date().toISOString(),
-        }, { status: 500 });
-      }
-    }
+    // NOTE: Reversal is now handled inside placeBracketOrder
+    // We pass the detected position info so it can flatten before entering
+    // This is more reliable than the old approach that used Position API
 
     // 8. Execute bracket order via broker client
-    // If we already handled position reconciliation (reverse or execute from flat),
-    // tell the bracket order to skip its own cleanup phase
-    const skipCleanup = actionToTake === 'reverse'; // Already flattened above
-
+    // Pass detected position info so bracket order can handle flattening
     console.log(`[Webhook] Executing ${action.toUpperCase()} bracket order on ${targetAccount.id}...`);
     console.log(`  Account: ${targetAccount.id} (${targetAccount.broker})`);
     console.log(`  Entry: Market ${action.toUpperCase()}`);
     console.log(`  Stop Loss: ${stopRounded}`);
     console.log(`  Take Profit: ${tpRounded}`);
-    console.log(`  Skip cleanup: ${skipCleanup} (already handled: ${actionToTake})`);
+    console.log(`  Detected position: ${positionSide} (${positionSize} contracts)`);
+    console.log(`  Action to take: ${actionToTake}`);
 
     const orderResult = await brokerClient.placeBracketOrder(
       action.toLowerCase(),
       stopRounded,
       tpRounded,
-      3, // Scaled up to 3 contracts
-      { skipCleanup } // Pass options to bracket order
+      3, // Total 3 contracts (2 main + 1 runner)
+      {
+        skipCleanup: false,  // Always let bracket order handle cleanup
+        detectedSide: actionToTake === 'reverse' ? positionSide : null,  // Pass position to flatten
+        detectedSize: actionToTake === 'reverse' ? positionSize : 0,
+        useTrailingStop: true  // Enable trailing stop for runner
+      }
     );
 
     // 9. Record trade in risk manager with details
@@ -565,12 +507,14 @@ export async function POST(request) {
       orders: {
         entry: orderResult.entry,
         stopLoss: orderResult.stopLoss,
+        runnerStop: orderResult.runnerStop,
         takeProfit: orderResult.takeProfit,
       },
       prices: {
         stop: stopRounded,
         takeProfit: tpRounded,
       },
+      breakdown: orderResult.breakdown,  // Include contract split info
       positionReconciliation: {
         previousPosition: positionSide,
         intendedPosition: intendedSide,
