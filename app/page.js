@@ -434,7 +434,7 @@ function TradingStats({ stats, periodPnl, target }) {
           />
         </div>
         <span className="text-xs text-neutral-500">
-          {stats.winningDays}W / {stats.losingDays}L
+          {stats.winningTrades ?? stats.winningDays}W / {stats.losingTrades ?? stats.losingDays}L
         </span>
       </div>
 

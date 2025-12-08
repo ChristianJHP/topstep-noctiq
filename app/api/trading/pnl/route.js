@@ -93,8 +93,10 @@ async function fetchBrokerPnL(brokerId, days) {
 
     const trades = tradeResponse.ok ? (await tradeResponse.json()).trades || [] : [];
 
-    // Group trades by date
+    // Group trades by date and track individual trade outcomes
     const tradesByDate = {};
+    let winningTrades = 0;
+    let losingTrades = 0;
     trades.forEach(trade => {
       const date = trade.creationTimestamp?.split('T')[0];
       if (!date) return;
@@ -102,6 +104,11 @@ async function fetchBrokerPnL(brokerId, days) {
       tradesByDate[date].pnl += trade.profitAndLoss || 0;
       tradesByDate[date].fees += trade.fees || 0;
       tradesByDate[date].trades += 1;
+
+      // Track individual trade wins/losses (net of fees per trade)
+      const tradePnl = (trade.profitAndLoss || 0) - (trade.fees || 0);
+      if (tradePnl > 0) winningTrades++;
+      else if (tradePnl < 0) losingTrades++;
     });
 
     // Calculate today
@@ -145,7 +152,8 @@ async function fetchBrokerPnL(brokerId, days) {
     const winningDays = dailyPnl.filter(d => d.pnl > 0);
     const losingDays = dailyPnl.filter(d => d.pnl < 0);
     const tradingDays = dailyPnl.filter(d => d.trades > 0).length;
-    const winRate = tradingDays > 0 ? (winningDays.length / tradingDays) * 100 : 0;
+    // Win rate based on individual trades, not days
+    const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
     const avgWin = winningDays.length > 0 ? winningDays.reduce((sum, d) => sum + d.pnl, 0) / winningDays.length : 0;
     const avgLoss = losingDays.length > 0 ? Math.abs(losingDays.reduce((sum, d) => sum + d.pnl, 0) / losingDays.length) : 0;
     const profitFactor = avgLoss > 0 ? avgWin / avgLoss : avgWin > 0 ? Infinity : 0;
@@ -181,6 +189,9 @@ async function fetchBrokerPnL(brokerId, days) {
         tradingDays,
         winningDays: winningDays.length,
         losingDays: losingDays.length,
+        winningTrades,
+        losingTrades,
+        totalTrades,
         winRate,
         avgWin,
         avgLoss,
