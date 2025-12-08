@@ -555,6 +555,110 @@ function MarketBrief() {
   )
 }
 
+function TradingSummary() {
+  const [summary, setSummary] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [generatedAt, setGeneratedAt] = useState(null)
+
+  const fetchSummary = async (forceRefresh = false) => {
+    try {
+      const url = forceRefresh ? '/api/trading/summary?refresh=true' : '/api/trading/summary'
+      const res = await fetch(url)
+      if (res.ok) {
+        const data = await res.json()
+        setSummary(data.summary)
+        setGeneratedAt(data.generatedAt)
+      }
+    } catch (err) {
+      console.error('Failed to fetch trading summary:', err)
+    }
+  }
+
+  useEffect(() => {
+    const loadSummary = async () => {
+      await fetchSummary()
+      setLoading(false)
+    }
+    loadSummary()
+  }, [])
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await fetchSummary(true)
+    setRefreshing(false)
+  }
+
+  const formatTimestamp = (isoString) => {
+    if (!isoString) return ''
+    const date = new Date(isoString)
+    const now = new Date()
+    const isToday = date.toDateString() === now.toDateString()
+
+    const timeStr = date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'America/New_York',
+    })
+
+    if (isToday) {
+      return `Today ${timeStr} ET`
+    }
+
+    const dateStr = date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'America/New_York',
+    })
+    return `${dateStr} ${timeStr} ET`
+  }
+
+  return (
+    <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs text-neutral-500 uppercase tracking-wider">AI Trading Coach</p>
+        <div className="flex items-center gap-2">
+          {generatedAt && (
+            <span className="text-xs text-neutral-600">{formatTimestamp(generatedAt)}</span>
+          )}
+          <button
+            onClick={handleRefresh}
+            disabled={loading || refreshing}
+            className="p-1 text-neutral-500 hover:text-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            title="Refresh summary"
+          >
+            <svg
+              className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+      {loading ? (
+        <div className="py-4 text-center">
+          <div className="inline-block w-4 h-4 border-2 border-neutral-700 border-t-neutral-400 rounded-full animate-spin" />
+        </div>
+      ) : summary ? (
+        <div className="text-sm text-neutral-400 leading-relaxed whitespace-pre-line">
+          {summary}
+        </div>
+      ) : (
+        <p className="text-sm text-neutral-600 text-center py-4">Summary unavailable</p>
+      )}
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const [status, setStatus] = useState(null)
   const [trades, setTrades] = useState([])
@@ -748,6 +852,11 @@ export default function Dashboard() {
             periodPnl={realPnl?.brokers?.tsx?.period?.pnl || 0}
             target={3000}
           />
+        </div>
+
+        {/* AI Trading Summary */}
+        <div className="mb-6">
+          <TradingSummary />
         </div>
 
         {/* Footer */}
