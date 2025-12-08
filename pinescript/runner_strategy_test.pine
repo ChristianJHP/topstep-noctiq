@@ -1,0 +1,178 @@
+//@version=6
+// IMPORTANT: pyramiding=2 allows both Main and Runner entries to fill separately
+strategy("TopStep 10min optimized MNQ - RUNNER TEST", overlay=true, initial_capital=50000, default_qty_type=strategy.fixed, default_qty_value=3, commission_type=strategy.commission.cash_per_contract, commission_value=0.50, slippage=2, margin_long=5, margin_short=5, pyramiding=2)
+
+atrPeriod = input(47, "ATR Length")
+factor = input.float(2.5, "Factor", step = 0.01)
+rrRatio = input.float(6.0, "Risk:Reward Ratio", step = 0.1)
+
+// Dynamic Stop Loss
+slBase = input.float(1.5, "Base Stop Loss Multiplier", step = 0.1)
+slMin = input.float(1.0, "Min SL Multiplier (High Vol)", step = 0.1)
+slMax = input.float(2.5, "Max SL Multiplier (Low Vol)", step = 0.1)
+volLookback = input.int(35, "Volatility Lookback")
+
+// Runner Settings
+useRunner = input.bool(true, "Use Runner Strategy", group="Runner")
+mainQty = input.int(2, "Main Contracts (TP exit)", group="Runner")
+runnerQty = input.int(1, "Runner Contracts (trail exit)", group="Runner")
+trailPoints = input.float(10.0, "Trail Distance (points)", group="Runner")
+
+// Hardcoded webhook secret
+webhookSecret = "409dad6eb83ed329e8bdc27f55d421b6ab59533408832e62b9b11a5d4e919ebd"
+
+// ============================================
+// TOPSTEP COMPLIANCE
+// ============================================
+tradingSessionStart = input.int(630, "Session Start (HHMM CT)", group = "TopStep Compliance")
+lastEntryTime = input.int(1400, "Last Entry Time (HHMM CT)", group = "TopStep Compliance")
+forceCloseTime = input.int(1430, "Force Close Candle (HHMM CT)", group = "TopStep Compliance")
+
+// Get current time in CT (Chicago)
+currentHour = hour(time, "America/Chicago")
+currentMinute = minute(time, "America/Chicago")
+currentTimeHHMM = currentHour * 100 + currentMinute
+currentDay = dayofweek(time, "America/Chicago")
+
+// ============================================
+// MARKET HOURS CHECK (CME Futures)
+// ============================================
+isSunday = currentDay == 1
+isMonThu = currentDay >= 2 and currentDay <= 5
+isFriday = currentDay == 6
+isSaturday = currentDay == 7
+
+sundayOpen = isSunday and currentTimeHHMM >= 1700
+monThuOpen = isMonThu and (currentTimeHHMM < 1600 or currentTimeHHMM >= 1700)
+fridayOpen = isFriday and currentTimeHHMM < 1600
+marketOpen = sundayOpen or monThuOpen or fridayOpen
+
+inTradingSession = marketOpen and currentTimeHHMM >= tradingSessionStart and currentTimeHHMM < lastEntryTime
+needsDailyClose = (isMonThu or isFriday) and currentTimeHHMM >= forceCloseTime and currentTimeHHMM < 1600
+
+// ============================================
+// STRATEGY LOGIC
+// ============================================
+
+atrValue = ta.atr(atrPeriod)
+atrSma = ta.sma(atrValue, volLookback)
+volRatio = atrValue / atrSma
+slMultiplier = volRatio > 1 ? math.max(slMin, slBase / volRatio) : math.min(slMax, slBase * (2 - volRatio))
+
+// Daily Loss Limit
+useDailyLimit = input.bool(true, "Use Daily Loss Limit")
+maxDailyLoss = input.float(400, "Max Daily Loss $", step = 50)
+
+// Max Trades Per Day
+useMaxTrades = input.bool(true, "Use Max Trades Per Day")
+maxTrades = input.int(3, "Max Trades Per Day", minval = 1, maxval = 10)
+
+// Daily reset
+var float dayStartEquity = strategy.equity
+var int tradesToday = 0
+newDay = ta.change(time("D")) != 0
+if newDay
+    dayStartEquity := strategy.equity
+    tradesToday := 0
+
+todayPnL = strategy.equity - dayStartEquity
+dailyLimitHit = useDailyLimit and todayPnL <= -maxDailyLoss
+maxTradesHit = useMaxTrades and tradesToday >= maxTrades
+
+canTrade = inTradingSession and not dailyLimitHit and not maxTradesHit
+
+[supertrend, direction] = ta.supertrend(factor, atrPeriod)
+
+// Stop and TP levels - calculated fresh each bar
+currentLongStop = close - (atrValue * slMultiplier)
+currentLongTP = close + (atrValue * slMultiplier * rrRatio)
+currentShortStop = close + (atrValue * slMultiplier)
+currentShortTP = close - (atrValue * slMultiplier * rrRatio)
+
+// Persistent trade levels (locked at entry)
+var float entryPrice = na
+var float lockedLongStop = na
+var float lockedLongTP = na
+var float lockedShortStop = na
+var float lockedShortTP = na
+var float runnerTrailStopLong = na
+var float runnerTrailStopShort = na
+
+// Detect direction change for entries
+longSignal = ta.change(direction) < 0 and canTrade
+shortSignal = ta.change(direction) > 0 and canTrade
+
+// Long Entry
+if longSignal
+    entryPrice := close
+    lockedLongStop := currentLongStop
+    lockedLongTP := currentLongTP
+    runnerTrailStopLong := currentLongStop  // Runner starts with same stop
+
+    if useRunner
+        strategy.entry("Main Long", strategy.long, qty=mainQty, alert_message = '{"secret":"' + webhookSecret + '","action":"buy","symbol":"MNQ","stop":' + str.tostring(currentLongStop, "#.##") + ',"tp":' + str.tostring(currentLongTP, "#.##") + '}')
+        strategy.entry("Runner Long", strategy.long, qty=runnerQty)
+    else
+        strategy.entry("Long", strategy.long, qty=3, alert_message = '{"secret":"' + webhookSecret + '","action":"buy","symbol":"MNQ","stop":' + str.tostring(currentLongStop, "#.##") + ',"tp":' + str.tostring(currentLongTP, "#.##") + '}')
+    tradesToday += 1
+
+// Short Entry
+if shortSignal
+    entryPrice := close
+    lockedShortStop := currentShortStop
+    lockedShortTP := currentShortTP
+    runnerTrailStopShort := currentShortStop  // Runner starts with same stop
+
+    if useRunner
+        strategy.entry("Main Short", strategy.short, qty=mainQty, alert_message = '{"secret":"' + webhookSecret + '","action":"sell","symbol":"MNQ","stop":' + str.tostring(currentShortStop, "#.##") + ',"tp":' + str.tostring(currentShortTP, "#.##") + '}')
+        strategy.entry("Runner Short", strategy.short, qty=runnerQty)
+    else
+        strategy.entry("Short", strategy.short, qty=3, alert_message = '{"secret":"' + webhookSecret + '","action":"sell","symbol":"MNQ","stop":' + str.tostring(currentShortStop, "#.##") + ',"tp":' + str.tostring(currentShortTP, "#.##") + '}')
+    tradesToday += 1
+
+// Update trailing stop for runner ONLY when in profit
+if useRunner and not na(entryPrice)
+    // Long runner trailing
+    if strategy.position_size > 0 and high > entryPrice
+        newTrailStop = high - trailPoints
+        if not na(runnerTrailStopLong)
+            runnerTrailStopLong := math.max(runnerTrailStopLong, newTrailStop)
+
+    // Short runner trailing
+    if strategy.position_size < 0 and low < entryPrice
+        newTrailStop = low + trailPoints
+        if not na(runnerTrailStopShort)
+            runnerTrailStopShort := math.min(runnerTrailStopShort, newTrailStop)
+
+// Exits
+if useRunner
+    // Main Long exits at locked TP/SL
+    strategy.exit("Main Long Exit", "Main Long", stop=lockedLongStop, limit=lockedLongTP, alert_profit = '{"secret":"' + webhookSecret + '","action":"close","symbol":"MNQ"}', alert_loss = '{"secret":"' + webhookSecret + '","action":"close","symbol":"MNQ"}')
+    // Runner Long exits at trailing stop only
+    strategy.exit("Runner Long Exit", "Runner Long", stop=runnerTrailStopLong)
+
+    // Main Short exits at locked TP/SL
+    strategy.exit("Main Short Exit", "Main Short", stop=lockedShortStop, limit=lockedShortTP, alert_profit = '{"secret":"' + webhookSecret + '","action":"close","symbol":"MNQ"}', alert_loss = '{"secret":"' + webhookSecret + '","action":"close","symbol":"MNQ"}')
+    // Runner Short exits at trailing stop only
+    strategy.exit("Runner Short Exit", "Runner Short", stop=runnerTrailStopShort)
+else
+    strategy.exit("Long Exit", "Long", stop=lockedLongStop, limit=lockedLongTP, alert_profit = '{"secret":"' + webhookSecret + '","action":"close","symbol":"MNQ"}', alert_loss = '{"secret":"' + webhookSecret + '","action":"close","symbol":"MNQ"}')
+    strategy.exit("Short Exit", "Short", stop=lockedShortStop, limit=lockedShortTP, alert_profit = '{"secret":"' + webhookSecret + '","action":"close","symbol":"MNQ"}', alert_loss = '{"secret":"' + webhookSecret + '","action":"close","symbol":"MNQ"}')
+
+// TOPSTEP FORCE CLOSE
+if needsDailyClose and strategy.position_size != 0
+    strategy.close_all("TopStep Flat", alert_message = '{"secret":"' + webhookSecret + '","action":"close","symbol":"MNQ"}')
+
+// Visual indicators
+bgcolor(dailyLimitHit ? color.new(color.red, 90) : na)
+bgcolor(maxTradesHit ? color.new(color.orange, 90) : na)
+bgcolor(not marketOpen ? color.new(color.gray, 80) : not inTradingSession ? color.new(color.gray, 95) : na)
+
+// Plots - show locked levels when in position
+plot(strategy.position_size > 0 ? lockedLongStop : na, "Long Stop", color=color.red, style=plot.style_linebr, linewidth=2)
+plot(strategy.position_size > 0 ? lockedLongTP : na, "Long TP", color=color.green, style=plot.style_linebr, linewidth=2)
+plot(strategy.position_size < 0 ? lockedShortStop : na, "Short Stop", color=color.red, style=plot.style_linebr, linewidth=2)
+plot(strategy.position_size < 0 ? lockedShortTP : na, "Short TP", color=color.green, style=plot.style_linebr, linewidth=2)
+plot(useRunner and strategy.position_size > 0 ? runnerTrailStopLong : na, "Runner Trail Stop Long", color=color.orange, style=plot.style_linebr, linewidth=2)
+plot(useRunner and strategy.position_size < 0 ? runnerTrailStopShort : na, "Runner Trail Stop Short", color=color.orange, style=plot.style_linebr, linewidth=2)
+plot(slMultiplier, "SL Multiplier", color=color.yellow, display=display.data_window)

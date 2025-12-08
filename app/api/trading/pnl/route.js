@@ -16,9 +16,10 @@ const BROKERS = {
   tfd: {
     name: 'The Futures Desk',
     baseUrl: 'https://api.thefuturesdesk.projectx.com/api',
-    getUsernameEnv: () => process.env.ACCOUNT_TFD_USERNAME,
-    getApiKeyEnv: () => process.env.ACCOUNT_TFD_API_KEY,
-    getAccountIdEnv: () => process.env.ACCOUNT_TFD_ACCOUNT_ID,
+    // Support both naming conventions: ACCOUNT_TFD_* and ACCOUNT_FUTURESDESK_*
+    getUsernameEnv: () => process.env.ACCOUNT_TFD_USERNAME || process.env.ACCOUNT_FUTURESDESK_USERNAME,
+    getApiKeyEnv: () => process.env.ACCOUNT_TFD_API_KEY || process.env.ACCOUNT_FUTURESDESK_API_KEY,
+    getAccountIdEnv: () => process.env.ACCOUNT_TFD_ACCOUNT_ID || process.env.ACCOUNT_FUTURESDESK_ACCOUNT_ID,
   }
 };
 

@@ -212,7 +212,7 @@ function AlertsFeed({ trades }) {
 
   const getAccountLabel = (account) => {
     if (!account || account === 'default') return { text: 'TSX', color: 'text-blue-400' }
-    if (account === 'tfd') return { text: 'TFD', color: 'text-purple-400' }
+    if (account === 'tfd' || account === 'futuresdesk') return { text: 'TFD', color: 'text-purple-400' }
     return { text: account.toUpperCase().slice(0, 3), color: 'text-neutral-400' }
   }
 
@@ -329,7 +329,10 @@ function StrategyComparison({ pnlData, accountsStatus }) {
   };
 
   const tsxStats = getStrategyStats('default', 'Supertrend')
-  const tfdStats = getStrategyStats('tfd', 'ORB')
+  // Check both 'tfd' and 'futuresdesk' for TFD account
+  const tfdStatsFromTfd = getStrategyStats('tfd', 'Copy Trade')
+  const tfdStatsFromFd = getStrategyStats('futuresdesk', 'Copy Trade')
+  const tfdStats = tfdStatsFromTfd.totalTrades > 0 ? tfdStatsFromTfd : tfdStatsFromFd
 
   const hasData = pnlData.length > 0
 

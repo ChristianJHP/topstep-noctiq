@@ -530,16 +530,18 @@ export async function POST(request) {
     console.log(`  Detected position: ${positionSide} (${positionSize} contracts)`);
     console.log(`  Action to take: ${actionToTake}`);
 
+    // TopStep trades 5 contracts, TFD trades 3
+    const contractQty = targetAccount.id === 'default' ? 5 : 3;
+
     const orderResult = await brokerClient.placeBracketOrder(
       action.toLowerCase(),
       stopRounded,
       tpRounded,
-      3, // Total 3 contracts (2 main + 1 runner)
+      contractQty,
       {
         skipCleanup: false,  // Always let bracket order handle cleanup
         detectedSide: actionToTake === 'reverse' ? positionSide : null,  // Pass position to flatten
         detectedSize: actionToTake === 'reverse' ? positionSize : 0,
-        useTrailingStop: true  // Enable trailing stop for runner
       }
     );
 
@@ -653,12 +655,11 @@ export async function POST(request) {
             action.toLowerCase(),
             stopRounded,
             tpRounded,
-            3,
+            5,  // Same as TopStep - 5 contracts
             {
               skipCleanup: false,
               detectedSide: followerNeedsReverse ? followerPositionSide : null,
               detectedSize: followerNeedsReverse ? followerPositionSize : 0,
-              useTrailingStop: true
             }
           );
 
