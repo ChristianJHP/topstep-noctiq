@@ -814,11 +814,15 @@ export default function Dashboard() {
             {/* TopStepX Account */}
             {(() => {
               const tsx = realPnl?.brokers?.tsx
-              const todayPnl = tsx?.today?.pnlPercent
-              const hasPnl = tsx?.connected && todayPnl !== null && todayPnl !== undefined
-              const isPositive = todayPnl >= 0
+              const todayPnl = tsx?.today?.pnl || 0
+              const periodPnl = tsx?.period?.pnl || 0
+              const hasPnl = tsx?.connected
+              const isPositiveToday = todayPnl >= 0
+              const isPositivePeriod = periodPnl >= 0
               const trades = tsx?.today?.trades || 0
               const accountName = tsx?.account?.name?.split('-').slice(-1)[0] || ''
+              const target = 3000  // TopStepX target profit
+              const progress = Math.min(100, Math.max(0, (periodPnl / target) * 100))
               return (
                 <div className={`rounded-lg p-4 border ${tsx?.connected ? 'bg-blue-500/5 border-blue-500/20' : 'bg-neutral-800/30 border-neutral-700/30'}`}>
                   <div className="flex items-center justify-between mb-2">
@@ -834,29 +838,48 @@ export default function Dashboard() {
                   <div className="flex items-baseline justify-between">
                     <div>
                       <p className="text-[10px] text-neutral-600">Today</p>
-                      <p className={`text-xl font-semibold ${hasPnl ? (isPositive ? 'text-emerald-400' : 'text-red-400') : 'text-neutral-500'}`}>
-                        {hasPnl ? `${isPositive ? '+' : ''}${todayPnl.toFixed(2)}%` : '--'}
+                      <p className={`text-xl font-semibold ${hasPnl ? (isPositiveToday ? 'text-emerald-400' : 'text-red-400') : 'text-neutral-500'}`}>
+                        {hasPnl ? `${isPositiveToday ? '+' : ''}$${todayPnl.toFixed(0)}` : '--'}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] text-neutral-600">30 Day</p>
-                      <p className={`text-sm ${tsx?.connected ? (tsx?.period?.pnlPercent >= 0 ? 'text-emerald-400/70' : 'text-red-400/70') : 'text-neutral-600'}`}>
-                        {tsx?.connected ? `${tsx?.period?.pnlPercent >= 0 ? '+' : ''}${tsx?.period?.pnlPercent?.toFixed(2)}%` : '--'}
+                      <p className={`text-sm ${hasPnl ? (isPositivePeriod ? 'text-emerald-400/70' : 'text-red-400/70') : 'text-neutral-600'}`}>
+                        {hasPnl ? `${isPositivePeriod ? '+' : ''}$${periodPnl.toFixed(0)}` : '--'}
                       </p>
                     </div>
                   </div>
                   <p className="text-[10px] text-neutral-700 mt-1">{trades} trades today</p>
+                  {/* Target Progress */}
+                  {hasPnl && (
+                    <div className="mt-3">
+                      <div className="flex justify-between text-[10px] mb-1">
+                        <span className="text-neutral-600">Target: ${target.toLocaleString()}</span>
+                        <span className={periodPnl >= target ? 'text-emerald-400' : 'text-neutral-500'}>{progress.toFixed(0)}%</span>
+                      </div>
+                      <div className="h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${periodPnl >= 0 ? 'bg-blue-500' : 'bg-red-500'}`}
+                          style={{ width: `${Math.abs(progress)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             })()}
             {/* The Futures Desk Account */}
             {(() => {
               const tfd = realPnl?.brokers?.tfd
-              const todayPnl = tfd?.today?.pnlPercent
-              const hasPnl = tfd?.connected && todayPnl !== null && todayPnl !== undefined
-              const isPositive = todayPnl >= 0
+              const todayPnl = tfd?.today?.pnl || 0
+              const periodPnl = tfd?.period?.pnl || 0
+              const hasPnl = tfd?.connected
+              const isPositiveToday = todayPnl >= 0
+              const isPositivePeriod = periodPnl >= 0
               const trades = tfd?.today?.trades || 0
               const accountName = tfd?.account?.name?.split('-').slice(-1)[0] || ''
+              const target = 3500  // TFD target profit
+              const progress = Math.min(100, Math.max(0, (periodPnl / target) * 100))
               return (
                 <div className={`rounded-lg p-4 border ${tfd?.connected ? 'bg-purple-500/5 border-purple-500/20' : 'bg-neutral-800/30 border-neutral-700/30'}`}>
                   <div className="flex items-center justify-between mb-2">
@@ -872,18 +895,33 @@ export default function Dashboard() {
                   <div className="flex items-baseline justify-between">
                     <div>
                       <p className="text-[10px] text-neutral-600">Today</p>
-                      <p className={`text-xl font-semibold ${hasPnl ? (isPositive ? 'text-emerald-400' : 'text-red-400') : 'text-neutral-500'}`}>
-                        {hasPnl ? `${isPositive ? '+' : ''}${todayPnl.toFixed(2)}%` : '--'}
+                      <p className={`text-xl font-semibold ${hasPnl ? (isPositiveToday ? 'text-emerald-400' : 'text-red-400') : 'text-neutral-500'}`}>
+                        {hasPnl ? `${isPositiveToday ? '+' : ''}$${todayPnl.toFixed(0)}` : '--'}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] text-neutral-600">30 Day</p>
-                      <p className={`text-sm ${tfd?.connected ? (tfd?.period?.pnlPercent >= 0 ? 'text-emerald-400/70' : 'text-red-400/70') : 'text-neutral-600'}`}>
-                        {tfd?.connected ? `${tfd?.period?.pnlPercent >= 0 ? '+' : ''}${tfd?.period?.pnlPercent?.toFixed(2)}%` : '--'}
+                      <p className={`text-sm ${hasPnl ? (isPositivePeriod ? 'text-emerald-400/70' : 'text-red-400/70') : 'text-neutral-600'}`}>
+                        {hasPnl ? `${isPositivePeriod ? '+' : ''}$${periodPnl.toFixed(0)}` : '--'}
                       </p>
                     </div>
                   </div>
                   <p className="text-[10px] text-neutral-700 mt-1">{trades} trades today</p>
+                  {/* Target Progress */}
+                  {hasPnl && (
+                    <div className="mt-3">
+                      <div className="flex justify-between text-[10px] mb-1">
+                        <span className="text-neutral-600">Target: ${target.toLocaleString()}</span>
+                        <span className={periodPnl >= target ? 'text-emerald-400' : 'text-neutral-500'}>{progress.toFixed(0)}%</span>
+                      </div>
+                      <div className="h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${periodPnl >= 0 ? 'bg-purple-500' : 'bg-red-500'}`}
+                          style={{ width: `${Math.abs(progress)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             })()}
@@ -891,9 +929,9 @@ export default function Dashboard() {
           {/* Combined totals */}
           {realPnl?.combined && realPnl.combined.activeBrokers > 1 && (
             <div className="mt-3 pt-3 border-t border-neutral-800 flex justify-between text-xs">
-              <span className="text-neutral-500">Combined</span>
-              <span className={realPnl.combined.today.pnlPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                {realPnl.combined.today.pnlPercent >= 0 ? '+' : ''}{realPnl.combined.today.pnlPercent.toFixed(2)}% today
+              <span className="text-neutral-500">Combined Today</span>
+              <span className={realPnl.combined.today.pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                {realPnl.combined.today.pnl >= 0 ? '+' : ''}${(realPnl.combined.today.pnl || 0).toFixed(0)}
               </span>
             </div>
           )}

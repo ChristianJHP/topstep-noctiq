@@ -138,8 +138,17 @@ async function fetchBrokerPnL(brokerId, days) {
       broker: brokerId,
       brokerName: broker.name,
       account: { id: account.id, name: account.name, balance },
-      today: { pnlPercent: todayPnlPercent, trades: todayData.trades },
-      period: { days, pnlPercent: totalPnlPercent, trades: totalTrades },
+      today: {
+        pnl: todayNetPnl,  // Dollar amount
+        pnlPercent: todayPnlPercent,
+        trades: todayData.trades
+      },
+      period: {
+        days,
+        pnl: totalPnl - totalFees,  // Dollar amount
+        pnlPercent: totalPnlPercent,
+        trades: totalTrades
+      },
       daily: dailyPnl,
       connected: true
     };
@@ -162,8 +171,8 @@ export async function GET(request) {
 
     // Build response
     const brokers = {};
-    let combinedToday = { pnlPercent: 0, trades: 0 };
-    let combinedPeriod = { pnlPercent: 0, trades: 0 };
+    let combinedToday = { pnl: 0, pnlPercent: 0, trades: 0 };
+    let combinedPeriod = { pnl: 0, pnlPercent: 0, trades: 0 };
     let activeBrokers = 0;
 
     results.forEach(result => {
@@ -171,8 +180,10 @@ export async function GET(request) {
       brokers[result.broker] = result;
 
       if (result.connected && result.today) {
+        combinedToday.pnl += result.today.pnl || 0;
         combinedToday.pnlPercent += result.today.pnlPercent || 0;
         combinedToday.trades += result.today.trades || 0;
+        combinedPeriod.pnl += result.period?.pnl || 0;
         combinedPeriod.pnlPercent += result.period?.pnlPercent || 0;
         combinedPeriod.trades += result.period?.trades || 0;
         activeBrokers++;
