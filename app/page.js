@@ -265,6 +265,192 @@ function AlertsFeed({ trades }) {
   )
 }
 
+function PnLCalendar({ daily = [] }) {
+  const [currentMonth, setCurrentMonth] = useState(() => new Date())
+
+  // Get calendar data for the current month view
+  const getCalendarDays = () => {
+    const year = currentMonth.getFullYear()
+    const month = currentMonth.getMonth()
+    const firstDay = new Date(year, month, 1)
+    const lastDay = new Date(year, month + 1, 0)
+    const startPadding = firstDay.getDay()
+    const days = []
+
+    // Add padding for days before the 1st
+    for (let i = 0; i < startPadding; i++) {
+      days.push(null)
+    }
+
+    // Add all days of the month
+    for (let d = 1; d <= lastDay.getDate(); d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      const dayData = daily.find(day => day.date === dateStr)
+      days.push({
+        day: d,
+        date: dateStr,
+        pnl: dayData?.pnl || 0,
+        trades: dayData?.trades || 0,
+        hasData: !!dayData
+      })
+    }
+
+    return days
+  }
+
+  const days = getCalendarDays()
+  const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+
+  const prevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))
+  }
+
+  const nextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))
+  }
+
+  const getPnLColor = (pnl, hasData) => {
+    if (!hasData) return 'bg-neutral-900/30'
+    if (pnl > 0) return 'bg-emerald-500/20 border-emerald-500/30'
+    if (pnl < 0) return 'bg-red-500/20 border-red-500/30'
+    return 'bg-neutral-800/50'
+  }
+
+  const getPnLTextColor = (pnl) => {
+    if (pnl > 0) return 'text-emerald-400'
+    if (pnl < 0) return 'text-red-400'
+    return 'text-neutral-500'
+  }
+
+  return (
+    <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-xs text-neutral-500 uppercase tracking-wider">P&L Calendar</p>
+        <div className="flex items-center gap-2">
+          <button onClick={prevMonth} className="p-1 text-neutral-500 hover:text-neutral-300">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <span className="text-sm text-neutral-400 w-32 text-center">{monthName}</span>
+          <button onClick={nextMonth} className="p-1 text-neutral-500 hover:text-neutral-300">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Day headers */}
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+          <div key={day} className="text-center text-[10px] text-neutral-600 py-1">{day}</div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((day, i) => (
+          <div
+            key={i}
+            className={`aspect-square p-1 rounded border border-transparent ${day ? getPnLColor(day.pnl, day.hasData) : ''}`}
+          >
+            {day && (
+              <div className="h-full flex flex-col justify-between">
+                <span className="text-[10px] text-neutral-500">{day.day}</span>
+                {day.hasData && (
+                  <span className={`text-[10px] font-medium ${getPnLTextColor(day.pnl)}`}>
+                    {day.pnl >= 0 ? '+' : ''}{day.pnl.toFixed(0)}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function TradingStats({ stats, periodPnl, target }) {
+  if (!stats) {
+    return (
+      <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
+        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Trading Stats</p>
+        <p className="text-sm text-neutral-600 text-center py-4">No data available</p>
+      </div>
+    )
+  }
+
+  const remaining = target - periodPnl
+  const daysToTarget = stats.avgDailyPnl > 0 ? Math.ceil(remaining / stats.avgDailyPnl) : null
+  const annualizedReturn = stats.annualizedReturn || 0
+
+  const statItems = [
+    { label: 'Win Rate', value: `${stats.winRate?.toFixed(1)}%`, color: stats.winRate >= 50 ? 'text-emerald-400' : 'text-amber-400' },
+    { label: 'Profit Factor', value: stats.profitFactor ? stats.profitFactor.toFixed(2) : 'N/A', color: stats.profitFactor > 1.5 ? 'text-emerald-400' : 'text-neutral-400' },
+    { label: 'Sharpe Ratio', value: stats.sharpeRatio?.toFixed(2) || 'N/A', color: stats.sharpeRatio > 1 ? 'text-emerald-400' : 'text-neutral-400' },
+    { label: 'Avg Win', value: `$${stats.avgWin?.toFixed(0) || 0}`, color: 'text-emerald-400' },
+    { label: 'Avg Loss', value: `$${stats.avgLoss?.toFixed(0) || 0}`, color: 'text-red-400' },
+    { label: 'Avg Daily P&L', value: `$${stats.avgDailyPnl?.toFixed(0) || 0}`, color: stats.avgDailyPnl > 0 ? 'text-emerald-400' : 'text-red-400' },
+  ]
+
+  return (
+    <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
+      <p className="text-xs text-neutral-500 uppercase tracking-wider mb-4">Trading Stats</p>
+
+      {/* Key projections */}
+      <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-neutral-800">
+        <div>
+          <p className="text-[10px] text-neutral-600 mb-1">Days to Target</p>
+          <p className="text-xl font-semibold text-blue-400">
+            {daysToTarget !== null && daysToTarget > 0 ? `${daysToTarget} days` : remaining <= 0 ? 'Complete!' : '--'}
+          </p>
+          <p className="text-[10px] text-neutral-600">
+            {daysToTarget !== null && daysToTarget > 0 && stats.avgDailyPnl > 0
+              ? `At $${stats.avgDailyPnl.toFixed(0)}/day avg`
+              : ''}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] text-neutral-600 mb-1">Annualized Equiv.</p>
+          <p className={`text-xl font-semibold ${annualizedReturn > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            ${Math.abs(annualizedReturn).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </p>
+          <p className="text-[10px] text-neutral-600">Projected yearly</p>
+        </div>
+      </div>
+
+      {/* Win/Loss breakdown */}
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex-1 h-2 bg-neutral-800 rounded-full overflow-hidden flex">
+          <div
+            className="h-full bg-emerald-500"
+            style={{ width: `${stats.winRate || 0}%` }}
+          />
+          <div
+            className="h-full bg-red-500"
+            style={{ width: `${100 - (stats.winRate || 0)}%` }}
+          />
+        </div>
+        <span className="text-xs text-neutral-500">
+          {stats.winningDays}W / {stats.losingDays}L
+        </span>
+      </div>
+
+      {/* Stat grid */}
+      <div className="grid grid-cols-3 gap-3">
+        {statItems.map(item => (
+          <div key={item.label}>
+            <p className="text-[10px] text-neutral-600">{item.label}</p>
+            <p className={`text-sm font-medium ${item.color}`}>{item.value}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function MarketBrief() {
   const [brief, setBrief] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -552,6 +738,16 @@ export default function Dashboard() {
               </div>
             )
           })()}
+        </div>
+
+        {/* Calendar and Stats */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <PnLCalendar daily={realPnl?.brokers?.tsx?.daily || []} />
+          <TradingStats
+            stats={realPnl?.brokers?.tsx?.stats}
+            periodPnl={realPnl?.brokers?.tsx?.period?.pnl || 0}
+            target={3000}
+          />
         </div>
 
         {/* Footer */}

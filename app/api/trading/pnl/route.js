@@ -119,20 +119,47 @@ async function fetchBrokerPnL(brokerId, days) {
     });
     const totalPnlPercent = ((totalPnl - totalFees) / balance) * 100;
 
-    // Daily breakdown
+    // Daily breakdown with dollar amounts
     const dailyPnl = Object.entries(tradesByDate)
-      .map(([date, data]) => ({
-        date,
-        pnlPercent: ((data.pnl - data.fees) / balance) * 100,
-        trades: data.trades
-      }))
+      .map(([date, data]) => {
+        const netPnl = data.pnl - data.fees;
+        return {
+          date,
+          pnl: netPnl,  // Dollar amount
+          pnlPercent: (netPnl / balance) * 100,
+          trades: data.trades
+        };
+      })
       .sort((a, b) => a.date.localeCompare(b.date));
 
     let cumulative = 0;
+    let cumulativeDollar = 0;
     dailyPnl.forEach(day => {
       cumulative += day.pnlPercent;
+      cumulativeDollar += day.pnl;
       day.cumulativePercent = cumulative;
+      day.cumulativePnl = cumulativeDollar;
     });
+
+    // Calculate stats for win rate, avg win/loss, etc.
+    const winningDays = dailyPnl.filter(d => d.pnl > 0);
+    const losingDays = dailyPnl.filter(d => d.pnl < 0);
+    const tradingDays = dailyPnl.filter(d => d.trades > 0).length;
+    const winRate = tradingDays > 0 ? (winningDays.length / tradingDays) * 100 : 0;
+    const avgWin = winningDays.length > 0 ? winningDays.reduce((sum, d) => sum + d.pnl, 0) / winningDays.length : 0;
+    const avgLoss = losingDays.length > 0 ? Math.abs(losingDays.reduce((sum, d) => sum + d.pnl, 0) / losingDays.length) : 0;
+    const profitFactor = avgLoss > 0 ? avgWin / avgLoss : avgWin > 0 ? Infinity : 0;
+    const avgDailyPnl = tradingDays > 0 ? (totalPnl - totalFees) / tradingDays : 0;
+
+    // Sharpe ratio approximation (daily returns)
+    const dailyReturns = dailyPnl.map(d => d.pnlPercent);
+    const avgReturn = dailyReturns.length > 0 ? dailyReturns.reduce((a, b) => a + b, 0) / dailyReturns.length : 0;
+    const variance = dailyReturns.length > 1
+      ? dailyReturns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / (dailyReturns.length - 1)
+      : 0;
+    const stdDev = Math.sqrt(variance);
+    const dailySharpe = stdDev > 0 ? avgReturn / stdDev : 0;
+    const annualizedSharpe = dailySharpe * Math.sqrt(252);  // Annualize assuming 252 trading days
 
     return {
       broker: brokerId,
@@ -150,6 +177,18 @@ async function fetchBrokerPnL(brokerId, days) {
         trades: totalTrades
       },
       daily: dailyPnl,
+      stats: {
+        tradingDays,
+        winningDays: winningDays.length,
+        losingDays: losingDays.length,
+        winRate,
+        avgWin,
+        avgLoss,
+        profitFactor: profitFactor === Infinity ? null : profitFactor,
+        avgDailyPnl,
+        sharpeRatio: annualizedSharpe,
+        annualizedReturn: avgDailyPnl * 252  // Rough annualized $ return
+      },
       connected: true
     };
 
