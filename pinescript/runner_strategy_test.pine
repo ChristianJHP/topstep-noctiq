@@ -14,8 +14,8 @@ volLookback = input.int(35, "Volatility Lookback")
 
 // Runner Settings
 useRunner = input.bool(true, "Use Runner Strategy", group="Runner")
-mainQty = input.int(2, "Main Contracts (TP exit)", group="Runner")
-runnerQty = input.int(1, "Runner Contracts (trail exit)", group="Runner")
+mainQty = input.int(2, "Main Contracts (TP exit)", minval=1, maxval=4, group="Runner")
+runnerQty = input.int(1, "Runner Contracts (trail exit)", minval=1, maxval=1, group="Runner")
 trailPoints = input.float(10.0, "Trail Distance (points)", group="Runner")
 
 // Hardcoded webhook secret
@@ -65,7 +65,7 @@ maxDailyLoss = input.float(400, "Max Daily Loss $", step = 50)
 
 // Max Trades Per Day
 useMaxTrades = input.bool(true, "Use Max Trades Per Day")
-maxTrades = input.int(3, "Max Trades Per Day", minval = 1, maxval = 10)
+maxTrades = input.int(5, "Max Trades Per Day", minval = 1, maxval = 10)
 
 // Daily reset
 var float dayStartEquity = strategy.equity
