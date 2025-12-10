@@ -1,6 +1,6 @@
 //@version=6
 // IMPORTANT: pyramiding=2 allows both Main and Runner entries to fill separately
-strategy("TopStep 10min optimized MNQ - RUNNER TEST", overlay=true, initial_capital=50000, default_qty_type=strategy.fixed, default_qty_value=3, commission_type=strategy.commission.cash_per_contract, commission_value=0.50, slippage=2, margin_long=5, margin_short=5, pyramiding=2)
+strategy("TopStep 10min optimized MNQ", overlay=true, initial_capital=50000, default_qty_type=strategy.fixed, default_qty_value=5, commission_type=strategy.commission.cash_per_contract, commission_value=0.50, slippage=2, margin_long=5, margin_short=5, pyramiding=1)
 
 atrPeriod = input(47, "ATR Length")
 factor = input.float(2.5, "Factor", step = 0.01)
@@ -13,7 +13,7 @@ slMax = input.float(2.5, "Max SL Multiplier (Low Vol)", step = 0.1)
 volLookback = input.int(35, "Volatility Lookback")
 
 // Runner Settings
-useRunner = input.bool(true, "Use Runner Strategy", group="Runner")
+useRunner = input.bool(false, "Use Runner Strategy", group="Runner")
 mainQty = input.int(2, "Main Contracts (TP exit)", minval=1, maxval=4, group="Runner")
 runnerQty = input.int(1, "Runner Contracts (trail exit)", minval=1, maxval=1, group="Runner")
 trailPoints = input.float(10.0, "Trail Distance (points)", group="Runner")
@@ -113,7 +113,7 @@ if longSignal
         strategy.entry("Main Long", strategy.long, qty=mainQty, alert_message = '{"secret":"' + webhookSecret + '","action":"buy","symbol":"MNQ","stop":' + str.tostring(currentLongStop, "#.##") + ',"tp":' + str.tostring(currentLongTP, "#.##") + '}')
         strategy.entry("Runner Long", strategy.long, qty=runnerQty)
     else
-        strategy.entry("Long", strategy.long, qty=3, alert_message = '{"secret":"' + webhookSecret + '","action":"buy","symbol":"MNQ","stop":' + str.tostring(currentLongStop, "#.##") + ',"tp":' + str.tostring(currentLongTP, "#.##") + '}')
+        strategy.entry("Long", strategy.long, qty=5, alert_message = '{"secret":"' + webhookSecret + '","action":"buy","symbol":"MNQ","stop":' + str.tostring(currentLongStop, "#.##") + ',"tp":' + str.tostring(currentLongTP, "#.##") + '}')
     tradesToday += 1
 
 // Short Entry
@@ -127,7 +127,7 @@ if shortSignal
         strategy.entry("Main Short", strategy.short, qty=mainQty, alert_message = '{"secret":"' + webhookSecret + '","action":"sell","symbol":"MNQ","stop":' + str.tostring(currentShortStop, "#.##") + ',"tp":' + str.tostring(currentShortTP, "#.##") + '}')
         strategy.entry("Runner Short", strategy.short, qty=runnerQty)
     else
-        strategy.entry("Short", strategy.short, qty=3, alert_message = '{"secret":"' + webhookSecret + '","action":"sell","symbol":"MNQ","stop":' + str.tostring(currentShortStop, "#.##") + ',"tp":' + str.tostring(currentShortTP, "#.##") + '}')
+        strategy.entry("Short", strategy.short, qty=5, alert_message = '{"secret":"' + webhookSecret + '","action":"sell","symbol":"MNQ","stop":' + str.tostring(currentShortStop, "#.##") + ',"tp":' + str.tostring(currentShortTP, "#.##") + '}')
     tradesToday += 1
 
 // Update trailing stop for runner ONLY when in profit
