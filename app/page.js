@@ -456,7 +456,7 @@ const COMBINE_RULES = {
   profitTarget: 3000,
   maxLossLimit: 2000,       // Trailing drawdown from high watermark
   consistencyRule: 0.50,    // Best day must be < 50% of total profits
-  maxContracts: 5,
+  maxContracts: 3,          // Currently trading 3 contracts
   startingBalance: 50000,
 }
 
