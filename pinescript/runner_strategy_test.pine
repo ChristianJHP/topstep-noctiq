@@ -4,7 +4,7 @@ strategy("TopStep 10min optimized MNQ - RUNNER TEST", overlay=true, initial_capi
 
 atrPeriod = input(47, "ATR Length")
 factor = input.float(2.5, "Factor", step = 0.01)
-rrRatio = input.float(6.0, "Risk:Reward Ratio", step = 0.1)
+rrRatio = input.float(3.0, "Risk:Reward Ratio", step = 0.1)
 
 // Dynamic Stop Loss
 slBase = input.float(1.5, "Base Stop Loss Multiplier", step = 0.1)

@@ -530,8 +530,8 @@ export async function POST(request) {
     console.log(`  Detected position: ${positionSide} (${positionSize} contracts)`);
     console.log(`  Action to take: ${actionToTake}`);
 
-    // TopStep trades 5 contracts, TFD trades 3
-    const contractQty = targetAccount.id === 'default' ? 5 : 3;
+    // TopStep trades 3 contracts, TFD trades 3
+    const contractQty = targetAccount.id === 'default' ? 3 : 3;
 
     const orderResult = await brokerClient.placeBracketOrder(
       action.toLowerCase(),
@@ -655,7 +655,7 @@ export async function POST(request) {
             action.toLowerCase(),
             stopRounded,
             tpRounded,
-            5,  // Same as TopStep - 5 contracts
+            3,  // Same as TopStep - 3 contracts
             {
               skipCleanup: false,
               detectedSide: followerNeedsReverse ? followerPositionSide : null,
