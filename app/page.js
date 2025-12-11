@@ -465,19 +465,18 @@ function CombineStatus({ daily = [], periodPnl = 0, balance = 0 }) {
   const profitDays = daily.filter(d => d.pnl > 0)
   const bestDay = profitDays.length > 0 ? Math.max(...profitDays.map(d => d.pnl)) : 0
 
-  // Calculate total positive P&L (sum of all winning days)
-  const totalPositivePnl = profitDays.reduce((sum, d) => sum + d.pnl, 0)
-
-  // Consistency calculation: Best Day / Total Profit
-  // Must be < 50% to pass
-  const consistencyPct = totalPositivePnl > 0 ? (bestDay / totalPositivePnl) * 100 : 0
+  // Consistency calculation uses NET P&L (periodPnl), not sum of winning days
+  // Rule: Best Day / Overall Net Profit must be < 50%
+  const consistencyPct = periodPnl > 0 ? (bestDay / periodPnl) * 100 : 0
   const consistencyPassed = consistencyPct < 50
 
   // How much more profit needed to pass consistency
-  // If best day is X, total must be > 2X
-  // Required additional = (bestDay * 2) - totalPositivePnl
+  // If best day is X, net profit must be > 2X
   const requiredTotalForConsistency = bestDay * 2
-  const additionalNeededForConsistency = Math.max(0, requiredTotalForConsistency - totalPositivePnl)
+  const additionalNeededForConsistency = Math.max(0, requiredTotalForConsistency - periodPnl)
+
+  // The $1,500 limit - best day should ideally be under 50% of profit target
+  const maxIdealBestDay = COMBINE_RULES.profitTarget * 0.5
 
   // Profit target status
   const profitTargetPct = Math.min(100, (periodPnl / COMBINE_RULES.profitTarget) * 100)
@@ -488,7 +487,7 @@ function CombineStatus({ daily = [], periodPnl = 0, balance = 0 }) {
   const effectiveTarget = consistencyPassed
     ? COMBINE_RULES.profitTarget
     : Math.max(COMBINE_RULES.profitTarget, requiredTotalForConsistency)
-  const effectiveRemaining = Math.max(0, effectiveTarget - totalPositivePnl)
+  const effectiveRemaining = Math.max(0, effectiveTarget - periodPnl)
 
   // Drawdown calculation
   // High watermark would be starting balance + max profit reached
@@ -557,20 +556,22 @@ function CombineStatus({ daily = [], periodPnl = 0, balance = 0 }) {
           <div className="grid grid-cols-2 gap-3 mt-2">
             <div>
               <p className="text-[10px] text-neutral-600">Best Day</p>
-              <p className="text-sm font-mono text-amber-400">${bestDay.toFixed(0)}</p>
+              <p className={`text-sm font-mono ${bestDay > maxIdealBestDay ? 'text-red-400' : 'text-amber-400'}`}>${bestDay.toFixed(0)}</p>
+              <p className="text-[10px] text-neutral-700">Max ideal: ${maxIdealBestDay.toFixed(0)}</p>
             </div>
             <div>
-              <p className="text-[10px] text-neutral-600">Total Profits</p>
-              <p className="text-sm font-mono text-neutral-300">${totalPositivePnl.toFixed(0)}</p>
+              <p className="text-[10px] text-neutral-600">Net P&L</p>
+              <p className="text-sm font-mono text-neutral-300">${periodPnl.toFixed(0)}</p>
+              <p className="text-[10px] text-neutral-700">Need: ${requiredTotalForConsistency.toFixed(0)}</p>
             </div>
           </div>
           {!consistencyPassed && (
             <div className="mt-3 pt-2 border-t border-red-500/20">
-              <p className="text-xs text-red-400">
+              <p className="text-xs text-red-400 font-medium">
                 Need ${additionalNeededForConsistency.toFixed(0)} more profit to pass
               </p>
               <p className="text-[10px] text-neutral-600 mt-1">
-                Best day (${bestDay.toFixed(0)}) must be &lt;50% of total profits
+                Best day (${bestDay.toFixed(0)}) must be &lt;50% of net profit
               </p>
             </div>
           )}
