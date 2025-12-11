@@ -451,6 +451,187 @@ function TradingStats({ stats, periodPnl, target }) {
   )
 }
 
+// TopStep 50K Combine Rules
+const COMBINE_RULES = {
+  profitTarget: 3000,
+  maxLossLimit: 2000,       // Trailing drawdown from high watermark
+  consistencyRule: 0.50,    // Best day must be < 50% of total profits
+  maxContracts: 5,
+  startingBalance: 50000,
+}
+
+function CombineStatus({ daily = [], periodPnl = 0, balance = 0 }) {
+  // Calculate best day from daily P&L
+  const profitDays = daily.filter(d => d.pnl > 0)
+  const bestDay = profitDays.length > 0 ? Math.max(...profitDays.map(d => d.pnl)) : 0
+
+  // Calculate total positive P&L (sum of all winning days)
+  const totalPositivePnl = profitDays.reduce((sum, d) => sum + d.pnl, 0)
+
+  // Consistency calculation: Best Day / Total Profit
+  // Must be < 50% to pass
+  const consistencyPct = totalPositivePnl > 0 ? (bestDay / totalPositivePnl) * 100 : 0
+  const consistencyPassed = consistencyPct < 50
+
+  // How much more profit needed to pass consistency
+  // If best day is X, total must be > 2X
+  // Required additional = (bestDay * 2) - totalPositivePnl
+  const requiredTotalForConsistency = bestDay * 2
+  const additionalNeededForConsistency = Math.max(0, requiredTotalForConsistency - totalPositivePnl)
+
+  // Profit target status
+  const profitTargetPct = Math.min(100, (periodPnl / COMBINE_RULES.profitTarget) * 100)
+  const profitTargetPassed = periodPnl >= COMBINE_RULES.profitTarget
+
+  // Calculate actual profit target considering consistency rule
+  // If consistency isn't met, effective target is higher
+  const effectiveTarget = consistencyPassed
+    ? COMBINE_RULES.profitTarget
+    : Math.max(COMBINE_RULES.profitTarget, requiredTotalForConsistency)
+  const effectiveRemaining = Math.max(0, effectiveTarget - totalPositivePnl)
+
+  // Drawdown calculation
+  // High watermark would be starting balance + max profit reached
+  // For simplicity, use current balance as proxy
+  const highWatermark = Math.max(COMBINE_RULES.startingBalance, balance)
+  const currentDrawdown = highWatermark - balance
+  const drawdownPct = (currentDrawdown / COMBINE_RULES.maxLossLimit) * 100
+  const drawdownSafe = currentDrawdown < COMBINE_RULES.maxLossLimit
+
+  // Overall combine status
+  const allRulesPassed = profitTargetPassed && consistencyPassed && drawdownSafe
+  const readyToPass = periodPnl >= COMBINE_RULES.profitTarget && consistencyPassed
+
+  return (
+    <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-xs text-neutral-500 uppercase tracking-wider">50K Combine Status</p>
+        {readyToPass ? (
+          <span className="px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-400">
+            READY TO PASS
+          </span>
+        ) : (
+          <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-500/20 text-amber-400">
+            IN PROGRESS
+          </span>
+        )}
+      </div>
+
+      {/* Rules Grid */}
+      <div className="space-y-4">
+        {/* Profit Target */}
+        <div className={`p-3 rounded-lg border ${profitTargetPassed ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-neutral-800/30 border-neutral-700/30'}`}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${profitTargetPassed ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+              <span className="text-sm font-medium text-neutral-300">Profit Target</span>
+            </div>
+            <span className={`text-sm font-mono ${profitTargetPassed ? 'text-emerald-400' : 'text-neutral-400'}`}>
+              ${periodPnl.toFixed(0)} / ${COMBINE_RULES.profitTarget}
+            </span>
+          </div>
+          <div className="h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${profitTargetPassed ? 'bg-emerald-500' : 'bg-blue-500'}`}
+              style={{ width: `${Math.max(0, profitTargetPct)}%` }}
+            />
+          </div>
+          {!profitTargetPassed && (
+            <p className="text-[10px] text-neutral-600 mt-1">
+              ${(COMBINE_RULES.profitTarget - periodPnl).toFixed(0)} remaining
+            </p>
+          )}
+        </div>
+
+        {/* Consistency Rule - THE CRITICAL ONE */}
+        <div className={`p-3 rounded-lg border ${consistencyPassed ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${consistencyPassed ? 'bg-emerald-500' : 'bg-red-500'}`} />
+              <span className="text-sm font-medium text-neutral-300">Consistency Rule</span>
+            </div>
+            <span className={`text-sm font-mono ${consistencyPassed ? 'text-emerald-400' : 'text-red-400'}`}>
+              {consistencyPct.toFixed(1)}% {consistencyPassed ? '<' : '>'} 50%
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            <div>
+              <p className="text-[10px] text-neutral-600">Best Day</p>
+              <p className="text-sm font-mono text-amber-400">${bestDay.toFixed(0)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-neutral-600">Total Profits</p>
+              <p className="text-sm font-mono text-neutral-300">${totalPositivePnl.toFixed(0)}</p>
+            </div>
+          </div>
+          {!consistencyPassed && (
+            <div className="mt-3 pt-2 border-t border-red-500/20">
+              <p className="text-xs text-red-400">
+                Need ${additionalNeededForConsistency.toFixed(0)} more profit to pass
+              </p>
+              <p className="text-[10px] text-neutral-600 mt-1">
+                Best day (${bestDay.toFixed(0)}) must be &lt;50% of total profits
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Max Drawdown */}
+        <div className={`p-3 rounded-lg border ${drawdownSafe ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${drawdownSafe ? 'bg-emerald-500' : 'bg-red-500'}`} />
+              <span className="text-sm font-medium text-neutral-300">Max Drawdown</span>
+            </div>
+            <span className={`text-sm font-mono ${drawdownSafe ? 'text-emerald-400' : 'text-red-400'}`}>
+              ${currentDrawdown.toFixed(0)} / ${COMBINE_RULES.maxLossLimit}
+            </span>
+          </div>
+          <div className="h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${drawdownPct < 50 ? 'bg-emerald-500' : drawdownPct < 80 ? 'bg-amber-500' : 'bg-red-500'}`}
+              style={{ width: `${Math.min(100, drawdownPct)}%` }}
+            />
+          </div>
+          <p className="text-[10px] text-neutral-600 mt-1">
+            Trailing from high watermark (${highWatermark.toLocaleString()})
+          </p>
+        </div>
+
+        {/* Position Limit */}
+        <div className="p-3 rounded-lg border bg-neutral-800/30 border-neutral-700/30">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="text-sm font-medium text-neutral-300">Max Position</span>
+            </div>
+            <span className="text-sm font-mono text-neutral-400">
+              {COMBINE_RULES.maxContracts} contracts
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Effective Target Summary */}
+      {!readyToPass && (
+        <div className="mt-4 pt-3 border-t border-neutral-800">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-neutral-500">Effective Target</span>
+            <span className="text-sm font-semibold text-amber-400">
+              ${effectiveRemaining.toFixed(0)} to go
+            </span>
+          </div>
+          {!consistencyPassed && effectiveTarget > COMBINE_RULES.profitTarget && (
+            <p className="text-[10px] text-neutral-600 mt-1">
+              Consistency rule increased your effective target to ${effectiveTarget.toFixed(0)}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function MarketBrief() {
   const [brief, setBrief] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -842,6 +1023,15 @@ export default function Dashboard() {
               </div>
             )
           })()}
+        </div>
+
+        {/* Combine Status - THE IMPORTANT ONE */}
+        <div className="mb-6">
+          <CombineStatus
+            daily={realPnl?.brokers?.tsx?.daily || []}
+            periodPnl={realPnl?.brokers?.tsx?.period?.pnl || 0}
+            balance={realPnl?.brokers?.tsx?.account?.balance || 0}
+          />
         </div>
 
         {/* Calendar and Stats */}
