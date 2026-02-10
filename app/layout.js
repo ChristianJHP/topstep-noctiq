@@ -1,8 +1,8 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'Noctiq',
-  description: 'Trading dashboard',
+  title: 'noctiq.ai | Christian - Algo Trading & Market Research',
+  description: 'Finding market inefficiencies. Algorithmic trading, futures & options, statistical analysis, and automated trading systems.',
   icons: {
     icon: '/favicon.ico',
   },
