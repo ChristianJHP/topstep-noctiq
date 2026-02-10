@@ -1,8 +1,8 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'noctiq.ai | Christian - Algo Trading & Market Research',
-  description: 'Finding market inefficiencies. Algorithmic trading, futures & options, statistical analysis, and automated trading systems.',
+  title: 'Christian Park | Trader, Creator, Builder',
+  description: 'Algo trading, futures markets, and building things on the internet. Follow along on Instagram, YouTube, and TikTok.',
   icons: {
     icon: '/favicon.ico',
   },
