@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import Link from 'next/link'
 
 // ── Hooks ───────────────────────────────────────────────────────────────────
 
@@ -60,6 +59,14 @@ function TikTokIcon({ className = 'w-5 h-5' }) {
   )
 }
 
+function ArrowIcon({ className = 'w-3 h-3' }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
+  )
+}
+
 // ── Background ──────────────────────────────────────────────────────────────
 
 function GridBackground() {
@@ -75,65 +82,8 @@ function GridBackground() {
       />
       <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[1000px] h-[600px] rounded-full bg-indigo-500/[0.03] blur-[150px]" />
       <div className="absolute bottom-[-100px] right-[-100px] w-[600px] h-[600px] rounded-full bg-purple-500/[0.025] blur-[120px]" />
-      <div className="absolute top-[40%] left-[-100px] w-[400px] h-[400px] rounded-full bg-emerald-500/[0.02] blur-[100px]" />
     </div>
   )
-}
-
-// ── Socials data ────────────────────────────────────────────────────────────
-
-const socials = [
-  {
-    name: 'Instagram',
-    handle: '@christiannpark',
-    href: 'https://www.instagram.com/christiannpark',
-    icon: InstagramIcon,
-    color: 'from-pink-500/20 to-purple-500/20',
-    border: 'hover:border-pink-500/30',
-    iconColor: 'text-pink-400',
-    hoverBg: 'hover:bg-gradient-to-br hover:from-pink-500/[0.08] hover:to-purple-500/[0.04]',
-  },
-  {
-    name: 'YouTube',
-    handle: '@christiannpark',
-    href: 'https://www.youtube.com/@christiannpark',
-    icon: YouTubeIcon,
-    color: 'from-red-500/20 to-red-600/20',
-    border: 'hover:border-red-500/30',
-    iconColor: 'text-red-400',
-    hoverBg: 'hover:bg-gradient-to-br hover:from-red-500/[0.08] hover:to-red-600/[0.04]',
-  },
-  {
-    name: 'TikTok',
-    handle: '@jung.ho.p',
-    href: 'https://www.tiktok.com/@jung.ho.p',
-    icon: TikTokIcon,
-    color: 'from-cyan-500/20 to-pink-500/20',
-    border: 'hover:border-cyan-500/30',
-    iconColor: 'text-cyan-400',
-    hoverBg: 'hover:bg-gradient-to-br hover:from-cyan-500/[0.08] hover:to-pink-500/[0.04]',
-  },
-]
-
-// ── Time display ────────────────────────────────────────────────────────────
-
-function LiveClock() {
-  const [time, setTime] = useState('')
-  useEffect(() => {
-    const update = () => {
-      setTime(new Date().toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        timeZone: 'America/New_York',
-        hour12: true,
-      }))
-    }
-    update()
-    const interval = setInterval(update, 1000)
-    return () => clearInterval(interval)
-  }, [])
-  return <span className="font-mono text-xs text-neutral-600">{time} ET</span>
 }
 
 // ── Main page ───────────────────────────────────────────────────────────────
@@ -149,30 +99,27 @@ export default function LandingPage() {
           <span className="text-lg font-bold tracking-tight text-white">
             Christian Park
           </span>
-          <div className="flex items-center gap-5">
-            <LiveClock />
-            <div className="flex items-center gap-3">
-              <a href="https://www.instagram.com/christiannpark" target="_blank" rel="noopener noreferrer" className="text-neutral-500 hover:text-pink-400 transition-colors" aria-label="Instagram">
-                <InstagramIcon className="w-4 h-4" />
-              </a>
-              <a href="https://www.youtube.com/@christiannpark" target="_blank" rel="noopener noreferrer" className="text-neutral-500 hover:text-red-400 transition-colors" aria-label="YouTube">
-                <YouTubeIcon className="w-4 h-4" />
-              </a>
-              <a href="https://www.tiktok.com/@jung.ho.p" target="_blank" rel="noopener noreferrer" className="text-neutral-500 hover:text-cyan-400 transition-colors" aria-label="TikTok">
-                <TikTokIcon className="w-4 h-4" />
-              </a>
-            </div>
+          <div className="flex items-center gap-3">
+            <a href="https://www.instagram.com/christiannpark" target="_blank" rel="noopener noreferrer" className="text-neutral-500 hover:text-pink-400 transition-colors" aria-label="Instagram">
+              <InstagramIcon className="w-4 h-4" />
+            </a>
+            <a href="https://www.youtube.com/@christiannpark" target="_blank" rel="noopener noreferrer" className="text-neutral-500 hover:text-red-400 transition-colors" aria-label="YouTube">
+              <YouTubeIcon className="w-4 h-4" />
+            </a>
+            <a href="https://www.tiktok.com/@jung.ho.p" target="_blank" rel="noopener noreferrer" className="text-neutral-500 hover:text-cyan-400 transition-colors" aria-label="TikTok">
+              <TikTokIcon className="w-4 h-4" />
+            </a>
           </div>
         </div>
       </nav>
 
       {/* ── Hero ── */}
-      <section className="pt-32 sm:pt-40 pb-16 sm:pb-20 px-6">
+      <section className="pt-32 sm:pt-40 pb-20 sm:pb-28 px-6">
         <div className="max-w-5xl mx-auto text-center">
           <FadeIn>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-neutral-400 text-xs font-medium mb-8">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Trader &middot; Creator &middot; Builder
+              Algo trading &middot; Futures &middot; Content
             </div>
           </FadeIn>
 
@@ -186,9 +133,10 @@ export default function LandingPage() {
           </FadeIn>
 
           <FadeIn delay={200}>
-            <p className="text-lg sm:text-xl text-neutral-400 max-w-xl mx-auto mb-10 leading-relaxed">
-              Algo trading, futures markets, and building things on the internet.
-              Sharing what I learn along the way.
+            <p className="text-lg sm:text-xl text-neutral-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+              I build automated trading systems for MNQ futures and break down
+              exactly how they work &mdash; the code, the math, and the risk management.
+              No fluff, just the real stuff.
             </p>
           </FadeIn>
 
@@ -226,43 +174,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Social Cards ── */}
-      <section className="px-6 pb-16 sm:pb-20">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid sm:grid-cols-3 gap-4">
-            {socials.map((social, i) => (
-              <FadeIn key={social.name} delay={i * 100}>
-                <a
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`group flex items-center gap-4 p-5 rounded-2xl border border-white/[0.06] bg-white/[0.01] ${social.border} ${social.hoverBg} transition-all duration-300 hover:scale-[1.02]`}
-                >
-                  <div className={`w-12 h-12 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center ${social.iconColor} group-hover:scale-110 transition-transform`}>
-                    <social.icon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-white">{social.name}</div>
-                    <div className="text-xs text-neutral-500">{social.handle}</div>
-                  </div>
-                  <svg className="w-4 h-4 text-neutral-600 ml-auto group-hover:text-white group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </a>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── NQ TradingView Chart ── */}
-      <section className="px-6 pb-16 sm:pb-20">
+      {/* ── NQ Live Price ── */}
+      <section className="px-6 pb-20 sm:pb-28">
         <div className="max-w-5xl mx-auto">
           <FadeIn>
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">NQ / MNQ</h2>
-                <p className="text-sm text-neutral-500 mt-1">Micro E-Mini Nasdaq Futures &mdash; live chart</p>
+                <p className="text-sm text-neutral-500 mt-1">Micro E-Mini Nasdaq Futures</p>
               </div>
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -283,17 +202,17 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── What I Do ── */}
-      <section className="px-6 pb-16 sm:pb-20">
+      {/* ── What I cover ── */}
+      <section className="px-6 pb-20 sm:pb-28">
         <div className="max-w-5xl mx-auto">
           <FadeIn>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4">What I do</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4">What I cover</h2>
             <p className="text-neutral-500 max-w-lg mb-10">
-              Building at the intersection of markets, code, and content.
+              Everything I post is stuff I actually use. No theory-only content.
             </p>
           </FadeIn>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               {
                 icon: (
@@ -301,29 +220,9 @@ export default function LandingPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 ),
-                title: 'Algo Trading',
-                desc: 'Building automated trading systems for futures markets. Pine Script strategies, webhook execution, and real-time risk management.',
+                title: 'Automated Systems',
+                desc: 'TradingView signals to live execution via webhooks, with bracket orders and risk limits.',
                 accent: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
-              },
-              {
-                icon: (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                ),
-                title: 'Content Creation',
-                desc: 'Sharing my trading journey, strategies, and the real math behind it all on TikTok and YouTube. Making quant trading accessible.',
-                accent: 'text-pink-400 bg-pink-500/10 border-pink-500/20',
-              },
-              {
-                icon: (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                  </svg>
-                ),
-                title: 'Software Engineering',
-                desc: 'Full-stack development with Next.js, React, and APIs. Building tools and dashboards for trading and beyond.',
-                accent: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
               },
               {
                 icon: (
@@ -331,38 +230,38 @@ export default function LandingPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 ),
-                title: 'Market Research',
-                desc: 'Statistical analysis, Monte Carlo simulations, and backtesting frameworks. Data-driven edge quantification.',
+                title: 'Backtesting & Stats',
+                desc: 'Monte Carlo sims, walk-forward optimization, and how to know if your edge is real.',
                 accent: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
               },
               {
                 icon: (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 ),
-                title: 'Futures Trading',
-                desc: 'MNQ and MES micro futures. Prop firm evaluations, risk management, and systematic strategy development.',
-                accent: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+                title: 'Risk Management',
+                desc: 'ATR-based stops, daily loss caps, position sizing, and why capital preservation comes first.',
+                accent: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
               },
               {
                 icon: (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                   </svg>
                 ),
-                title: 'Noctiq',
-                desc: 'Something new I\'m building. Stay tuned.',
-                accent: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',
+                title: 'The Code',
+                desc: 'Pine Script, Python, Next.js. I show the actual code behind everything I build.',
+                accent: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
               },
             ].map((item, i) => (
               <FadeIn key={i} delay={i * 80}>
-                <div className="group h-full p-6 rounded-2xl border border-white/[0.06] bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/[0.12] transition-all duration-300">
+                <div className="group h-full p-5 rounded-2xl border border-white/[0.06] bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/[0.12] transition-all duration-300">
                   <div className={`w-10 h-10 rounded-xl ${item.accent} border flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                     {item.icon}
                   </div>
-                  <h3 className="text-white font-semibold mb-2">{item.title}</h3>
-                  <p className="text-sm text-neutral-500 leading-relaxed">{item.desc}</p>
+                  <h3 className="text-white font-semibold mb-1.5 text-sm">{item.title}</h3>
+                  <p className="text-xs text-neutral-500 leading-relaxed">{item.desc}</p>
                 </div>
               </FadeIn>
             ))}
@@ -370,98 +269,133 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Featured Content ── */}
-      <section className="px-6 pb-16 sm:pb-20">
+      {/* ── Content / Where to find me ── */}
+      <section className="px-6 pb-20 sm:pb-28">
         <div className="max-w-5xl mx-auto">
           <FadeIn>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4">Featured content</h2>
-            <p className="text-neutral-500 max-w-lg mb-10">
-              Videos, tutorials, and breakdowns across platforms.
-            </p>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-10">Where to find me</h2>
           </FadeIn>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              {
-                title: 'Algo Trading Tutorial',
-                platform: 'TikTok',
-                desc: 'Building an automated trading system from scratch',
-                views: '9.2K views',
-                href: 'https://www.tiktok.com/@jung.ho.p',
-                icon: TikTokIcon,
-                accent: 'text-cyan-400',
-              },
-              {
-                title: 'How I Became an Algo Trader',
-                platform: 'TikTok',
-                desc: 'The full journey and steps to get started',
-                views: '6.1K views',
-                href: 'https://www.tiktok.com/@jung.ho.p',
-                icon: TikTokIcon,
-                accent: 'text-cyan-400',
-              },
-              {
-                title: 'ATR-Based Stops Explained',
-                platform: 'TikTok',
-                desc: 'Why dynamic stops beat fixed stops every time',
-                views: '165 views',
-                href: 'https://www.tiktok.com/@jung.ho.p',
-                icon: TikTokIcon,
-                accent: 'text-cyan-400',
-              },
-            ].map((vid, i) => (
-              <FadeIn key={i} delay={i * 100}>
-                <a
-                  href={vid.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group block p-5 rounded-2xl border border-white/[0.06] bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/[0.12] transition-all duration-300"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <vid.icon className={`w-3.5 h-3.5 ${vid.accent}`} />
-                      <span className="text-[10px] text-neutral-500 font-medium uppercase tracking-wider">{vid.platform}</span>
-                    </div>
-                    <span className="text-[10px] text-neutral-600 font-mono">{vid.views}</span>
+          <div className="grid lg:grid-cols-3 gap-4">
+            {/* TikTok */}
+            <FadeIn delay={0}>
+              <a
+                href="https://www.tiktok.com/@jung.ho.p"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group block p-6 rounded-2xl border border-white/[0.06] bg-white/[0.01] hover:bg-white/[0.03] hover:border-cyan-500/20 transition-all duration-300"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
+                    <TikTokIcon className="w-5 h-5" />
                   </div>
-                  <h3 className="text-sm font-semibold text-white group-hover:text-indigo-400 transition-colors mb-1">{vid.title}</h3>
-                  <p className="text-xs text-neutral-600">{vid.desc}</p>
-                </a>
-              </FadeIn>
-            ))}
+                  <div>
+                    <div className="text-sm font-semibold text-white">TikTok</div>
+                    <div className="text-xs text-neutral-500">@jung.ho.p</div>
+                  </div>
+                  <ArrowIcon className="w-4 h-4 text-neutral-600 ml-auto group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
+                </div>
+                <p className="text-xs text-neutral-500 leading-relaxed">
+                  Short-form breakdowns of algo trading, backtesting frameworks, and how I built my automated system from scratch.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {['Algo Trading Tutorial', 'ATR-Based Stops', 'My Trading Journey'].map((tag) => (
+                    <span key={tag} className="text-[10px] px-2 py-1 rounded-full bg-white/[0.04] text-neutral-500 border border-white/[0.06]">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </a>
+            </FadeIn>
+
+            {/* YouTube */}
+            <FadeIn delay={100}>
+              <a
+                href="https://www.youtube.com/@christiannpark"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group block p-6 rounded-2xl border border-white/[0.06] bg-white/[0.01] hover:bg-white/[0.03] hover:border-red-500/20 transition-all duration-300"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform">
+                    <YouTubeIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-white">YouTube</div>
+                    <div className="text-xs text-neutral-500">@christiannpark</div>
+                  </div>
+                  <ArrowIcon className="w-4 h-4 text-neutral-600 ml-auto group-hover:text-red-400 group-hover:translate-x-1 transition-all" />
+                </div>
+                <p className="text-xs text-neutral-500 leading-relaxed">
+                  Longer deep dives, full strategy walkthroughs, and behind-the-scenes of building trading infrastructure.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {['Deep Dives', 'Strategy Builds', 'System Design'].map((tag) => (
+                    <span key={tag} className="text-[10px] px-2 py-1 rounded-full bg-white/[0.04] text-neutral-500 border border-white/[0.06]">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </a>
+            </FadeIn>
+
+            {/* Instagram */}
+            <FadeIn delay={200}>
+              <a
+                href="https://www.instagram.com/christiannpark"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group block p-6 rounded-2xl border border-white/[0.06] bg-white/[0.01] hover:bg-white/[0.03] hover:border-pink-500/20 transition-all duration-300"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400 group-hover:scale-110 transition-transform">
+                    <InstagramIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-white">Instagram</div>
+                    <div className="text-xs text-neutral-500">@christiannpark</div>
+                  </div>
+                  <ArrowIcon className="w-4 h-4 text-neutral-600 ml-auto group-hover:text-pink-400 group-hover:translate-x-1 transition-all" />
+                </div>
+                <p className="text-xs text-neutral-500 leading-relaxed">
+                  Day-to-day updates, quick takes, and a look at life outside of trading.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {['Updates', 'Behind the Scenes', 'Life'].map((tag) => (
+                    <span key={tag} className="text-[10px] px-2 py-1 rounded-full bg-white/[0.04] text-neutral-500 border border-white/[0.06]">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </a>
+            </FadeIn>
           </div>
         </div>
       </section>
 
-      {/* ── Connect CTA ── */}
-      <section className="px-6 pb-20 sm:pb-24">
+      {/* ── CTA ── */}
+      <section className="px-6 pb-20 sm:pb-28">
         <div className="max-w-5xl mx-auto">
           <FadeIn>
             <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-indigo-500/[0.06] via-purple-500/[0.03] to-transparent p-10 sm:p-14 text-center">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium mb-6">
+                Coming soon
+              </div>
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4">
-                Let&apos;s connect
+                Noctiq
               </h2>
               <p className="text-neutral-400 max-w-md mx-auto mb-8">
-                Follow along as I build, trade, and share everything I learn about markets and technology.
+                Something new I&apos;m building. Follow me on socials to be the first to know when it launches.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-3">
-                <a
-                  href="https://www.instagram.com/christiannpark"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-neutral-200 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  <InstagramIcon className="w-4 h-4" />
-                  Instagram
-                </a>
                 <a
                   href="https://www.youtube.com/@christiannpark"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 text-sm text-neutral-300 hover:border-white/25 hover:text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-neutral-200 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <YouTubeIcon className="w-4 h-4" />
-                  YouTube
+                  Subscribe on YouTube
                 </a>
                 <a
                   href="https://www.tiktok.com/@jung.ho.p"
@@ -470,7 +404,7 @@ export default function LandingPage() {
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 text-sm text-neutral-300 hover:border-white/25 hover:text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <TikTokIcon className="w-4 h-4" />
-                  TikTok
+                  Follow on TikTok
                 </a>
               </div>
             </div>
@@ -480,24 +414,31 @@ export default function LandingPage() {
 
       {/* ── Footer ── */}
       <footer className="border-t border-white/5 py-10 px-6">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="text-sm font-bold text-white">
-            Christian Park
-          </span>
-          <div className="flex items-center gap-5">
-            <a href="https://www.instagram.com/christiannpark" target="_blank" rel="noopener noreferrer" className="text-neutral-500 hover:text-pink-400 transition-colors" aria-label="Instagram">
-              <InstagramIcon className="w-4.5 h-4.5" />
-            </a>
-            <a href="https://www.youtube.com/@christiannpark" target="_blank" rel="noopener noreferrer" className="text-neutral-500 hover:text-red-400 transition-colors" aria-label="YouTube">
-              <YouTubeIcon className="w-4.5 h-4.5" />
-            </a>
-            <a href="https://www.tiktok.com/@jung.ho.p" target="_blank" rel="noopener noreferrer" className="text-neutral-500 hover:text-cyan-400 transition-colors" aria-label="TikTok">
-              <TikTokIcon className="w-4.5 h-4.5" />
-            </a>
-            <span className="text-neutral-700">|</span>
-            <Link href="/dashboard" className="text-sm text-neutral-500 hover:text-white transition-colors">
-              Dashboard
-            </Link>
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            <span className="text-sm font-bold text-white">
+              Christian Park
+            </span>
+            <div className="flex items-center gap-4">
+              <a href="https://www.instagram.com/christiannpark" target="_blank" rel="noopener noreferrer" className="text-neutral-500 hover:text-pink-400 transition-colors" aria-label="Instagram">
+                <InstagramIcon className="w-4 h-4" />
+              </a>
+              <a href="https://www.youtube.com/@christiannpark" target="_blank" rel="noopener noreferrer" className="text-neutral-500 hover:text-red-400 transition-colors" aria-label="YouTube">
+                <YouTubeIcon className="w-4 h-4" />
+              </a>
+              <a href="https://www.tiktok.com/@jung.ho.p" target="_blank" rel="noopener noreferrer" className="text-neutral-500 hover:text-cyan-400 transition-colors" aria-label="TikTok">
+                <TikTokIcon className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+          <div className="mt-8 pt-6 border-t border-white/[0.04]">
+            <p className="text-[11px] text-neutral-600 leading-relaxed max-w-3xl">
+              Not financial advice. All content is for educational and informational purposes only.
+              Trading futures involves substantial risk of loss and is not suitable for all investors.
+              Past performance, whether actual or indicated by historical tests of strategies, is not
+              indicative of future results. You should not assume that any information or strategy
+              presented will be profitable or equal past performance.
+            </p>
           </div>
         </div>
       </footer>
