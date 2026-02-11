@@ -86,6 +86,114 @@ function GridBackground() {
   )
 }
 
+// ── TradingView Chart ───────────────────────────────────────────────────────
+
+function TradingViewChart() {
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    if (!containerRef.current) return
+    containerRef.current.innerHTML = ''
+
+    const script = document.createElement('script')
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js'
+    script.type = 'text/javascript'
+    script.async = true
+    script.innerHTML = JSON.stringify({
+      autosize: true,
+      symbol: "PEPPERSTONE:NAS100",
+      interval: "5",
+      timezone: "America/New_York",
+      theme: "dark",
+      style: "1",
+      locale: "en",
+      backgroundColor: "rgba(10, 10, 10, 1)",
+      gridColor: "rgba(30, 30, 30, 1)",
+      hide_top_toolbar: false,
+      hide_legend: true,
+      allow_symbol_change: false,
+      save_image: false,
+      calendar: false,
+      hide_volume: true,
+      support_host: "https://www.tradingview.com"
+    })
+
+    containerRef.current.appendChild(script)
+  }, [])
+
+  return (
+    <div className="tradingview-widget-container" style={{ height: '500px', width: '100%' }}>
+      <div ref={containerRef} style={{ height: '100%', width: '100%' }} className="tradingview-widget-container__widget" />
+    </div>
+  )
+}
+
+// ── AI Market Brief ─────────────────────────────────────────────────────────
+
+function AIMarketBrief() {
+  const [brief, setBrief] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [generatedAt, setGeneratedAt] = useState(null)
+
+  useEffect(() => {
+    async function fetchBrief() {
+      try {
+        const res = await fetch('/api/market/brief')
+        if (!res.ok) throw new Error('Failed to fetch')
+        const data = await res.json()
+        setBrief(data.brief)
+        setGeneratedAt(data.generatedAt)
+      } catch {
+        setBrief(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchBrief()
+  }, [])
+
+  const formatTime = (iso) => {
+    if (!iso) return ''
+    return new Date(iso).toLocaleTimeString('en-US', {
+      timeZone: 'America/New_York',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }) + ' ET'
+  }
+
+  return (
+    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.01] p-6 sm:p-8">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-white">AI Market Brief</h3>
+            {generatedAt && (
+              <p className="text-[10px] text-neutral-600">Updated {formatTime(generatedAt)}</p>
+            )}
+          </div>
+        </div>
+      </div>
+      {loading ? (
+        <div className="space-y-2.5">
+          <div className="h-3 bg-white/[0.04] rounded-full w-full animate-pulse" />
+          <div className="h-3 bg-white/[0.04] rounded-full w-4/5 animate-pulse" />
+          <div className="h-3 bg-white/[0.04] rounded-full w-3/5 animate-pulse" />
+        </div>
+      ) : brief ? (
+        <div className="text-sm text-neutral-400 leading-relaxed whitespace-pre-line">{brief}</div>
+      ) : (
+        <p className="text-sm text-neutral-600 italic">Market brief currently unavailable.</p>
+      )}
+    </div>
+  )
+}
+
 // ── Main page ───────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
@@ -134,7 +242,7 @@ export default function LandingPage() {
 
           <FadeIn delay={200}>
             <p className="text-lg sm:text-xl text-neutral-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-              I build automated trading systems for MNQ futures and break down
+              I build automated trading systems for Nasdaq futures and break down
               exactly how they work &mdash; the code, the math, and the risk management.
               No fluff, just the real stuff.
             </p>
@@ -174,14 +282,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── NQ Live Price ── */}
+      {/* ── Nasdaq Futures Live Price ── */}
       <section className="px-6 pb-20 sm:pb-28">
         <div className="max-w-5xl mx-auto">
           <FadeIn>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">NQ / MNQ</h2>
-                <p className="text-sm text-neutral-500 mt-1">Micro E-Mini Nasdaq Futures</p>
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Nasdaq Futures</h2>
+                <p className="text-sm text-neutral-500 mt-1">NAS100 &mdash; live chart</p>
               </div>
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -191,13 +299,17 @@ export default function LandingPage() {
           </FadeIn>
           <FadeIn delay={100}>
             <div className="rounded-2xl border border-white/[0.06] overflow-hidden bg-[#111113]">
-              <iframe
-                src="https://www.tradingview.com/widgetembed/?symbol=CME_MINI%3ANQ1!&interval=5&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0a0a0a&studies=[]&theme=dark&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=[]&disabled_features=[]&locale=en&utm_source=localhost"
-                style={{ width: '100%', height: '500px', border: 'none' }}
-                allowFullScreen
-                title="NQ Futures Chart"
-              />
+              <TradingViewChart />
             </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── AI Market Brief ── */}
+      <section className="px-6 pb-20 sm:pb-28">
+        <div className="max-w-5xl mx-auto">
+          <FadeIn>
+            <AIMarketBrief />
           </FadeIn>
         </div>
       </section>
