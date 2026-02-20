@@ -308,6 +308,7 @@ export default function LandingPage() {
             <button onClick={() => scrollTo('expertise')} className="text-sm text-neutral-400 hover:text-white transition-colors">Expertise</button>
             <button onClick={() => scrollTo('system')} className="text-sm text-neutral-400 hover:text-white transition-colors">System</button>
             <button onClick={() => scrollTo('resources')} className="text-sm text-neutral-400 hover:text-white transition-colors">Resources</button>
+            <button onClick={() => scrollTo('prop-firms')} className="text-sm text-neutral-400 hover:text-white transition-colors">Prop Firms</button>
             <Link
               href="/dashboard"
               className="text-sm px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition-colors font-medium"
@@ -337,6 +338,7 @@ export default function LandingPage() {
             <button onClick={() => scrollTo('expertise')} className="block text-sm text-neutral-400 hover:text-white transition-colors w-full text-left">Expertise</button>
             <button onClick={() => scrollTo('system')} className="block text-sm text-neutral-400 hover:text-white transition-colors w-full text-left">System</button>
             <button onClick={() => scrollTo('resources')} className="block text-sm text-neutral-400 hover:text-white transition-colors w-full text-left">Resources</button>
+            <button onClick={() => scrollTo('prop-firms')} className="block text-sm text-neutral-400 hover:text-white transition-colors w-full text-left">Prop Firms</button>
             <Link href="/dashboard" className="block text-sm text-indigo-400 font-medium">Dashboard</Link>
           </div>
         )}
@@ -412,7 +414,7 @@ export default function LandingPage() {
       <section className="border-y border-white/5 bg-white/[0.01] overflow-hidden">
         <FadeIn>
           <div className="max-w-6xl mx-auto px-6 py-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs text-neutral-500 font-mono">
-            {['Python', 'Pine Script', 'Next.js', 'TradingView', 'Monte Carlo', 'TopStepX API', 'Supabase', 'Vercel'].map((t) => (
+            {['Python', 'Pine Script', 'Next.js', 'TradingView', 'Monte Carlo', 'TopStepX API', 'Alpha Futures', 'Supabase', 'Vercel'].map((t) => (
               <span key={t} className="flex items-center gap-1.5 hover:text-neutral-300 transition-colors">
                 <span className="w-1 h-1 rounded-full bg-indigo-500/50" />
                 {t}
@@ -679,6 +681,67 @@ export default function LandingPage() {
                     <div className="text-xs text-neutral-600 mt-1">{vid.desc}</div>
                   </a>
                 ))}
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── Prop Firms ── */}
+      <section id="prop-firms" className="py-20 sm:py-24 px-6 border-t border-white/5">
+        <div className="max-w-6xl mx-auto">
+          <FadeIn>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Get funded</h2>
+            <p className="text-neutral-500 max-w-lg mb-12">
+              Prop firm accounts let you trade significant capital without risking your own. I trade on Alpha Futures &mdash; here&apos;s how to get started.
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={100}>
+            <div className="rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/[0.06] via-purple-500/[0.03] to-transparent p-8 sm:p-10">
+              <div className="flex flex-col lg:flex-row lg:items-center gap-8">
+
+                {/* Info */}
+                <div className="flex-1">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium mb-4">
+                    Recommended prop firm
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-3">Alpha Futures</h3>
+                  <p className="text-neutral-400 leading-relaxed mb-6 max-w-xl">
+                    The prop firm I use for live algo trading. Competitive evaluations, fast payouts, and rules that are compatible with systematic futures strategies.
+                  </p>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    {[
+                      { label: 'Market', value: 'Futures' },
+                      { label: 'Instruments', value: 'MNQ, MES & more' },
+                      { label: 'Affiliate code', value: 'Christian018978' },
+                    ].map((item) => (
+                      <div key={item.label} className="p-3 rounded-lg border border-white/[0.06] bg-white/[0.02]">
+                        <div className="text-[10px] text-neutral-600 uppercase tracking-wide mb-1">{item.label}</div>
+                        <div className="text-sm text-white font-medium font-mono">{item.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <div className="lg:shrink-0 flex flex-col items-start lg:items-center gap-3">
+                  <a
+                    href="https://app.alpha-futures.com/signup/Christian018978/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition-colors font-semibold text-sm text-white"
+                  >
+                    Sign up for Alpha Futures
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                  <p className="text-xs text-neutral-600">
+                    Affiliate code: <span className="text-indigo-400 font-mono">Christian018978</span>
+                  </p>
+                </div>
+
               </div>
             </div>
           </FadeIn>
