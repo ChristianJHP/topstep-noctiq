@@ -308,6 +308,15 @@ export default function LandingPage() {
             <button onClick={() => scrollTo('expertise')} className="text-sm text-neutral-400 hover:text-white transition-colors">Expertise</button>
             <button onClick={() => scrollTo('system')} className="text-sm text-neutral-400 hover:text-white transition-colors">System</button>
             <button onClick={() => scrollTo('resources')} className="text-sm text-neutral-400 hover:text-white transition-colors">Resources</button>
+            <a
+              href="https://eigenstate.app?ref=JHP"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm px-4 py-1.5 rounded-lg border border-indigo-500/40 text-indigo-400 hover:bg-indigo-500/10 hover:border-indigo-500/60 transition-all font-medium flex items-center gap-1.5"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+              Eigenstate
+            </a>
             <Link
               href="/dashboard"
               className="text-sm px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition-colors font-medium"
@@ -337,6 +346,14 @@ export default function LandingPage() {
             <button onClick={() => scrollTo('expertise')} className="block text-sm text-neutral-400 hover:text-white transition-colors w-full text-left">Expertise</button>
             <button onClick={() => scrollTo('system')} className="block text-sm text-neutral-400 hover:text-white transition-colors w-full text-left">System</button>
             <button onClick={() => scrollTo('resources')} className="block text-sm text-neutral-400 hover:text-white transition-colors w-full text-left">Resources</button>
+            <a
+              href="https://eigenstate.app?ref=JHP"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-sm text-indigo-400 font-medium"
+            >
+              Eigenstate <span className="text-neutral-600 text-xs font-normal">(code JHP)</span>
+            </a>
             <Link href="/dashboard" className="block text-sm text-indigo-400 font-medium">Dashboard</Link>
           </div>
         )}
@@ -405,6 +422,66 @@ export default function LandingPage() {
               </div>
             </FadeIn>
           </div>
+        </div>
+      </section>
+
+      {/* ── Eigenstate referral banner ── */}
+      <section className="px-6 pb-12">
+        <div className="max-w-6xl mx-auto">
+          <FadeIn delay={400}>
+            <a
+              href="https://eigenstate.app?ref=JHP"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group block relative rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/[0.08] via-purple-500/[0.05] to-transparent p-6 sm:p-8 hover:border-indigo-500/50 hover:from-indigo-500/[0.12] transition-all duration-300 overflow-hidden"
+            >
+              {/* Background glow */}
+              <div className="absolute top-0 right-0 w-72 h-72 rounded-full bg-indigo-500/[0.05] blur-[80px] pointer-events-none" />
+
+              <div className="relative flex flex-col sm:flex-row sm:items-center gap-6">
+                {/* Badge */}
+                <div className="shrink-0 flex items-center gap-2">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-semibold tracking-wide uppercase">
+                    Recommended
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                    <h3 className="text-white font-bold text-lg">Eigenstate</h3>
+                    <span className="text-xs text-neutral-500 font-mono">eigenstate.app</span>
+                  </div>
+                  <p className="text-sm text-neutral-400 leading-relaxed mb-3">
+                    The ML-powered quant algo platform built by <span className="text-white font-medium">Berkeley &amp; MIT quants</span>. Machine learning-driven strategies, institutional-grade backtesting, and systematic edge discovery &mdash; the same rigor I use in my own research.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                      <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                      </svg>
+                      <span className="text-xs font-bold text-emerald-400 tracking-widest">Use code JHP for a discount</span>
+                    </div>
+                    <span className="text-xs text-neutral-600">My referral code</span>
+                  </div>
+                </div>
+
+                {/* CTA arrow */}
+                <div className="shrink-0 self-center">
+                  <div className="w-9 h-9 rounded-lg border border-white/10 bg-white/[0.03] flex items-center justify-center group-hover:border-indigo-500/40 group-hover:bg-indigo-500/10 transition-all">
+                    <svg className="w-4 h-4 text-neutral-500 group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </FadeIn>
         </div>
       </section>
 
