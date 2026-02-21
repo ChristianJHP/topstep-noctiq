@@ -307,6 +307,7 @@ export default function LandingPage() {
             <button onClick={() => scrollTo('about')} className="text-sm text-neutral-400 hover:text-white transition-colors">About</button>
             <button onClick={() => scrollTo('expertise')} className="text-sm text-neutral-400 hover:text-white transition-colors">Expertise</button>
             <button onClick={() => scrollTo('system')} className="text-sm text-neutral-400 hover:text-white transition-colors">System</button>
+            <button onClick={() => scrollTo('eigenstate')} className="text-sm text-neutral-400 hover:text-white transition-colors">Eigenstate</button>
             <button onClick={() => scrollTo('resources')} className="text-sm text-neutral-400 hover:text-white transition-colors">Resources</button>
             <Link
               href="/dashboard"
@@ -336,6 +337,7 @@ export default function LandingPage() {
             <button onClick={() => scrollTo('about')} className="block text-sm text-neutral-400 hover:text-white transition-colors w-full text-left">About</button>
             <button onClick={() => scrollTo('expertise')} className="block text-sm text-neutral-400 hover:text-white transition-colors w-full text-left">Expertise</button>
             <button onClick={() => scrollTo('system')} className="block text-sm text-neutral-400 hover:text-white transition-colors w-full text-left">System</button>
+            <button onClick={() => scrollTo('eigenstate')} className="block text-sm text-neutral-400 hover:text-white transition-colors w-full text-left">Eigenstate</button>
             <button onClick={() => scrollTo('resources')} className="block text-sm text-neutral-400 hover:text-white transition-colors w-full text-left">Resources</button>
             <Link href="/dashboard" className="block text-sm text-indigo-400 font-medium">Dashboard</Link>
           </div>
@@ -567,6 +569,68 @@ export default function LandingPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </Link>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── Eigenstate ── */}
+      <section id="eigenstate" className="py-20 sm:py-24 px-6 border-t border-white/5">
+        <div className="max-w-6xl mx-auto">
+          <FadeIn>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-medium mb-6">
+              My other project
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Eigenstate</h2>
+            <p className="text-neutral-400 max-w-2xl mb-10 leading-relaxed">
+              Eigenstate is my other project &mdash; a platform built to help traders find and maintain
+              their intrinsic edge. It&apos;s the analytical layer that sits on top of your trading:
+              track your performance, surface your real statistical edges, and cut through the noise
+              of day-to-day P&amp;L to understand what&apos;s actually working in your system.
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={100}>
+            <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/[0.06] via-indigo-500/[0.03] to-transparent p-8 sm:p-10">
+              <div className="grid sm:grid-cols-3 gap-8 items-center">
+                <div className="sm:col-span-2 space-y-4">
+                  <div className="flex flex-wrap gap-3">
+                    {['Performance Analytics', 'Edge Quantification', 'Trade Journal'].map((tag) => (
+                      <span key={tag} className="text-[10px] px-2.5 py-1 rounded-full font-medium border text-purple-400 bg-purple-500/10 border-purple-500/20">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-sm text-neutral-400 leading-relaxed">
+                    I built Eigenstate alongside noctiq because raw trade data alone isn&apos;t enough.
+                    You need to know <span className="text-white">which setups actually have edge</span>,
+                    which market conditions favor your system, and where you&apos;re bleeding performance.
+                    Eigenstate answers those questions.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-4 pt-2">
+                    <a
+                      href="https://eigenstate.app/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 transition-colors font-semibold text-sm text-white"
+                    >
+                      Visit Eigenstate
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-purple-500/20 bg-purple-500/[0.05] p-6 text-center space-y-1">
+                  <div className="text-xs text-neutral-500 uppercase tracking-widest mb-3">Discount code</div>
+                  <div className="font-mono text-2xl font-bold text-white tracking-widest bg-purple-500/10 rounded-lg py-3 px-4 border border-purple-500/20">
+                    JHP
+                  </div>
+                  <div className="text-purple-400 font-semibold text-sm pt-2">20% off</div>
+                  <div className="text-xs text-neutral-600">Use at checkout on eigenstate.app</div>
+                </div>
+              </div>
             </div>
           </FadeIn>
         </div>
