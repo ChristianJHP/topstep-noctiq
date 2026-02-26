@@ -364,7 +364,7 @@ export default function LandingPage() {
               </p>
               <div className="flex flex-wrap items-center gap-3">
                 <a
-                  href="https://www.tiktok.com/@jung.ho.p"
+                  href="https://www.tiktok.com/@junho.p"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white text-black font-semibold text-sm hover:bg-neutral-200 transition-colors"
@@ -372,7 +372,7 @@ export default function LandingPage() {
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.72a8.19 8.19 0 004.76 1.52V6.79a4.83 4.83 0 01-1-.1z"/>
                   </svg>
-                  @jung.ho.p
+                  @junho.p
                 </a>
                 <button
                   onClick={() => scrollTo('resources')}
@@ -451,7 +451,7 @@ export default function LandingPage() {
                   { label: 'Focus', value: 'MNQ / MES Futures' },
                   { label: 'Approach', value: 'Systematic & Automated' },
                   { label: 'Platform', value: 'TradingView + Custom API' },
-                  { label: 'Content', value: '@jung.ho.p on TikTok' },
+                  { label: 'Content', value: '@junho.p on TikTok' },
                 ].map((item) => (
                   <div key={item.label} className="flex justify-between items-center text-sm border-b border-white/[0.04] pb-3 last:border-0 last:pb-0">
                     <span className="text-neutral-500">{item.label}</span>
@@ -645,7 +645,7 @@ export default function LandingPage() {
                   <p className="text-sm text-neutral-500">Deep dives on TikTok covering these topics and more</p>
                 </div>
                 <a
-                  href="https://www.tiktok.com/@jung.ho.p"
+                  href="https://www.tiktok.com/@junho.p"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black font-semibold text-sm hover:bg-neutral-200 transition-colors shrink-0"
@@ -653,7 +653,7 @@ export default function LandingPage() {
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.72a8.19 8.19 0 004.76 1.52V6.79a4.83 4.83 0 01-1-.1z"/>
                   </svg>
-                  Follow @jung.ho.p
+                  Follow @junho.p
                 </a>
               </div>
               <div className="grid sm:grid-cols-3 gap-3">
@@ -664,7 +664,7 @@ export default function LandingPage() {
                 ].map((vid) => (
                   <a
                     key={vid.title}
-                    href="https://www.tiktok.com/@jung.ho.p"
+                    href="https://www.tiktok.com/@junho.p"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="group p-4 rounded-lg border border-white/[0.04] hover:border-white/[0.1] hover:bg-white/[0.02] transition-all"
@@ -698,7 +698,7 @@ export default function LandingPage() {
               </p>
               <div className="flex flex-wrap items-center justify-center gap-4">
                 <a
-                  href="https://www.tiktok.com/@jung.ho.p"
+                  href="https://www.tiktok.com/@junho.p"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white text-black font-semibold text-sm hover:bg-neutral-200 transition-colors"
@@ -735,7 +735,7 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-6">
             <a
-              href="https://www.tiktok.com/@jung.ho.p"
+              href="https://www.tiktok.com/@junho.p"
               target="_blank"
               rel="noopener noreferrer"
               className="text-neutral-500 hover:text-white transition-colors"
