@@ -636,6 +636,40 @@ export default function LandingPage() {
             ))}
           </div>
 
+          {/* Tools I use */}
+          <FadeIn>
+            <h3 className="text-lg font-semibold text-white mb-4">Tools I use</h3>
+            <div className="grid sm:grid-cols-2 gap-4 mb-8">
+              <a
+                href="https://www.tradingview.com/?aff_id=164318&aff_sub=JHP"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group p-6 rounded-xl border border-white/[0.06] bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/[0.12] transition-all duration-300 flex items-start gap-4"
+              >
+                <div className="w-10 h-10 rounded-lg bg-[#131722] border border-white/10 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5 text-[#2962ff]" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M4.5 3h15A1.5 1.5 0 0121 4.5v15a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 19.5v-15A1.5 1.5 0 014.5 3zm0 1.5v15h15v-15h-15zM7 16l3-4 2 2.5 2.5-3.5L18 16H7z"/>
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-white font-semibold text-sm group-hover:text-indigo-400 transition-colors">TradingView</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium border text-blue-400 bg-blue-500/10 border-blue-500/20">Charting</span>
+                  </div>
+                  <p className="text-xs text-neutral-500 leading-relaxed">
+                    The charting platform I use for strategy development and Pine Script backtesting. Industry-standard for writing and testing algo signals before connecting them to a live system.
+                  </p>
+                  <span className="inline-flex items-center gap-1 mt-2 text-[11px] text-indigo-400 group-hover:text-indigo-300 transition-colors">
+                    Try TradingView
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </span>
+                </div>
+              </a>
+            </div>
+          </FadeIn>
+
           {/* Video content */}
           <FadeIn>
             <div className="rounded-xl border border-white/[0.06] bg-white/[0.01] p-6 sm:p-8">
