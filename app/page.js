@@ -667,6 +667,33 @@ export default function LandingPage() {
                   </span>
                 </div>
               </a>
+              <a
+                href="https://refer.pdf.ai/christian-park"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group p-6 rounded-xl border border-white/[0.06] bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/[0.12] transition-all duration-300 flex items-start gap-4"
+              >
+                <div className="w-10 h-10 rounded-lg bg-[#1a0808] border border-white/10 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-white font-semibold text-sm group-hover:text-indigo-400 transition-colors">PDF.ai</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium border text-red-400 bg-red-500/10 border-red-500/20">AI Tool</span>
+                  </div>
+                  <p className="text-xs text-neutral-500 leading-relaxed">
+                    Chat with any PDF — research reports, prop firm rulebooks, earnings transcripts. Ask questions and get instant answers without reading the whole document.
+                  </p>
+                  <span className="inline-flex items-center gap-1 mt-2 text-[11px] text-indigo-400 group-hover:text-indigo-300 transition-colors">
+                    Try PDF.ai
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </span>
+                </div>
+              </a>
             </div>
           </FadeIn>
 
