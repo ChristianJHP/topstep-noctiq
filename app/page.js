@@ -116,7 +116,7 @@ const SOCIALS = [
   },
   {
     name: 'YouTube',
-    handle: 'Christian',
+    handle: 'Christian - YouTube',
     url: 'https://www.youtube.com/@christiannpark',
     icon: (
       <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
