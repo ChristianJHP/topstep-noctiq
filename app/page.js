@@ -116,8 +116,8 @@ const SOCIALS = [
   },
   {
     name: 'YouTube',
-    handle: 'Christian - YouTube',
-    url: 'https://www.youtube.com/@christiannpark',
+    handle: '@JHPTrades',
+    url: 'https://www.youtube.com/@JHPTrades',
     icon: (
       <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
         <path d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 00.5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 002.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 002.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81zM9.75 15.52V8.48L15.5 12l-5.75 3.52z"/>
