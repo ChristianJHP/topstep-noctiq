@@ -67,14 +67,30 @@ const SOCIALS = [
       </svg>
     ),
   },
+  {
+    name: 'Email',
+    handle: 'christian.park2002@gmail.com',
+    url: 'mailto:christian.park2002@gmail.com',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    ),
+  },
 ]
 
-const REFERRALS = [
+const TOOLS = [
   {
     name: 'Alpha Futures',
     desc: 'Prop firm I trade with — use my link to sign up',
     url: 'https://app.alpha-futures.com/signup/Christian018978/',
     tag: 'Prop Firm',
+  },
+  {
+    name: 'TradingView',
+    desc: 'Charting platform I use every day',
+    url: 'https://www.tradingview.com/?aff_id=164318&aff_sub=jhp',
+    tag: 'Charting',
   },
   {
     name: 'Eigenstate',
@@ -162,13 +178,13 @@ export default function Page() {
           </div>
         </FadeIn>
 
-        {/* referrals */}
+        {/* tools */}
         <FadeIn delay={200}>
           <h2 className="text-xs font-semibold uppercase tracking-widest text-neutral-600 mb-4">
-            Referrals
+            Tools I Use
           </h2>
           <div className="space-y-3">
-            {REFERRALS.map((r, i) => (
+            {TOOLS.map((r, i) => (
               <FadeIn key={r.name} delay={220 + i * 60}>
                 <a
                   href={r.url}
