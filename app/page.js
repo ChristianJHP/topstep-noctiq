@@ -1,31 +1,108 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
 
+/* ── scramble hook ── */
+const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%'
+function useScramble(text, { speed = 28, delay = 120 } = {}) {
+  const [out, setOut] = useState(() =>
+    text.split('').map(() => GLYPHS[Math.floor(Math.random() * GLYPHS.length)]).join('')
+  )
+  useEffect(() => {
+    let iter = 0
+    let iv
+    const t = setTimeout(() => {
+      iv = setInterval(() => {
+        setOut(
+          text.split('').map((ch, i) =>
+            i < iter ? ch : GLYPHS[Math.floor(Math.random() * GLYPHS.length)]
+          ).join('')
+        )
+        iter += 0.45
+        if (iter > text.length) clearInterval(iv)
+      }, speed)
+    }, delay)
+    return () => { clearTimeout(t); clearInterval(iv) }
+  }, [text, speed, delay])
+  return out
+}
+
+/* ── spring fade-in ── */
 function FadeIn({ children, delay = 0, className = '' }) {
   const ref = useRef(null)
-  const [visible, setVisible] = useState(false)
+  const [on, setOn] = useState(false)
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) { setVisible(true); obs.disconnect() }
-    }, { threshold: 0.1 })
-    obs.observe(el)
-    return () => obs.disconnect()
+    const ob = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setOn(true); ob.disconnect() }
+    }, { threshold: 0.05 })
+    ob.observe(el)
+    return () => ob.disconnect()
   }, [])
   return (
     <div
       ref={ref}
-      className={`transition-all duration-500 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'} ${className}`}
-      style={{ transitionDelay: `${delay}ms` }}
+      className={className}
+      style={{
+        opacity: on ? 1 : 0,
+        transform: on ? 'translateY(0px)' : 'translateY(22px)',
+        transition: `opacity 0.65s cubic-bezier(.16,1,.3,1) ${delay}ms, transform 0.65s cubic-bezier(.16,1,.3,1) ${delay}ms`,
+      }}
     >
       {children}
     </div>
   )
 }
 
+/* ── 3-D tilt card ── */
+function TiltCard({ children, className = '' }) {
+  const ref = useRef(null)
+  const raf = useRef(null)
+
+  const onMove = useCallback((e) => {
+    if (raf.current) cancelAnimationFrame(raf.current)
+    raf.current = requestAnimationFrame(() => {
+      const el = ref.current
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      const x = (e.clientX - r.left) / r.width - 0.5
+      const y = (e.clientY - r.top) / r.height - 0.5
+      el.style.transform = `perspective(700px) rotateX(${-y * 7}deg) rotateY(${x * 7}deg) scale(1.025)`
+    })
+  }, [])
+
+  const onLeave = useCallback(() => {
+    if (raf.current) cancelAnimationFrame(raf.current)
+    const el = ref.current
+    if (el) el.style.transform = 'perspective(700px) rotateX(0deg) rotateY(0deg) scale(1)'
+  }, [])
+
+  return (
+    <div
+      ref={ref}
+      className={className}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      style={{ transition: 'transform 0.35s cubic-bezier(.16,1,.3,1)', willChange: 'transform' }}
+    >
+      {children}
+    </div>
+  )
+}
+
+/* ── drifting blob ── */
+function Blob({ style }) {
+  return (
+    <div
+      className="fixed -z-10 rounded-full blur-[120px] pointer-events-none"
+      style={style}
+    />
+  )
+}
+
+/* ─────────────── data ─────────────── */
 const SOCIALS = [
   {
     name: 'TikTok',
@@ -67,16 +144,6 @@ const SOCIALS = [
       </svg>
     ),
   },
-  {
-    name: 'Email',
-    handle: 'christian.park2002@gmail.com',
-    url: 'mailto:christian.park2002@gmail.com',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-      </svg>
-    ),
-  },
 ]
 
 const TOOLS = [
@@ -106,105 +173,218 @@ const TOOLS = [
   },
 ]
 
+/* ─────────────── page ─────────────── */
 export default function Page() {
+  const name = useScramble('Christian', { speed: 26, delay: 80 })
+
   return (
-    <div className="min-h-screen bg-[#080810] text-white">
-      {/* subtle grid */}
+    <div className="min-h-screen bg-[#06060e] text-white overflow-x-hidden">
+
+      {/* CSS for shine sweep & grid */}
+      <style>{`
+        @keyframes drift1 {
+          0%,100% { transform: translate(0,0) scale(1); }
+          50%      { transform: translate(60px,-40px) scale(1.08); }
+        }
+        @keyframes drift2 {
+          0%,100% { transform: translate(0,0) scale(1); }
+          50%      { transform: translate(-50px,50px) scale(1.05); }
+        }
+        @keyframes drawline {
+          from { transform: scaleX(0); }
+          to   { transform: scaleX(1); }
+        }
+        .blob1 { animation: drift1 12s ease-in-out infinite; }
+        .blob2 { animation: drift2 16s ease-in-out infinite; }
+
+        .shine {
+          position: relative;
+          overflow: hidden;
+        }
+        .shine::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(105deg, transparent 40%, rgba(59,130,246,0.08) 50%, transparent 60%);
+          transform: translateX(-100%);
+          transition: transform 0s;
+        }
+        .shine:hover::after {
+          transform: translateX(100%);
+          transition: transform 0.55s ease;
+        }
+
+        .section-line {
+          display: block;
+          height: 1px;
+          background: #3b82f6;
+          transform-origin: left;
+          animation: drawline 0.6s cubic-bezier(.16,1,.3,1) both;
+        }
+      `}</style>
+
+      {/* background blobs */}
       <div
-        className="fixed inset-0 -z-10 opacity-[0.025]"
+        className="blob1 fixed -z-10 rounded-full pointer-events-none"
         style={{
-          backgroundImage: `linear-gradient(rgba(59,130,246,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.6) 1px, transparent 1px)`,
-          backgroundSize: '48px 48px',
+          width: 560, height: 400,
+          top: '-80px', left: '50%', marginLeft: '-280px',
+          background: 'radial-gradient(ellipse, rgba(37,99,235,0.09) 0%, transparent 70%)',
+          filter: 'blur(80px)',
         }}
       />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] -z-10 rounded-full bg-blue-600/[0.06] blur-[100px]" />
+      <div
+        className="blob2 fixed -z-10 rounded-full pointer-events-none"
+        style={{
+          width: 400, height: 320,
+          bottom: '10%', right: '-80px',
+          background: 'radial-gradient(ellipse, rgba(59,130,246,0.06) 0%, transparent 70%)',
+          filter: 'blur(100px)',
+        }}
+      />
+
+      {/* grid */}
+      <div
+        className="fixed inset-0 -z-10"
+        style={{
+          backgroundImage: `linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px)`,
+          backgroundSize: '52px 52px',
+        }}
+      />
 
       {/* nav */}
       <nav className="px-6 py-5 flex items-center justify-between max-w-3xl mx-auto">
-        <span className="font-bold tracking-tight text-base">
+        <span className="font-bold tracking-tight text-base select-none">
           noctiq<span className="text-blue-500">.ai</span>
         </span>
         <Link
           href="/dashboard"
-          className="text-sm text-neutral-500 hover:text-white transition-colors"
+          className="text-sm text-neutral-500 hover:text-white transition-colors duration-200"
         >
           dashboard →
         </Link>
       </nav>
 
-      <main className="max-w-3xl mx-auto px-6 pb-20">
+      <main className="max-w-3xl mx-auto px-6 pb-24">
 
         {/* hero */}
-        <FadeIn className="mt-12 mb-14">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-            <span className="text-sm text-neutral-500">algo trader · builder</span>
+        <FadeIn className="mt-14 mb-16">
+          <div className="flex items-center gap-2.5 mb-5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+            </span>
+            <span className="text-sm text-neutral-500 tracking-wide">algo trader · builder</span>
           </div>
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-3">
-            Christian
+          <h1
+            className="text-5xl sm:text-6xl font-black tracking-tight mb-4 font-mono"
+            style={{ letterSpacing: '-0.03em' }}
+          >
+            {name}
           </h1>
-          <p className="text-neutral-400 text-lg max-w-md">
-            I build automated trading systems and share everything along the way. Find me everywhere below.
+          <p className="text-neutral-400 text-lg max-w-sm leading-relaxed">
+            Automated trading systems. Sharing everything.
           </p>
         </FadeIn>
 
-        {/* socials */}
-        <FadeIn delay={80}>
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-neutral-600 mb-4">
-            Socials
-          </h2>
-          <div className="grid grid-cols-2 gap-3 mb-12">
+        {/* ── socials ── */}
+        <FadeIn delay={100} className="mb-14">
+          <div className="flex items-center gap-3 mb-5">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-600">Socials</span>
+            <span className="section-line flex-1" />
+          </div>
+
+          {/* 2×2 grid */}
+          <div className="grid grid-cols-2 gap-2.5 mb-2.5">
             {SOCIALS.map((s, i) => (
-              <FadeIn key={s.name} delay={80 + i * 50}>
-                <a
-                  href={s.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-3 p-4 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:bg-blue-500/[0.08] hover:border-blue-500/30 transition-all duration-200"
-                >
-                  <span className="text-neutral-500 group-hover:text-blue-400 transition-colors shrink-0">
-                    {s.icon}
-                  </span>
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium text-white">{s.name}</div>
-                    <div className="text-xs text-neutral-500 truncate">{s.handle}</div>
-                  </div>
-                  <svg className="w-3.5 h-3.5 text-neutral-700 group-hover:text-blue-500 ml-auto shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
-                  </svg>
-                </a>
+              <FadeIn key={s.name} delay={120 + i * 55}>
+                <TiltCard>
+                  <a
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shine group flex items-center gap-3 p-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] hover:border-blue-500/40 hover:bg-blue-500/[0.06] transition-colors duration-200 cursor-pointer"
+                  >
+                    <span className="text-neutral-600 group-hover:text-blue-400 transition-colors duration-200 shrink-0">
+                      {s.icon}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-semibold text-white leading-none mb-1">{s.name}</div>
+                      <div className="text-[11px] text-neutral-600 truncate">{s.handle}</div>
+                    </div>
+                    <svg
+                      className="w-3 h-3 text-neutral-700 group-hover:text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0"
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
+                    </svg>
+                  </a>
+                </TiltCard>
               </FadeIn>
             ))}
           </div>
+
+          {/* email — full width */}
+          <FadeIn delay={360}>
+            <TiltCard>
+              <a
+                href="mailto:christian.park2002@gmail.com"
+                className="shine group flex items-center gap-3 p-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] hover:border-blue-500/40 hover:bg-blue-500/[0.06] transition-colors duration-200"
+              >
+                <span className="text-neutral-600 group-hover:text-blue-400 transition-colors duration-200 shrink-0">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-white leading-none mb-1">Email</div>
+                  <div className="text-[11px] text-neutral-600">christian.park2002@gmail.com</div>
+                </div>
+                <svg
+                  className="w-3 h-3 text-neutral-700 group-hover:text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0"
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
+                </svg>
+              </a>
+            </TiltCard>
+          </FadeIn>
         </FadeIn>
 
-        {/* tools */}
-        <FadeIn delay={200}>
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-neutral-600 mb-4">
-            Tools I Use
-          </h2>
-          <div className="space-y-3">
-            {TOOLS.map((r, i) => (
-              <FadeIn key={r.name} delay={220 + i * 60}>
-                <a
-                  href={r.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-4 p-4 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:bg-blue-500/[0.08] hover:border-blue-500/30 transition-all duration-200"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-sm font-medium text-white">{r.name}</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20 font-medium">
-                        {r.tag}
-                      </span>
+        {/* ── tools ── */}
+        <FadeIn delay={280}>
+          <div className="flex items-center gap-3 mb-5">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-600">Tools I Use</span>
+            <span className="section-line flex-1" />
+          </div>
+          <div className="space-y-2.5">
+            {TOOLS.map((t, i) => (
+              <FadeIn key={t.name} delay={300 + i * 60}>
+                <TiltCard>
+                  <a
+                    href={t.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shine group flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] hover:border-blue-500/40 hover:bg-blue-500/[0.06] transition-colors duration-200"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-semibold text-white">{t.name}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 tracking-wide uppercase">
+                          {t.tag}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-neutral-600 leading-relaxed">{t.desc}</p>
                     </div>
-                    <p className="text-xs text-neutral-500">{r.desc}</p>
-                  </div>
-                  <svg className="w-3.5 h-3.5 text-neutral-700 group-hover:text-blue-500 shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
-                  </svg>
-                </a>
+                    <svg
+                      className="w-3 h-3 text-neutral-700 group-hover:text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0"
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
+                    </svg>
+                  </a>
+                </TiltCard>
               </FadeIn>
             ))}
           </div>
@@ -212,10 +392,10 @@ export default function Page() {
 
       </main>
 
-      <footer className="border-t border-white/[0.05] py-6 px-6">
+      <footer className="border-t border-white/[0.04] py-6 px-6">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <span className="text-xs text-neutral-700">noctiq.ai</span>
-          <Link href="/dashboard" className="text-xs text-neutral-700 hover:text-white transition-colors">
+          <span className="text-xs text-neutral-800 font-mono">noctiq.ai</span>
+          <Link href="/dashboard" className="text-xs text-neutral-700 hover:text-white transition-colors duration-200">
             live dashboard
           </Link>
         </div>
