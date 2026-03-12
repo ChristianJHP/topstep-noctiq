@@ -166,12 +166,6 @@ const TOOLS = [
     tag: 'Trading Tools',
   },
   {
-    name: 'PDF.ai',
-    desc: 'Best AI PDF reader out there',
-    url: 'https://refer.pdf.ai/christian-park',
-    tag: 'AI Tool',
-  },
-  {
     name: 'TradeZella',
     desc: 'Trading journal I use to track and improve my performance',
     url: 'https://refer.tradezella.com/christian-park',
