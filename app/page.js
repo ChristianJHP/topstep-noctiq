@@ -171,6 +171,12 @@ const TOOLS = [
     url: 'https://refer.pdf.ai/christian-park',
     tag: 'AI Tool',
   },
+  {
+    name: 'TradeZella',
+    desc: 'Trading journal I use to track and improve my performance',
+    url: 'https://refer.tradezella.com/christian-park',
+    tag: 'Journal',
+  },
 ]
 
 /* ─────────────── page ─────────────── */
