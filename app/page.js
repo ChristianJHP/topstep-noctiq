@@ -636,6 +636,34 @@ export default function LandingPage() {
             ))}
           </div>
 
+          {/* Tools I use */}
+          <FadeIn>
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.01] p-6 sm:p-8 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div>
+                  <h3 className="text-white font-semibold text-lg mb-1">Tools I use</h3>
+                  <p className="text-sm text-neutral-500">Platforms and software that are part of my actual workflow</p>
+                </div>
+              </div>
+              <div className="grid sm:grid-cols-3 gap-3">
+                <a
+                  href="https://refer.tradezella.com/christian-park"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group p-4 rounded-lg border border-white/[0.04] hover:border-indigo-500/40 hover:bg-white/[0.02] transition-all"
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium border text-indigo-400 bg-indigo-500/10 border-indigo-500/20">
+                      Journal
+                    </span>
+                  </div>
+                  <div className="text-sm font-medium text-white group-hover:text-indigo-400 transition-colors mb-1">TradeZella</div>
+                  <div className="text-xs text-neutral-500 leading-relaxed">Trade journal I use to track performance, spot patterns, and review my edge. Affiliate link.</div>
+                </a>
+              </div>
+            </div>
+          </FadeIn>
+
           {/* Video content */}
           <FadeIn>
             <div className="rounded-xl border border-white/[0.06] bg-white/[0.01] p-6 sm:p-8">
