@@ -399,53 +399,91 @@ export default function Page() {
 
       <main className="max-w-3xl mx-auto px-6 pb-24">
 
-        {/* hero */}
-        <FadeIn className="mt-14 mb-16">
-          <div className="flex items-center gap-2.5 mb-5">
-            <span className="relative flex h-2 w-2">
+        {/* hero — compact */}
+        <FadeIn className="mt-8 mb-10">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="relative flex h-1.5 w-1.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" />
             </span>
-            <span className="text-sm text-neutral-500 tracking-wide">algo trader · builder</span>
+            <span className="text-xs text-neutral-500 tracking-wide">algo trader · builder</span>
           </div>
           <h1
-            className="text-5xl sm:text-6xl font-black tracking-tight mb-4 font-mono"
+            className="text-3xl sm:text-4xl font-black tracking-tight mb-2 font-mono"
             style={{ letterSpacing: '-0.03em' }}
           >
             {name}
           </h1>
-          <p className="text-neutral-400 text-lg max-w-sm leading-relaxed">
+          <p className="text-neutral-400 text-sm max-w-xs leading-relaxed">
             Automated trading systems. Sharing everything.
           </p>
         </FadeIn>
 
+        {/* ── tools ── */}
+        <FadeIn delay={100} className="mb-10">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Tools I Use</span>
+            <span className="section-line flex-1" />
+          </div>
+          <div className="space-y-2">
+            {TOOLS.map((t, i) => (
+              <FadeIn key={t.name} delay={120 + i * 55}>
+                <TiltCard>
+                  <a
+                    href={t.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shine group flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.12] bg-white/[0.05] hover:border-blue-500/50 hover:bg-blue-500/[0.08] transition-colors duration-200"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-semibold text-white">{t.name}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30 tracking-wide uppercase">
+                          {t.tag}
+                        </span>
+                      </div>
+                      <p className="text-xs text-neutral-400 leading-relaxed">{t.desc}</p>
+                    </div>
+                    <svg
+                      className="w-3 h-3 text-neutral-500 group-hover:text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0"
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
+                    </svg>
+                  </a>
+                </TiltCard>
+              </FadeIn>
+            ))}
+          </div>
+        </FadeIn>
+
         {/* ── socials ── */}
-        <FadeIn delay={100} className="mb-14">
-          <div className="flex items-center gap-3 mb-5">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-600">Socials</span>
+        <FadeIn delay={360} className="mb-10">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Socials</span>
             <span className="section-line flex-1" />
           </div>
 
           {/* 2×2 grid */}
-          <div className="grid grid-cols-2 gap-2.5 mb-2.5">
+          <div className="grid grid-cols-2 gap-2 mb-2">
             {SOCIALS.map((s, i) => (
-              <FadeIn key={s.name} delay={120 + i * 55}>
+              <FadeIn key={s.name} delay={380 + i * 50}>
                 <TiltCard>
                   <a
                     href={s.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="shine group flex items-center gap-3 p-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] hover:border-blue-500/40 hover:bg-blue-500/[0.06] transition-colors duration-200 cursor-pointer"
+                    className="shine group flex items-center gap-3 p-4 rounded-2xl border border-white/[0.12] bg-white/[0.05] hover:border-blue-500/50 hover:bg-blue-500/[0.08] transition-colors duration-200 cursor-pointer"
                   >
-                    <span className="text-neutral-600 group-hover:text-blue-400 transition-colors duration-200 shrink-0">
+                    <span className="text-neutral-400 group-hover:text-blue-400 transition-colors duration-200 shrink-0">
                       {s.icon}
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-semibold text-white leading-none mb-1">{s.name}</div>
-                      <div className="text-[11px] text-neutral-600 truncate">{s.handle}</div>
+                      <div className="text-[11px] text-neutral-400 truncate">{s.handle}</div>
                     </div>
                     <svg
-                      className="w-3 h-3 text-neutral-700 group-hover:text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0"
+                      className="w-3 h-3 text-neutral-500 group-hover:text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0"
                       fill="none" stroke="currentColor" viewBox="0 0 24 24"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
@@ -457,23 +495,23 @@ export default function Page() {
           </div>
 
           {/* email — full width */}
-          <FadeIn delay={360}>
+          <FadeIn delay={580}>
             <TiltCard>
               <a
                 href="mailto:christian.park2002@gmail.com"
-                className="shine group flex items-center gap-3 p-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] hover:border-blue-500/40 hover:bg-blue-500/[0.06] transition-colors duration-200"
+                className="shine group flex items-center gap-3 p-4 rounded-2xl border border-white/[0.12] bg-white/[0.05] hover:border-blue-500/50 hover:bg-blue-500/[0.08] transition-colors duration-200"
               >
-                <span className="text-neutral-600 group-hover:text-blue-400 transition-colors duration-200 shrink-0">
+                <span className="text-neutral-400 group-hover:text-blue-400 transition-colors duration-200 shrink-0">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold text-white leading-none mb-1">Email</div>
-                  <div className="text-[11px] text-neutral-600">christian.park2002@gmail.com</div>
+                  <div className="text-[11px] text-neutral-400">christian.park2002@gmail.com</div>
                 </div>
                 <svg
-                  className="w-3 h-3 text-neutral-700 group-hover:text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0"
+                  className="w-3 h-3 text-neutral-500 group-hover:text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0"
                   fill="none" stroke="currentColor" viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
@@ -481,44 +519,6 @@ export default function Page() {
               </a>
             </TiltCard>
           </FadeIn>
-        </FadeIn>
-
-        {/* ── tools ── */}
-        <FadeIn delay={280}>
-          <div className="flex items-center gap-3 mb-5">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-600">Tools I Use</span>
-            <span className="section-line flex-1" />
-          </div>
-          <div className="space-y-2.5">
-            {TOOLS.map((t, i) => (
-              <FadeIn key={t.name} delay={300 + i * 60}>
-                <TiltCard>
-                  <a
-                    href={t.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shine group flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] hover:border-blue-500/40 hover:bg-blue-500/[0.06] transition-colors duration-200"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-semibold text-white">{t.name}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 tracking-wide uppercase">
-                          {t.tag}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-neutral-600 leading-relaxed">{t.desc}</p>
-                    </div>
-                    <svg
-                      className="w-3 h-3 text-neutral-700 group-hover:text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0"
-                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
-                    </svg>
-                  </a>
-                </TiltCard>
-              </FadeIn>
-            ))}
-          </div>
         </FadeIn>
 
       </main>
