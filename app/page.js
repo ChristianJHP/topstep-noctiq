@@ -274,7 +274,7 @@ const SOCIALS = [
 const TOOLS = [
   {
     name: 'Alpha Futures',
-    desc: 'Prop firm I trade with — use my link to sign up',
+    desc: 'Prop firm I trade with. If you were already planning to sign up, using my link helps us both.',
     url: 'https://app.alpha-futures.com/signup/Christian018978/',
     tag: 'Prop Firm',
   },
@@ -409,14 +409,11 @@ export default function Page() {
             <span className="text-xs text-neutral-500 tracking-wide">algo trader · builder</span>
           </div>
           <h1
-            className="text-3xl sm:text-4xl font-black tracking-tight mb-2 font-mono"
+            className="text-3xl sm:text-4xl font-black tracking-tight font-mono"
             style={{ letterSpacing: '-0.03em' }}
           >
             {name}
           </h1>
-          <p className="text-neutral-400 text-sm max-w-xs leading-relaxed">
-            Automated trading systems. Sharing everything.
-          </p>
         </FadeIn>
 
         {/* ── tools ── */}
