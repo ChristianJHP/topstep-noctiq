@@ -114,22 +114,22 @@ function CandlestickBackground() {
     let animId
     let frameOffset = 0
 
-    const CW = 10
-    const GAP = 9
+    const CW = 14
+    const GAP = 10
     const STRIDE = CW + GAP
-    const SPEED = 0.22
+    const SPEED = 0.3
 
     const nextCandle = (prev) => {
       const open = prev
-      const change = (Math.random() - 0.48) * 0.055
+      const change = (Math.random() - 0.48) * 0.09
       const close = Math.max(0.08, Math.min(0.92, open + change))
-      const wickUp = Math.random() * 0.022
-      const wickDown = Math.random() * 0.022
+      const wickUp = Math.random() * 0.04
+      const wickDown = Math.random() * 0.04
       return {
         open,
         close,
-        high: Math.min(Math.max(open, close) + wickUp, 0.95),
-        low: Math.max(Math.min(open, close) - wickDown, 0.05),
+        high: Math.min(Math.max(open, close) + wickUp, 0.96),
+        low: Math.max(Math.min(open, close) - wickDown, 0.04),
       }
     }
 
@@ -165,8 +165,8 @@ function CandlestickBackground() {
         }
       }
 
-      const chartTop = H * 0.12
-      const chartH = H * 0.76
+      const chartTop = H * 0.08
+      const chartH = H * 0.84
       const toY = (v) => chartTop + (1 - v) * chartH
 
       for (let i = 0; i < candles.length; i++) {
@@ -181,12 +181,12 @@ function CandlestickBackground() {
         const highY = toY(c.high)
         const lowY = toY(c.low)
         const bodyTop = Math.min(openY, closeY)
-        const bodyH = Math.max(Math.abs(closeY - openY), 1.5)
+        const bodyH = Math.max(Math.abs(closeY - openY), 2)
 
         // wick
         ctx.strokeStyle = isBullish
-          ? 'rgba(96,165,250,0.09)'
-          : 'rgba(203,213,225,0.065)'
+          ? 'rgba(96,165,250,0.28)'
+          : 'rgba(203,213,225,0.18)'
         ctx.lineWidth = 1
         ctx.beginPath()
         ctx.moveTo(x + CW / 2, highY)
@@ -195,15 +195,15 @@ function CandlestickBackground() {
 
         // body fill
         ctx.fillStyle = isBullish
-          ? 'rgba(59,130,246,0.11)'
-          : 'rgba(148,163,184,0.075)'
+          ? 'rgba(59,130,246,0.22)'
+          : 'rgba(148,163,184,0.14)'
         ctx.fillRect(x, bodyTop, CW, bodyH)
 
         // body border
         ctx.strokeStyle = isBullish
-          ? 'rgba(59,130,246,0.18)'
-          : 'rgba(148,163,184,0.11)'
-        ctx.lineWidth = 0.5
+          ? 'rgba(96,165,250,0.45)'
+          : 'rgba(203,213,225,0.28)'
+        ctx.lineWidth = 0.8
         ctx.strokeRect(x, bodyTop, CW, bodyH)
       }
 
@@ -222,7 +222,7 @@ function CandlestickBackground() {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: -8 }}
+      style={{ zIndex: 0, opacity: 1 }}
     />
   )
 }
@@ -303,10 +303,13 @@ export default function Page() {
   const name = useScramble('Christian', { speed: 26, delay: 80 })
 
   return (
-    <div className="min-h-screen bg-[#06060e] text-white overflow-x-hidden">
+    <div className="min-h-screen text-white overflow-x-hidden">
 
       {/* candlestick chart background */}
       <CandlestickBackground />
+
+      {/* page content sits above the canvas */}
+      <div className="relative z-10">
 
       {/* CSS for shine sweep & grid */}
       <style>{`
@@ -528,6 +531,7 @@ export default function Page() {
           </Link>
         </div>
       </footer>
+      </div>{/* end relative z-10 content wrapper */}
     </div>
   )
 }
