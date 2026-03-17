@@ -433,7 +433,7 @@ export default function Page() {
                     href={t.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="shine group flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.12] bg-white/[0.05] hover:border-blue-500/50 hover:bg-blue-500/[0.08] transition-colors duration-200"
+                    className="shine group flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.12] bg-[#0d1117] hover:border-blue-500/50 hover:bg-[#0f1828] transition-colors duration-200"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -473,7 +473,7 @@ export default function Page() {
                     href={s.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="shine group flex items-center gap-3 p-4 rounded-2xl border border-white/[0.12] bg-white/[0.05] hover:border-blue-500/50 hover:bg-blue-500/[0.08] transition-colors duration-200 cursor-pointer"
+                    className="shine group flex items-center gap-3 p-4 rounded-2xl border border-white/[0.12] bg-[#0d1117] hover:border-blue-500/50 hover:bg-[#0f1828] transition-colors duration-200 cursor-pointer"
                   >
                     <span className="text-neutral-400 group-hover:text-blue-400 transition-colors duration-200 shrink-0">
                       {s.icon}
@@ -499,7 +499,7 @@ export default function Page() {
             <TiltCard>
               <a
                 href="mailto:christian.park2002@gmail.com"
-                className="shine group flex items-center gap-3 p-4 rounded-2xl border border-white/[0.12] bg-white/[0.05] hover:border-blue-500/50 hover:bg-blue-500/[0.08] transition-colors duration-200"
+                className="shine group flex items-center gap-3 p-4 rounded-2xl border border-white/[0.12] bg-[#0d1117] hover:border-blue-500/50 hover:bg-[#0f1828] transition-colors duration-200"
               >
                 <span className="text-neutral-400 group-hover:text-blue-400 transition-colors duration-200 shrink-0">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5">
