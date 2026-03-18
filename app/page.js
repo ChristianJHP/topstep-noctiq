@@ -171,6 +171,12 @@ const TOOLS = [
     url: 'https://refer.tradezella.com/christian-park',
     tag: 'Journal',
   },
+  {
+    name: 'TopOne Futures',
+    desc: 'Futures prop trading firm',
+    url: 'https://toponefutures.com/?linkId=lp_707970&sourceId=jhp&tenantId=toponefutures',
+    tag: 'Prop Firm',
+  },
 ]
 
 /* ─────────────── page ─────────────── */
