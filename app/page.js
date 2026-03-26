@@ -223,7 +223,7 @@ function CandlestickBackground() {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 0, opacity: 1 }}
+      style={{ zIndex: 0, opacity: 0.35 }}
     />
   )
 }
@@ -296,7 +296,7 @@ const TOOLS = [
   },
   {
     name: 'TradingView',
-    desc: 'Charting platform I use every session — indicators, scripts, and execution all in one place',
+    desc: 'My full chart setup — indicators, scripts, alerts, and execution all in one place',
     url: 'https://www.tradingview.com/?aff_id=164318&aff_sub=jhp',
     tag: 'Charting',
     accent: '#34d399',
@@ -310,7 +310,7 @@ const TOOLS = [
   },
   {
     name: 'TradeZella',
-    desc: 'Trading journal I use to track and improve my performance',
+    desc: 'Journal built for active traders — track every trade, find patterns, cut losing habits',
     url: 'https://refer.tradezella.com/christian-park',
     tag: 'Journal',
     accent: '#38bdf8',
@@ -326,7 +326,7 @@ const TOOLS = [
 const FIRMS = [
   {
     name: 'Alpha Futures',
-    desc: 'Prop firm I trade with. Using my link helps us both.',
+    desc: 'The prop firm I\'m currently funded with — use my link if you\'re signing up anyway',
     url: 'https://app.alpha-futures.com/signup/Christian018978/',
     tag: 'Prop Firm',
     accent: '#60a5fa',
@@ -340,7 +340,7 @@ const FIRMS = [
   },
   {
     name: 'Top One Futures',
-    desc: 'Prop firm with great payouts and fast scaling',
+    desc: 'Competitive prop firm with fast scaling and solid payouts — code JHP for 50% off',
     url: 'https://checkout.toponefutures.com/',
     tag: 'Prop Firm',
     accent: '#fbbf24',
@@ -451,115 +451,114 @@ export default function Page() {
         </span>
         <Link
           href="/dashboard"
-          className="text-sm text-neutral-500 hover:text-white transition-colors duration-200"
+          className="text-xs text-neutral-600 hover:text-neutral-400 transition-colors duration-200 border border-white/[0.06] px-3 py-1.5 rounded-lg"
         >
-          dashboard →
+          live charts →
         </Link>
       </nav>
 
       <main className="max-w-3xl mx-auto px-6 pb-24">
 
-        {/* hero — compact */}
-        <FadeIn className="mt-8 mb-10">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="relative flex h-1.5 w-1.5">
+        {/* ── hero ── */}
+        <FadeIn className="mt-10 mb-10">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60" />
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
             </span>
-            <span className="text-xs text-neutral-500 tracking-wide">algo trader · builder</span>
+            <span className="text-xs text-neutral-500 tracking-widest uppercase font-medium">Futures trader · Builder</span>
           </div>
           <h1
-            className="text-3xl sm:text-4xl font-black tracking-tight font-mono"
+            className="text-4xl sm:text-5xl font-black tracking-tight font-mono mb-4"
             style={{ letterSpacing: '-0.03em' }}
           >
             {name}
           </h1>
-        </FadeIn>
+          <p className="text-neutral-400 text-sm leading-relaxed mb-6 max-w-sm">
+            Building quant tools and trading systems for futures traders. Live streams, research, and a free community — no course BS.
+          </p>
 
-        {/* ── socials ── */}
-        <FadeIn delay={200} className="mb-10">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Socials</span>
-            <span className="section-line flex-1" />
-          </div>
-
-          {/* 2×2 grid */}
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            {SOCIALS.map((s, i) => (
-              <FadeIn key={s.name} delay={220 + i * 50}>
-                <TiltCard>
-                  <a
-                    href={s.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shine group relative flex items-center gap-3 p-4 rounded-2xl border border-white/[0.08] bg-[#0a0e17] overflow-hidden transition-all duration-200"
-                    onMouseEnter={e => {
-                      e.currentTarget.style.borderColor = s.accent + '55'
-                      e.currentTarget.style.boxShadow = `0 0 20px ${s.accent}18`
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
-                      e.currentTarget.style.boxShadow = 'none'
-                    }}
-                  >
-                    <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full opacity-60" style={{ background: s.accent }} />
-                    <span
-                      className="shrink-0 flex items-center justify-center w-8 h-8 rounded-xl transition-colors duration-200"
-                      style={{ background: s.accent + '18', color: s.accent }}
-                    >
-                      {s.icon}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-semibold text-white leading-none mb-1">{s.name}</div>
-                      <div className="text-[11px] text-neutral-500 truncate">{s.handle}</div>
-                    </div>
-                    <svg className="w-3 h-3 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
-                    </svg>
-                  </a>
-                </TiltCard>
-              </FadeIn>
+          {/* stats */}
+          <div className="flex flex-wrap gap-2 mb-8">
+            {[
+              { val: '37.4K', label: 'TikTok views' },
+              { val: '154K', label: 'Likes' },
+              { val: '100+', label: 'Discord members' },
+            ].map(s => (
+              <div key={s.label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.07] bg-white/[0.03]">
+                <span className="text-sm font-bold text-white">{s.val}</span>
+                <span className="text-[11px] text-neutral-500">{s.label}</span>
+              </div>
             ))}
           </div>
 
-          {/* email — full width */}
-          <FadeIn delay={420}>
-            <TiltCard>
-              <a
-                href="mailto:christian.park2002@gmail.com"
-                className="shine group relative flex items-center gap-3 p-4 rounded-2xl border border-white/[0.08] bg-[#0a0e17] overflow-hidden transition-all duration-200"
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = EMAIL.accent + '55'
-                  e.currentTarget.style.boxShadow = `0 0 20px ${EMAIL.accent}18`
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
-                  e.currentTarget.style.boxShadow = 'none'
-                }}
-              >
-                <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full opacity-60" style={{ background: EMAIL.accent }} />
-                <span
-                  className="shrink-0 flex items-center justify-center w-8 h-8 rounded-xl"
-                  style={{ background: EMAIL.accent + '18', color: EMAIL.accent }}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-semibold text-white leading-none mb-1">Email</div>
-                  <div className="text-[11px] text-neutral-500">christian.park2002@gmail.com</div>
+          {/* CTAs */}
+          <div className="flex flex-wrap gap-3">
+            <a
+              href="https://discord.gg/dStyYWm8"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-colors duration-200"
+            >
+              Join the Discord
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </a>
+            <a
+              href="#tools"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/[0.1] text-neutral-400 hover:text-white text-sm font-medium transition-colors duration-200"
+            >
+              Explore tools
+            </a>
+          </div>
+        </FadeIn>
+
+        {/* ── discord featured ── */}
+        <FadeIn delay={150} className="mb-10">
+          <TiltCard>
+            <a
+              href="https://discord.gg/dStyYWm8"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shine group relative flex flex-col gap-3 px-6 py-5 rounded-2xl border bg-[#0a0e17] overflow-hidden transition-all duration-200"
+              style={{ borderColor: 'rgba(129,140,248,0.2)' }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'rgba(129,140,248,0.45)'
+                e.currentTarget.style.boxShadow = '0 0 32px rgba(129,140,248,0.1)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'rgba(129,140,248,0.2)'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+            >
+              <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(129,140,248,0.5), transparent)' }} />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0" style={{ background: 'rgba(129,140,248,0.12)', color: '#a5b4fc' }}>
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                      <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.056a19.904 19.904 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                    </svg>
+                  </span>
+                  <div>
+                    <div className="text-sm font-bold text-white leading-none mb-1">Free Discord Community</div>
+                    <div className="text-[11px] font-semibold" style={{ color: '#a5b4fc' }}>100+ members · launched last week</div>
+                  </div>
                 </div>
-                <svg className="w-3 h-3 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
                 </svg>
-              </a>
-            </TiltCard>
-          </FadeIn>
+              </div>
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                Live trading sessions, quant research, system building — a community that actually talks about edge, not just entries.
+              </p>
+            </a>
+          </TiltCard>
         </FadeIn>
 
         {/* ── tools ── */}
-        <FadeIn delay={500} className="mb-10">
+        <div id="tools">
+        <FadeIn delay={250} className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Tools</span>
             <span className="section-line flex-1" />
@@ -676,15 +675,63 @@ export default function Page() {
             ))}
           </div>
         </FadeIn>
+        </div>{/* end #tools */}
+
+        {/* ── socials ── */}
+        <FadeIn delay={500} className="mb-10">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Socials</span>
+            <span className="section-line flex-1" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {SOCIALS.map((s, i) => (
+              <FadeIn key={s.name} delay={520 + i * 50}>
+                <TiltCard>
+                  <a
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shine group relative flex items-center gap-3 p-4 rounded-2xl border border-white/[0.08] bg-[#0a0e17] overflow-hidden transition-all duration-200"
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = s.accent + '55'
+                      e.currentTarget.style.boxShadow = `0 0 20px ${s.accent}18`
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+                      e.currentTarget.style.boxShadow = 'none'
+                    }}
+                  >
+                    <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full opacity-60" style={{ background: s.accent }} />
+                    <span className="shrink-0 flex items-center justify-center w-8 h-8 rounded-xl" style={{ background: s.accent + '18', color: s.accent }}>
+                      {s.icon}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-semibold text-white leading-none mb-1">{s.name}</div>
+                      <div className="text-[11px] text-neutral-500 truncate">{s.handle}</div>
+                    </div>
+                    <svg className="w-3 h-3 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
+                    </svg>
+                  </a>
+                </TiltCard>
+              </FadeIn>
+            ))}
+          </div>
+        </FadeIn>
 
       </main>
 
       <footer className="border-t border-white/[0.04] py-6 px-6">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <span className="text-xs text-neutral-800 font-mono">noctiq.ai</span>
-          <Link href="/dashboard" className="text-xs text-neutral-700 hover:text-white transition-colors duration-200">
-            live dashboard
-          </Link>
+          <div className="flex items-center gap-4">
+            <a href="mailto:christian.park2002@gmail.com" className="text-xs text-neutral-700 hover:text-neutral-400 transition-colors duration-200">
+              christian.park2002@gmail.com
+            </a>
+            <Link href="/dashboard" className="text-xs text-neutral-700 hover:text-white transition-colors duration-200">
+              live charts →
+            </Link>
+          </div>
         </div>
       </footer>
       </div>{/* end relative z-10 content wrapper */}
