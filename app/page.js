@@ -234,6 +234,7 @@ const SOCIALS = [
     name: 'TikTok',
     handle: '@jung.ho.p',
     url: 'https://www.tiktok.com/@jung.ho.p',
+    accent: '#f43f5e',
     icon: (
       <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
         <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.72a8.19 8.19 0 004.76 1.52V6.79a4.83 4.83 0 01-1-.1z"/>
@@ -244,6 +245,7 @@ const SOCIALS = [
     name: 'YouTube',
     handle: '@JHPTrades',
     url: 'https://www.youtube.com/@JHPTrades',
+    accent: '#f87171',
     icon: (
       <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
         <path d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 00.5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 002.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 002.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81zM9.75 15.52V8.48L15.5 12l-5.75 3.52z"/>
@@ -254,6 +256,7 @@ const SOCIALS = [
     name: 'Discord',
     handle: 'Join server',
     url: 'https://discord.gg/dStyYWm8',
+    accent: '#818cf8',
     icon: (
       <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
         <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.056a19.904 19.904 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
@@ -264,6 +267,7 @@ const SOCIALS = [
     name: 'Instagram',
     handle: '@christiannpark',
     url: 'https://www.instagram.com/christiannpark',
+    accent: '#e879f9',
     icon: (
       <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
         <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
@@ -271,6 +275,8 @@ const SOCIALS = [
     ),
   },
 ]
+
+const EMAIL = { accent: '#60a5fa' }
 
 const TOOLS = [
   {
@@ -486,19 +492,28 @@ export default function Page() {
                     href={s.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="shine group flex items-center gap-3 p-4 rounded-2xl border border-white/[0.12] bg-[#0d1117] hover:border-blue-500/50 hover:bg-[#0f1828] transition-colors duration-200 cursor-pointer"
+                    className="shine group relative flex items-center gap-3 p-4 rounded-2xl border border-white/[0.08] bg-[#0a0e17] overflow-hidden transition-all duration-200"
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = s.accent + '55'
+                      e.currentTarget.style.boxShadow = `0 0 20px ${s.accent}18`
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+                      e.currentTarget.style.boxShadow = 'none'
+                    }}
                   >
-                    <span className="text-neutral-400 group-hover:text-blue-400 transition-colors duration-200 shrink-0">
+                    <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full opacity-60" style={{ background: s.accent }} />
+                    <span
+                      className="shrink-0 flex items-center justify-center w-8 h-8 rounded-xl transition-colors duration-200"
+                      style={{ background: s.accent + '18', color: s.accent }}
+                    >
                       {s.icon}
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-semibold text-white leading-none mb-1">{s.name}</div>
-                      <div className="text-[11px] text-neutral-400 truncate">{s.handle}</div>
+                      <div className="text-[11px] text-neutral-500 truncate">{s.handle}</div>
                     </div>
-                    <svg
-                      className="w-3 h-3 text-neutral-500 group-hover:text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0"
-                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    >
+                    <svg className="w-3 h-3 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
                     </svg>
                   </a>
@@ -512,21 +527,30 @@ export default function Page() {
             <TiltCard>
               <a
                 href="mailto:christian.park2002@gmail.com"
-                className="shine group flex items-center gap-3 p-4 rounded-2xl border border-white/[0.12] bg-[#0d1117] hover:border-blue-500/50 hover:bg-[#0f1828] transition-colors duration-200"
+                className="shine group relative flex items-center gap-3 p-4 rounded-2xl border border-white/[0.08] bg-[#0a0e17] overflow-hidden transition-all duration-200"
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = EMAIL.accent + '55'
+                  e.currentTarget.style.boxShadow = `0 0 20px ${EMAIL.accent}18`
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+                  e.currentTarget.style.boxShadow = 'none'
+                }}
               >
-                <span className="text-neutral-400 group-hover:text-blue-400 transition-colors duration-200 shrink-0">
+                <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full opacity-60" style={{ background: EMAIL.accent }} />
+                <span
+                  className="shrink-0 flex items-center justify-center w-8 h-8 rounded-xl"
+                  style={{ background: EMAIL.accent + '18', color: EMAIL.accent }}
+                >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold text-white leading-none mb-1">Email</div>
-                  <div className="text-[11px] text-neutral-400">christian.park2002@gmail.com</div>
+                  <div className="text-[11px] text-neutral-500">christian.park2002@gmail.com</div>
                 </div>
-                <svg
-                  className="w-3 h-3 text-neutral-500 group-hover:text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0"
-                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                >
+                <svg className="w-3 h-3 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
                 </svg>
               </a>
@@ -534,10 +558,10 @@ export default function Page() {
           </FadeIn>
         </FadeIn>
 
-        {/* ── affiliates ── */}
+        {/* ── tools ── */}
         <FadeIn delay={500} className="mb-10">
           <div className="flex items-center gap-3 mb-4">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Affiliates</span>
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Tools</span>
             <span className="section-line flex-1" />
           </div>
 
@@ -665,15 +689,18 @@ export default function Page() {
       </footer>
       </div>{/* end relative z-10 content wrapper */}
 
-      <Script src="https://storage.ko-fi.com/cdn/scripts/overlay-widget.js" strategy="afterInteractive" />
-      <Script id="kofi-widget" strategy="afterInteractive">{`
-        kofiWidgetOverlay.draw('jhp_trades', {
-          'type': 'floating-chat',
-          'floating-chat.donateButton.text': 'Support me',
-          'floating-chat.donateButton.background-color': '#323842',
-          'floating-chat.donateButton.text-color': '#fff'
-        });
-      `}</Script>
+      <Script
+        src="https://storage.ko-fi.com/cdn/scripts/overlay-widget.js"
+        strategy="afterInteractive"
+        onLoad={() => {
+          window.kofiWidgetOverlay.draw('jhp_trades', {
+            'type': 'floating-chat',
+            'floating-chat.donateButton.text': 'Support me',
+            'floating-chat.donateButton.background-color': '#323842',
+            'floating-chat.donateButton.text-color': '#fff',
+          })
+        }}
+      />
     </div>
   )
 }
