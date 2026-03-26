@@ -232,8 +232,8 @@ function CandlestickBackground() {
 const SOCIALS = [
   {
     name: 'TikTok',
-    handle: '@jung.ho.p',
-    url: 'https://www.tiktok.com/@jung.ho.p',
+    handle: '@jhp.trades',
+    url: 'https://www.tiktok.com/@jhp.trades',
     accent: '#e2e8f0',
     icon: (
       <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
