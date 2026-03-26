@@ -445,45 +445,48 @@ export default function Page() {
       />
 
       {/* nav */}
-      <nav className="px-6 py-5 flex items-center justify-between max-w-3xl mx-auto">
-        <span className="font-bold tracking-tight text-base select-none">
-          noctiq<span className="text-blue-500">.ai</span>
-        </span>
-        <Link
-          href="/dashboard"
-          className="text-xs text-neutral-600 hover:text-neutral-400 transition-colors duration-200 border border-white/[0.06] px-3 py-1.5 rounded-lg"
-        >
-          live charts →
-        </Link>
+      <nav className="px-6 py-5 max-w-3xl mx-auto">
+        <div className="flex items-center justify-between mb-1">
+          <span className="font-bold tracking-tight text-base select-none">
+            noctiq<span className="text-blue-500">.ai</span>
+          </span>
+          <Link
+            href="/dashboard"
+            className="text-xs text-neutral-600 hover:text-neutral-400 transition-colors duration-200 border border-white/[0.06] px-3 py-1.5 rounded-lg"
+          >
+            live charts →
+          </Link>
+        </div>
+        <p className="text-[11px] text-neutral-600">turning my trading systems into a platform</p>
       </nav>
 
       <main className="max-w-3xl mx-auto px-6 pb-24">
 
         {/* ── hero ── */}
         <FadeIn className="mt-10 mb-10">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
-            </span>
-            <span className="text-xs text-neutral-500 tracking-widest uppercase font-medium">Futures trader · Builder</span>
-          </div>
           <h1
-            className="text-4xl sm:text-5xl font-black tracking-tight font-mono mb-4"
-            style={{ letterSpacing: '-0.03em' }}
+            className="text-3xl sm:text-4xl font-black tracking-tight mb-2"
+            style={{ letterSpacing: '-0.02em' }}
           >
-            {name}
+            Quant tools and trading systems for futures traders.
           </h1>
-          <p className="text-neutral-400 text-sm leading-relaxed mb-6 max-w-sm">
-            Building quant tools and trading systems for futures traders. Live streams, research, and a free community — no course BS.
+          <div className="flex items-center gap-2 mb-3">
+            <span className="relative flex h-1.5 w-1.5 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" />
+            </span>
+            <span className="text-sm text-neutral-500 font-mono">{name}</span>
+          </div>
+          <p className="text-neutral-500 text-sm leading-relaxed mb-6 max-w-sm">
+            Live trading, research, and a free community — no course BS.
           </p>
 
           {/* stats */}
           <div className="flex flex-wrap gap-2 mb-8">
             {[
-              { val: '37.4K', label: 'TikTok views' },
-              { val: '154K', label: 'Likes' },
-              { val: '100+', label: 'Discord members' },
+              { val: '37.4K+', label: 'weekly TikTok views' },
+              { val: '154K+', label: 'total likes' },
+              { val: '100+', label: 'traders in Discord' },
             ].map(s => (
               <div key={s.label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.07] bg-white/[0.03]">
                 <span className="text-sm font-bold text-white">{s.val}</span>
@@ -509,7 +512,7 @@ export default function Page() {
               href="#tools"
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/[0.1] text-neutral-400 hover:text-white text-sm font-medium transition-colors duration-200"
             >
-              Explore tools
+              View tools
             </a>
           </div>
         </FadeIn>
@@ -550,7 +553,7 @@ export default function Page() {
                 </svg>
               </div>
               <p className="text-xs text-neutral-400 leading-relaxed">
-                Live trading sessions, quant research, system building — a community that actually talks about edge, not just entries.
+                Live trading, quant research, and system building — a community focused on edge, not just entries.
               </p>
             </a>
           </TiltCard>
