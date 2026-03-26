@@ -279,6 +279,12 @@ const TOOLS = [
     tag: 'Prop Firm',
   },
   {
+    name: 'Top One Futures',
+    desc: 'Prop firm with great payouts — use code JHP at checkout for 50% off',
+    url: 'https://checkout.toponefutures.com/',
+    tag: 'Prop Firm',
+  },
+  {
     name: 'TradingView',
     desc: 'Charting platform I use every day',
     url: 'https://www.tradingview.com/?aff_id=164318&aff_sub=jhp',
@@ -286,9 +292,9 @@ const TOOLS = [
   },
   {
     name: 'Eigenstate',
-    desc: 'Trading analytics platform',
+    desc: 'Quant & ML-powered tool built for futures trading — surface edges you can actually act on',
     url: 'https://eigenstate.app?ref=JHP',
-    tag: 'Trading Tools',
+    tag: 'Quant / ML',
   },
   {
     name: 'TradeZella',
