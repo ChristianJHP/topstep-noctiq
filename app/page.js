@@ -416,46 +416,40 @@ export default function Page() {
           </h1>
         </FadeIn>
 
-        {/* ── tools ── */}
+        {/* ── ko-fi ── */}
         <FadeIn delay={100} className="mb-10">
           <div className="flex items-center gap-3 mb-4">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Tools I Use</span>
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Support</span>
             <span className="section-line flex-1" />
           </div>
-          <div className="space-y-2">
-            {TOOLS.map((t, i) => (
-              <FadeIn key={t.name} delay={120 + i * 55}>
-                <TiltCard>
-                  <a
-                    href={t.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shine group flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.12] bg-[#0d1117] hover:border-blue-500/50 hover:bg-[#0f1828] transition-colors duration-200"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-semibold text-white">{t.name}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30 tracking-wide uppercase">
-                          {t.tag}
-                        </span>
-                      </div>
-                      <p className="text-xs text-neutral-400 leading-relaxed">{t.desc}</p>
-                    </div>
-                    <svg
-                      className="w-3 h-3 text-neutral-500 group-hover:text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0"
-                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
-                    </svg>
-                  </a>
-                </TiltCard>
-              </FadeIn>
-            ))}
-          </div>
+          <TiltCard>
+            <a
+              href="https://ko-fi.com/jhp_trades"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shine group flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.12] bg-[#0d1117] hover:border-blue-500/50 hover:bg-[#0f1828] transition-colors duration-200"
+            >
+              <span className="text-neutral-400 group-hover:text-blue-400 transition-colors duration-200 shrink-0">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                  <path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.019c-.linked to 1.89-.99-3.298-3.975-.475-.445-.444-1.164.00-1.615l4.011-3.976c.433-.505 1.17-.499 1.596.022.425.521.152 1.151-.286 1.574zm9.061.137c-.87.836-2.119 1.141-3.296.807l1.088-1.143c.652-.765.616-1.909-.108-2.542-.725-.633-1.794-.673-2.491.032l-1.094 1.149c-.178-1.264.387-2.493 1.403-3.264 1.555-1.172 3.944-.973 5.196.57 1.252 1.544.93 3.826-.698 5.391z"/>
+                </svg>
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-white mb-1">Support on Ko-fi</div>
+                <p className="text-xs text-neutral-400 leading-relaxed">Buy me a coffee if you find my content or tools helpful</p>
+              </div>
+              <svg
+                className="w-3 h-3 text-neutral-500 group-hover:text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
+              </svg>
+            </a>
+          </TiltCard>
         </FadeIn>
 
         {/* ── socials ── */}
-        <FadeIn delay={360} className="mb-10">
+        <FadeIn delay={200} className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Socials</span>
             <span className="section-line flex-1" />
@@ -464,7 +458,7 @@ export default function Page() {
           {/* 2×2 grid */}
           <div className="grid grid-cols-2 gap-2 mb-2">
             {SOCIALS.map((s, i) => (
-              <FadeIn key={s.name} delay={380 + i * 50}>
+              <FadeIn key={s.name} delay={220 + i * 50}>
                 <TiltCard>
                   <a
                     href={s.url}
@@ -492,7 +486,7 @@ export default function Page() {
           </div>
 
           {/* email — full width */}
-          <FadeIn delay={580}>
+          <FadeIn delay={420}>
             <TiltCard>
               <a
                 href="mailto:christian.park2002@gmail.com"
@@ -516,6 +510,44 @@ export default function Page() {
               </a>
             </TiltCard>
           </FadeIn>
+        </FadeIn>
+
+        {/* ── affiliates ── */}
+        <FadeIn delay={500} className="mb-10">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Affiliates</span>
+            <span className="section-line flex-1" />
+          </div>
+          <div className="space-y-2">
+            {TOOLS.map((t, i) => (
+              <FadeIn key={t.name} delay={520 + i * 55}>
+                <TiltCard>
+                  <a
+                    href={t.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shine group flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.12] bg-[#0d1117] hover:border-blue-500/50 hover:bg-[#0f1828] transition-colors duration-200"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-semibold text-white">{t.name}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30 tracking-wide uppercase">
+                          {t.tag}
+                        </span>
+                      </div>
+                      <p className="text-xs text-neutral-400 leading-relaxed">{t.desc}</p>
+                    </div>
+                    <svg
+                      className="w-3 h-3 text-neutral-500 group-hover:text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0"
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
+                    </svg>
+                  </a>
+                </TiltCard>
+              </FadeIn>
+            ))}
+          </div>
         </FadeIn>
 
       </main>
