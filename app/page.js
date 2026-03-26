@@ -464,46 +464,32 @@ export default function Page() {
 
         {/* ── hero ── */}
         <FadeIn className="mt-10 mb-10">
-          <h1
-            className="text-3xl sm:text-4xl font-black tracking-tight mb-2"
-            style={{ letterSpacing: '-0.02em' }}
-          >
-            Quant tools and trading systems for futures traders.
-          </h1>
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-4">
             <span className="relative flex h-1.5 w-1.5 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60" />
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" />
             </span>
-            <span className="text-sm text-neutral-500 font-mono">{name}</span>
+            <span className="text-xs text-neutral-600 font-mono">{name}</span>
           </div>
-          <p className="text-neutral-500 text-sm leading-relaxed mb-6 max-w-sm">
-            Live trading, research, and a free community — no course BS.
+          <h1
+            className="text-3xl sm:text-4xl font-black tracking-tight mb-3"
+            style={{ letterSpacing: '-0.02em' }}
+          >
+            Trade systematic futures strategies. Not guesswork.
+          </h1>
+          <p className="text-neutral-500 text-sm leading-relaxed mb-6 max-w-md">
+            Built and tested live. Watch execution, analyze setups, and run the same tools.
           </p>
 
-          {/* stats */}
-          <div className="flex flex-wrap gap-2 mb-8">
-            {[
-              { val: '37.4K+', label: 'weekly TikTok views' },
-              { val: '154K+', label: 'total likes' },
-              { val: '100+', label: 'traders in Discord' },
-            ].map(s => (
-              <div key={s.label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.07] bg-white/[0.03]">
-                <span className="text-sm font-bold text-white">{s.val}</span>
-                <span className="text-[11px] text-neutral-500">{s.label}</span>
-              </div>
-            ))}
-          </div>
-
           {/* CTAs */}
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 mb-6">
             <a
-              href="https://discord.gg/dStyYWm8"
+              href="https://www.tiktok.com/@jhp.trades"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-colors duration-200"
             >
-              Join the Discord
+              Watch live trading
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
@@ -514,6 +500,19 @@ export default function Page() {
             >
               View tools
             </a>
+          </div>
+
+          {/* proof */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <span className="relative flex h-1.5 w-1.5 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-60" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
+              </span>
+              <span className="text-xs text-neutral-500">Live daily sessions</span>
+            </div>
+            <span className="text-neutral-800">·</span>
+            <span className="text-xs text-neutral-500">100+ traders in community</span>
           </div>
         </FadeIn>
 
