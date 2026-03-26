@@ -201,14 +201,16 @@ export default function StreamPage() {
       {/* candlestick */}
       <CandlestickBg />
 
-      {/* top-left — brand */}
+      {/* top-left — handle */}
       <div className="fadein absolute top-5 left-5 z-10" style={{ animationDelay: '100ms' }}>
-        <div className="flex items-center gap-2 mb-0.5">
-          <span className="font-black text-lg tracking-tight font-mono" style={{ letterSpacing: '-0.04em' }}>
-            {brand}<span className="text-blue-500">.ai</span>
-          </span>
+        <div
+          className="font-black text-white font-mono"
+          style={{ fontSize: 'clamp(1.6rem, 6vw, 2.4rem)', letterSpacing: '-0.04em',
+            textShadow: '0 0 32px rgba(59,130,246,0.35)' }}
+        >
+          {handle}
         </div>
-        <p className="text-[10px] text-neutral-600 tracking-wide">turning my trading systems into a platform</p>
+        <p className="text-[10px] text-neutral-600 tracking-wide mt-0.5">Futures · Quant · Systems</p>
       </div>
 
       {/* top-right — live badge */}
@@ -219,20 +221,15 @@ export default function StreamPage() {
         </div>
       </div>
 
-      {/* center — main visual element */}
+      {/* center — noctiq brand */}
       <div className="fadein absolute inset-x-0 flex flex-col items-center justify-center z-10"
         style={{ top: '38%', animationDelay: '500ms' }}>
-        <div
-          className="text-[11px] font-semibold uppercase tracking-[0.25em] text-neutral-600 mb-3"
-        >
-          Futures · Quant · Systems
+        <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-neutral-700 mb-2">
+          trading platform
         </div>
-        <div
-          className="font-black text-white font-mono"
-          style={{ fontSize: 'clamp(2.2rem, 8vw, 3.5rem)', letterSpacing: '-0.04em',
-            textShadow: '0 0 40px rgba(59,130,246,0.3)' }}
-        >
-          {handle}
+        <div className="font-black font-mono text-neutral-800"
+          style={{ fontSize: 'clamp(1.8rem, 6vw, 2.8rem)', letterSpacing: '-0.04em' }}>
+          {brand}<span className="text-blue-900">.ai</span>
         </div>
       </div>
 
