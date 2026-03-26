@@ -273,34 +273,76 @@ const SOCIALS = [
 
 const TOOLS = [
   {
-    name: 'Alpha Futures',
-    desc: 'Prop firm I trade with. If you were already planning to sign up, using my link helps us both.',
-    url: 'https://app.alpha-futures.com/signup/Christian018978/',
-    tag: 'Prop Firm',
-  },
-  {
-    name: 'Top One Futures',
-    desc: 'Prop firm with great payouts — use code JHP at checkout for 50% off',
-    url: 'https://checkout.toponefutures.com/',
-    tag: 'Prop Firm',
-  },
-  {
-    name: 'TradingView',
-    desc: 'Charting platform I use every day',
-    url: 'https://www.tradingview.com/?aff_id=164318&aff_sub=jhp',
-    tag: 'Charting',
-  },
-  {
     name: 'Eigenstate',
     desc: 'Quant & ML-powered tool built for futures trading — surface edges you can actually act on',
     url: 'https://eigenstate.app?ref=JHP',
     tag: 'Quant / ML',
+    accent: '#a78bfa',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4 h-4">
+        <circle cx="12" cy="5" r="1.5"/><circle cx="5" cy="19" r="1.5"/><circle cx="19" cy="19" r="1.5"/>
+        <line x1="12" y1="6.5" x2="5" y2="17.5"/><line x1="12" y1="6.5" x2="19" y2="17.5"/>
+        <line x1="6.5" y1="19" x2="17.5" y2="19"/>
+        <circle cx="12" cy="13" r="1.2" fill="currentColor" stroke="none"/>
+      </svg>
+    ),
+  },
+  {
+    name: 'TradingView',
+    desc: 'Charting platform I use every session — indicators, scripts, and execution all in one place',
+    url: 'https://www.tradingview.com/?aff_id=164318&aff_sub=jhp',
+    tag: 'Charting',
+    accent: '#34d399',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4 h-4">
+        <polyline points="2,18 8,11 13,15 22,5"/>
+        <line x1="8" y1="11" x2="8" y2="20"/><line x1="13" y1="15" x2="13" y2="20"/>
+        <line x1="2" y1="20" x2="22" y2="20"/>
+      </svg>
+    ),
   },
   {
     name: 'TradeZella',
     desc: 'Trading journal I use to track and improve my performance',
     url: 'https://refer.tradezella.com/christian-park',
     tag: 'Journal',
+    accent: '#38bdf8',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4 h-4">
+        <path d="M4 4h16v16H4z" rx="2"/><line x1="8" y1="9" x2="16" y2="9"/>
+        <line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/>
+      </svg>
+    ),
+  },
+]
+
+const FIRMS = [
+  {
+    name: 'Alpha Futures',
+    desc: 'Prop firm I trade with. Using my link helps us both.',
+    url: 'https://app.alpha-futures.com/signup/Christian018978/',
+    tag: 'Prop Firm',
+    accent: '#60a5fa',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4 h-4">
+        <rect x="3" y="10" width="18" height="11" rx="1"/>
+        <path d="M8 10V7a4 4 0 018 0v3"/>
+        <circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/>
+      </svg>
+    ),
+  },
+  {
+    name: 'Top One Futures',
+    desc: 'Prop firm with great payouts and fast scaling',
+    url: 'https://checkout.toponefutures.com/',
+    tag: 'Prop Firm',
+    accent: '#fbbf24',
+    badge: 'CODE: JHP · 50% OFF',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4 h-4">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+    ),
   },
 ]
 
@@ -358,6 +400,11 @@ export default function Page() {
           transform-origin: left;
           animation: drawline 0.6s cubic-bezier(.16,1,.3,1) both;
         }
+        @keyframes badgepulse {
+          0%,100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.35); }
+          50%      { box-shadow: 0 0 0 5px rgba(251,191,36,0); }
+        }
+        .badge-pulse { animation: badgepulse 2s ease-in-out infinite; }
       `}</style>
 
       {/* background blobs */}
@@ -524,7 +571,9 @@ export default function Page() {
             <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Affiliates</span>
             <span className="section-line flex-1" />
           </div>
-          <div className="space-y-2">
+
+          {/* tools — stacked */}
+          <div className="space-y-2 mb-4">
             {TOOLS.map((t, i) => (
               <FadeIn key={t.name} delay={520 + i * 55}>
                 <TiltCard>
@@ -532,23 +581,102 @@ export default function Page() {
                     href={t.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="shine group flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.12] bg-[#0d1117] hover:border-blue-500/50 hover:bg-[#0f1828] transition-colors duration-200"
+                    className="shine group relative flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.08] bg-[#0a0e17] overflow-hidden transition-all duration-200"
+                    style={{ '--accent': t.accent }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = t.accent + '55'
+                      e.currentTarget.style.boxShadow = `0 0 24px ${t.accent}18`
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+                      e.currentTarget.style.boxShadow = 'none'
+                    }}
                   >
+                    {/* left accent strip */}
+                    <span
+                      className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full opacity-70"
+                      style={{ background: t.accent }}
+                    />
+                    {/* icon badge */}
+                    <span
+                      className="shrink-0 flex items-center justify-center w-8 h-8 rounded-xl"
+                      style={{ background: t.accent + '18', color: t.accent }}
+                    >
+                      {t.icon}
+                    </span>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-sm font-semibold text-white">{t.name}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30 tracking-wide uppercase">
+                        <span
+                          className="text-[9px] px-1.5 py-0.5 rounded-md font-bold tracking-wider uppercase"
+                          style={{ background: t.accent + '18', color: t.accent, border: `1px solid ${t.accent}40` }}
+                        >
                           {t.tag}
                         </span>
                       </div>
-                      <p className="text-xs text-neutral-400 leading-relaxed">{t.desc}</p>
+                      <p className="text-xs text-neutral-500 leading-relaxed">{t.desc}</p>
                     </div>
                     <svg
-                      className="w-3 h-3 text-neutral-500 group-hover:text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0"
+                      className="w-3 h-3 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0"
+                      style={{ color: 'inherit' }}
+                      onMouseEnter={e => e.currentTarget.style.color = t.accent}
                       fill="none" stroke="currentColor" viewBox="0 0 24 24"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
                     </svg>
+                  </a>
+                </TiltCard>
+              </FadeIn>
+            ))}
+          </div>
+
+          {/* prop firms — 2-col grid */}
+          <div className="grid grid-cols-2 gap-2">
+            {FIRMS.map((f, i) => (
+              <FadeIn key={f.name} delay={685 + i * 60}>
+                <TiltCard>
+                  <a
+                    href={f.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shine group relative flex flex-col gap-3 p-4 rounded-2xl border border-white/[0.08] bg-[#0a0e17] overflow-hidden transition-all duration-200"
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = f.accent + '55'
+                      e.currentTarget.style.boxShadow = `0 0 24px ${f.accent}18`
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+                      e.currentTarget.style.boxShadow = 'none'
+                    }}
+                  >
+                    {/* top accent bar */}
+                    <span
+                      className="absolute top-0 left-4 right-4 h-[2px] rounded-b-full opacity-60"
+                      style={{ background: f.accent }}
+                    />
+                    <div className="flex items-center justify-between">
+                      <span
+                        className="flex items-center justify-center w-7 h-7 rounded-lg"
+                        style={{ background: f.accent + '18', color: f.accent }}
+                      >
+                        {f.icon}
+                      </span>
+                      <svg className="w-3 h-3 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-white mb-0.5">{f.name}</div>
+                      <p className="text-[11px] text-neutral-500 leading-relaxed">{f.desc}</p>
+                    </div>
+                    {f.badge && (
+                      <span
+                        className="badge-pulse self-start text-[9px] font-black tracking-widest uppercase px-2 py-1 rounded-lg"
+                        style={{ background: f.accent + '20', color: f.accent, border: `1px solid ${f.accent}50` }}
+                      >
+                        {f.badge}
+                      </span>
+                    )}
                   </a>
                 </TiltCard>
               </FadeIn>
