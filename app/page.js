@@ -255,7 +255,7 @@ const SOCIALS = [
   {
     name: 'Discord',
     handle: 'Join server',
-    url: 'https://discord.gg/dStyYWm8',
+    url: 'https://discord.gg/aCNadDMvmH',
     accent: '#818cf8',
     icon: (
       <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
@@ -477,10 +477,6 @@ export default function Page() {
           >
             Trade systematic futures strategies. Not guesswork.
           </h1>
-          <p className="text-neutral-500 text-sm leading-relaxed mb-6 max-w-md">
-            Built and tested live. Watch execution, analyze setups, and run the same tools.
-          </p>
-
           {/* CTAs */}
           <div className="flex flex-wrap gap-3 mb-6">
             <a
@@ -520,7 +516,7 @@ export default function Page() {
         <FadeIn delay={150} className="mb-10">
           <TiltCard>
             <a
-              href="https://discord.gg/dStyYWm8"
+              href="https://discord.gg/aCNadDMvmH"
               target="_blank"
               rel="noopener noreferrer"
               className="shine group relative flex flex-col gap-3 px-6 py-5 rounded-2xl border bg-[#0a0e17] overflow-hidden transition-all duration-200"
