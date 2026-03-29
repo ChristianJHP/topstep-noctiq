@@ -475,8 +475,11 @@ export default function Page() {
             className="text-3xl sm:text-4xl font-black tracking-tight mb-3"
             style={{ letterSpacing: '-0.02em' }}
           >
-            Trade systematic futures strategies. Not guesswork.
+            Quant tools and trading resources without the fake guru nonsense
           </h1>
+          <p className="text-neutral-500 text-sm leading-relaxed mb-6 max-w-md">
+            Machine learning driven tools, live streams, Discord, and the platforms I actually use for futures trading.
+          </p>
           {/* CTAs */}
           <div className="flex flex-wrap gap-3 mb-6">
             <a
