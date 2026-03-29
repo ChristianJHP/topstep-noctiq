@@ -471,12 +471,6 @@ export default function Page() {
             </span>
             <span className="text-xs text-neutral-600 font-mono">{name}</span>
           </div>
-          <h1
-            className="text-3xl sm:text-4xl font-black tracking-tight mb-3"
-            style={{ letterSpacing: '-0.02em' }}
-          >
-            Machine learning driven tools, live streams, Discord, and the platforms I actually use for futures trading.
-          </h1>
           {/* CTAs */}
           <div className="flex flex-wrap gap-3 mb-6">
             <a
