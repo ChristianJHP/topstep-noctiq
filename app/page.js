@@ -533,7 +533,7 @@ export default function Page() {
                     </svg>
                   </span>
                   <div>
-                    <div className="text-sm font-bold text-white leading-none mb-1">JHP Mentorship</div>
+                    <div className="text-sm font-bold text-white leading-none mb-1">Work with me 1 on 1</div>
                     <div className="text-[11px] font-semibold" style={{ color: '#60a5fa' }}>Fix Your Execution. Get Funded.</div>
                   </div>
                 </div>
@@ -576,7 +576,7 @@ export default function Page() {
                   </span>
                   <div>
                     <div className="text-sm font-bold text-white leading-none mb-1">Free Discord Community</div>
-                    <div className="text-[11px] font-semibold" style={{ color: '#a5b4fc' }}>100+ members · launched last week</div>
+                    <div className="text-[11px] font-semibold" style={{ color: '#a5b4fc' }}>200+ members · launched this year</div>
                   </div>
                 </div>
                 <svg className="w-4 h-4 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
