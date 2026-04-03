@@ -506,7 +506,7 @@ export default function Page() {
                     </svg>
                   </span>
                   <div>
-                    <div className="text-sm font-bold text-white leading-none mb-1">Work with me</div>
+                    <div className="text-sm font-bold text-white leading-none mb-1">Apply for 1 on 1 Trading Help</div>
                     <div className="text-[11px] font-semibold" style={{ color: '#60a5fa' }}>Fix Your Execution. Get Funded.</div>
                   </div>
                 </div>
