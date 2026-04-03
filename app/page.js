@@ -446,10 +446,7 @@ export default function Page() {
 
       {/* nav */}
       <nav className="px-6 py-5 max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-1">
-          <span className="font-bold tracking-tight text-base select-none">
-            noctiq<span className="text-blue-500">.ai</span>
-          </span>
+        <div className="flex items-center justify-end">
           <Link
             href="/dashboard"
             className="text-xs text-neutral-600 hover:text-neutral-400 transition-colors duration-200 border border-white/[0.06] px-3 py-1.5 rounded-lg"
@@ -457,7 +454,6 @@ export default function Page() {
             live charts →
           </Link>
         </div>
-        <p className="text-[11px] text-neutral-600">turning my trading systems into a platform</p>
       </nav>
 
       <main className="max-w-3xl mx-auto px-6 pb-24">
@@ -471,27 +467,6 @@ export default function Page() {
             </span>
             <span className="text-xs text-neutral-600 font-mono">{name}</span>
           </div>
-          {/* CTAs */}
-          <div className="flex flex-wrap gap-3 mb-6">
-            <a
-              href="https://www.tiktok.com/@jhp.trades"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-colors duration-200"
-            >
-              Watch live trading
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </a>
-            <a
-              href="#tools"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/[0.1] text-neutral-400 hover:text-white text-sm font-medium transition-colors duration-200"
-            >
-              View tools
-            </a>
-          </div>
-
           {/* proof */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
@@ -502,7 +477,7 @@ export default function Page() {
               <span className="text-xs text-neutral-500">Live daily sessions</span>
             </div>
             <span className="text-neutral-800">·</span>
-            <span className="text-xs text-neutral-500">100+ traders in community</span>
+            <span className="text-xs text-neutral-500">1200+ followers on TikTok</span>
           </div>
         </FadeIn>
 
@@ -542,7 +517,7 @@ export default function Page() {
                 </span>
               </div>
               <p className="text-xs text-neutral-400 leading-relaxed">
-                1 on 1. focused on fixing mistakes, tightening execution, and building consistency — not for everyone, only if you're serious about getting funded.
+                1 on 1. fixing execution, building real consistency, and getting you to the point where you're pulling consistent payouts — not for everyone.
               </p>
             </a>
           </TiltCard>
@@ -598,17 +573,16 @@ export default function Page() {
             <span className="section-line flex-1" />
           </div>
 
-          {/* tools — stacked */}
-          <div className="space-y-2 mb-4">
-            {TOOLS.map((t, i) => (
-              <FadeIn key={t.name} delay={520 + i * 55}>
+          {/* tools + prop firms — single stacked list */}
+          <div className="space-y-2">
+            {[...TOOLS, ...FIRMS].map((t, i) => (
+              <FadeIn key={t.name} delay={520 + i * 50}>
                 <TiltCard>
                   <a
                     href={t.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="shine group relative flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.08] bg-[#0a0e17] overflow-hidden transition-all duration-200"
-                    style={{ '--accent': t.accent }}
                     onMouseEnter={e => {
                       e.currentTarget.style.borderColor = t.accent + '55'
                       e.currentTarget.style.boxShadow = `0 0 24px ${t.accent}18`
@@ -618,91 +592,27 @@ export default function Page() {
                       e.currentTarget.style.boxShadow = 'none'
                     }}
                   >
-                    {/* left accent strip */}
-                    <span
-                      className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full opacity-70"
-                      style={{ background: t.accent }}
-                    />
-                    {/* icon badge */}
-                    <span
-                      className="shrink-0 flex items-center justify-center w-8 h-8 rounded-xl"
-                      style={{ background: t.accent + '18', color: t.accent }}
-                    >
+                    <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full opacity-70" style={{ background: t.accent }} />
+                    <span className="shrink-0 flex items-center justify-center w-8 h-8 rounded-xl" style={{ background: t.accent + '18', color: t.accent }}>
                       {t.icon}
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-sm font-semibold text-white">{t.name}</span>
-                        <span
-                          className="text-[9px] px-1.5 py-0.5 rounded-md font-bold tracking-wider uppercase"
-                          style={{ background: t.accent + '18', color: t.accent, border: `1px solid ${t.accent}40` }}
-                        >
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold tracking-wider uppercase" style={{ background: t.accent + '18', color: t.accent, border: `1px solid ${t.accent}40` }}>
                           {t.tag}
                         </span>
+                        {t.badge && (
+                          <span className="badge-pulse text-[9px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded-md" style={{ background: t.accent + '20', color: t.accent, border: `1px solid ${t.accent}50` }}>
+                            {t.badge}
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-neutral-500 leading-relaxed">{t.desc}</p>
                     </div>
-                    <svg
-                      className="w-3 h-3 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0"
-                      style={{ color: 'inherit' }}
-                      onMouseEnter={e => e.currentTarget.style.color = t.accent}
-                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    >
+                    <svg className="w-3 h-3 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
                     </svg>
-                  </a>
-                </TiltCard>
-              </FadeIn>
-            ))}
-          </div>
-
-          {/* prop firms — 2-col grid */}
-          <div className="grid grid-cols-2 gap-2">
-            {FIRMS.map((f, i) => (
-              <FadeIn key={f.name} delay={685 + i * 60}>
-                <TiltCard>
-                  <a
-                    href={f.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shine group relative flex flex-col gap-3 p-4 rounded-2xl border border-white/[0.08] bg-[#0a0e17] overflow-hidden transition-all duration-200"
-                    onMouseEnter={e => {
-                      e.currentTarget.style.borderColor = f.accent + '55'
-                      e.currentTarget.style.boxShadow = `0 0 24px ${f.accent}18`
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
-                      e.currentTarget.style.boxShadow = 'none'
-                    }}
-                  >
-                    {/* top accent bar */}
-                    <span
-                      className="absolute top-0 left-4 right-4 h-[2px] rounded-b-full opacity-60"
-                      style={{ background: f.accent }}
-                    />
-                    <div className="flex items-center justify-between">
-                      <span
-                        className="flex items-center justify-center w-7 h-7 rounded-lg"
-                        style={{ background: f.accent + '18', color: f.accent }}
-                      >
-                        {f.icon}
-                      </span>
-                      <svg className="w-3 h-3 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
-                      </svg>
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-white mb-0.5">{f.name}</div>
-                      <p className="text-[11px] text-neutral-500 leading-relaxed">{f.desc}</p>
-                    </div>
-                    {f.badge && (
-                      <span
-                        className="badge-pulse self-start text-[9px] font-black tracking-widest uppercase px-2 py-1 rounded-lg"
-                        style={{ background: f.accent + '20', color: f.accent, border: `1px solid ${f.accent}50` }}
-                      >
-                        {f.badge}
-                      </span>
-                    )}
                   </a>
                 </TiltCard>
               </FadeIn>
@@ -712,43 +622,20 @@ export default function Page() {
         </div>{/* end #tools */}
 
         {/* ── socials ── */}
-        <FadeIn delay={500} className="mb-10">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Socials</span>
-            <span className="section-line flex-1" />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {SOCIALS.map((s, i) => (
-              <FadeIn key={s.name} delay={520 + i * 50}>
-                <TiltCard>
-                  <a
-                    href={s.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shine group relative flex items-center gap-3 p-4 rounded-2xl border border-white/[0.08] bg-[#0a0e17] overflow-hidden transition-all duration-200"
-                    onMouseEnter={e => {
-                      e.currentTarget.style.borderColor = s.accent + '55'
-                      e.currentTarget.style.boxShadow = `0 0 20px ${s.accent}18`
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
-                      e.currentTarget.style.boxShadow = 'none'
-                    }}
-                  >
-                    <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full opacity-60" style={{ background: s.accent }} />
-                    <span className="shrink-0 flex items-center justify-center w-8 h-8 rounded-xl" style={{ background: s.accent + '18', color: s.accent }}>
-                      {s.icon}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-semibold text-white leading-none mb-1">{s.name}</div>
-                      <div className="text-[11px] text-neutral-500 truncate">{s.handle}</div>
-                    </div>
-                    <svg className="w-3 h-3 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
-                    </svg>
-                  </a>
-                </TiltCard>
-              </FadeIn>
+        <FadeIn delay={400} className="mb-10">
+          <div className="flex items-center gap-2">
+            {SOCIALS.map(s => (
+              <a
+                key={s.name}
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={s.name}
+                className="flex items-center justify-center w-9 h-9 rounded-xl border border-white/[0.08] bg-[#0a0e17] transition-all duration-200 hover:border-white/20"
+                style={{ color: s.accent }}
+              >
+                {s.icon}
+              </a>
             ))}
           </div>
         </FadeIn>
