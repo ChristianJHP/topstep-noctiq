@@ -47,7 +47,7 @@ export default function MentorshipPage() {
             </span>
             <span className="text-xs text-neutral-500 font-mono">1 on 1 · limited spots</span>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Work with me</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">Apply to work with me</h1>
           <p className="text-sm text-neutral-400 leading-relaxed max-w-md">
             Fill out the form below. If it looks like a fit I'll reach out directly — usually within a day or two.
           </p>
