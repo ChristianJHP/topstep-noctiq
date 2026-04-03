@@ -506,8 +506,50 @@ export default function Page() {
           </div>
         </FadeIn>
 
+        {/* ── mentorship featured ── */}
+        <FadeIn delay={100} className="mb-4">
+          <TiltCard>
+            <a
+              href="https://whop.com/jhp-trades/jhp-mentorship"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shine group relative flex flex-col gap-3 px-6 py-5 rounded-2xl border bg-[#0a0e17] overflow-hidden transition-all duration-200"
+              style={{ borderColor: 'rgba(59,130,246,0.3)' }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'rgba(59,130,246,0.6)'
+                e.currentTarget.style.boxShadow = '0 0 36px rgba(59,130,246,0.12)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'rgba(59,130,246,0.3)'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+            >
+              <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.6), transparent)' }} />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0" style={{ background: 'rgba(59,130,246,0.12)', color: '#60a5fa' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                    </svg>
+                  </span>
+                  <div>
+                    <div className="text-sm font-bold text-white leading-none mb-1">JHP Mentorship</div>
+                    <div className="text-[11px] font-semibold" style={{ color: '#60a5fa' }}>Path to Profitability · $149.99/mo</div>
+                  </div>
+                </div>
+                <svg className="w-4 h-4 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
+                </svg>
+              </div>
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                1-on-1 coaching to take your trading from inconsistent to consistently profitable. Personalized feedback, live trade reviews, and a direct path to funded accounts.
+              </p>
+            </a>
+          </TiltCard>
+        </FadeIn>
+
         {/* ── discord featured ── */}
-        <FadeIn delay={150} className="mb-10">
+        <FadeIn delay={200} className="mb-10">
           <TiltCard>
             <a
               href="https://discord.gg/aCNadDMvmH"
