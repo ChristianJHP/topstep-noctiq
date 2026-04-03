@@ -485,9 +485,7 @@ export default function Page() {
         <FadeIn delay={100} className="mb-4">
           <TiltCard>
             <a
-              href="https://whop.com/jhp-trades/jhp-mentorship"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/mentorship"
               className="shine group relative flex flex-col gap-3 px-6 py-5 rounded-2xl border bg-[#0a0e17] overflow-hidden transition-all duration-200"
               style={{ borderColor: 'rgba(59,130,246,0.3)' }}
               onMouseEnter={e => {
