@@ -534,15 +534,15 @@ export default function Page() {
                   </span>
                   <div>
                     <div className="text-sm font-bold text-white leading-none mb-1">JHP Mentorship</div>
-                    <div className="text-[11px] font-semibold" style={{ color: '#60a5fa' }}>Path to Profitability · $149.99/mo</div>
+                    <div className="text-[11px] font-semibold" style={{ color: '#60a5fa' }}>Fix Your Execution. Get Funded.</div>
                   </div>
                 </div>
-                <svg className="w-4 h-4 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
-                </svg>
+                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-lg shrink-0 transition-colors duration-200" style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa' }}>
+                  Apply →
+                </span>
               </div>
               <p className="text-xs text-neutral-400 leading-relaxed">
-                1-on-1 coaching to take your trading from inconsistent to consistently profitable. Personalized feedback, live trade reviews, and a direct path to funded accounts.
+                1 on 1. focused on fixing mistakes, tightening execution, and building consistency — not for everyone, only if you're serious about getting funded.
               </p>
             </a>
           </TiltCard>
