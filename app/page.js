@@ -477,7 +477,7 @@ export default function Page() {
               <span className="text-xs text-neutral-500">Live daily sessions</span>
             </div>
             <span className="text-neutral-800">·</span>
-            <span className="text-xs text-neutral-500">1200+ followers on TikTok</span>
+            <span className="text-xs text-neutral-500">1200+ traders in the community</span>
           </div>
         </FadeIn>
 
