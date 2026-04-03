@@ -355,7 +355,7 @@ const FIRMS = [
 
 /* ─────────────── page ─────────────── */
 export default function Page() {
-  const name = useScramble('Christian', { speed: 26, delay: 80 })
+  const name = useScramble('JHP Trades', { speed: 26, delay: 80 })
 
   return (
     <div className="min-h-screen text-white overflow-x-hidden">
