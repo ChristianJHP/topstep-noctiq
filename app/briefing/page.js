@@ -62,16 +62,20 @@ function LevelChart({ candles, levels }) {
         wickDownColor: '#f87171',
       })
 
-      series.setData(
-        candles.map(c => ({
-          time: c.time,
-          open: c.open,
-          high: c.high,
-          low: c.low,
-          close: c.close,
+      // ensure timestamps are numbers (JSONB from Supabase may return strings)
+      const sorted = [...candles]
+        .map(c => ({
+          time: Number(c.time),
+          open: Number(c.open),
+          high: Number(c.high),
+          low: Number(c.low),
+          close: Number(c.close),
         }))
-      )
+        .sort((a, b) => a.time - b.time)
 
+      series.setData(sorted)
+
+      // draw levels as price lines on the candle series
       const levelEntries = [
         ['r2', levels.r2, 'R2'],
         ['r1', levels.r1, 'R1'],
@@ -81,20 +85,14 @@ function LevelChart({ candles, levels }) {
       ]
 
       for (const [key, price, title] of levelEntries) {
-        const line = chart.addLineSeries({
+        series.createPriceLine({
+          price: Number(price),
           color: LEVEL_COLORS[key],
           lineWidth: 1,
           lineStyle: key === 'pivot' ? 0 : 2,
-          priceLineVisible: false,
-          lastValueVisible: true,
+          axisLabelVisible: true,
           title,
         })
-        const first = candles[0].time
-        const last = candles[candles.length - 1].time
-        line.setData([
-          { time: first, value: price },
-          { time: last, value: price },
-        ])
       }
 
       chart.timeScale().fitContent()
@@ -113,13 +111,19 @@ function LevelChart({ candles, levels }) {
   return <div ref={containerRef} className="w-full rounded-xl overflow-hidden" />
 }
 
+function fmt(val) {
+  const n = Number(val)
+  // use 2 decimals, but drop .00 for large whole numbers (NQ, GC)
+  return n % 1 === 0 && n > 1000 ? n.toLocaleString() : n.toFixed(2)
+}
+
 function InstrumentCard({ data, label, full }) {
   if (!data) return null
   const { ohlcv, levels, candles, briefing } = data
 
-  const isUp = ohlcv.close >= ohlcv.open
-  const change = ohlcv.close - ohlcv.open
-  const changePct = ((change / ohlcv.open) * 100).toFixed(2)
+  const isUp = Number(ohlcv.close) >= Number(ohlcv.open)
+  const change = Number(ohlcv.close) - Number(ohlcv.open)
+  const changePct = ((change / Number(ohlcv.open)) * 100).toFixed(2)
 
   return (
     <div className="rounded-2xl border border-white/[0.07] bg-[#0a0e17] overflow-hidden">
@@ -131,10 +135,10 @@ function InstrumentCard({ data, label, full }) {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm font-semibold text-white">
-            {ohlcv.close?.toFixed(2)}
+            {fmt(ohlcv.close)}
           </span>
           <span className={`text-xs font-medium ${isUp ? 'text-green-400' : 'text-red-400'}`}>
-            {isUp ? '+' : ''}{change.toFixed(2)} ({isUp ? '+' : ''}{changePct}%)
+            {isUp ? '+' : ''}{fmt(change)} ({isUp ? '+' : ''}{changePct}%)
           </span>
         </div>
       </div>
@@ -155,12 +159,12 @@ function InstrumentCard({ data, label, full }) {
         ].map(l => (
           <div key={l.label} className="flex items-center gap-1.5">
             <span className={`text-[10px] font-bold ${l.color}`}>{l.label}</span>
-            <span className="text-xs text-neutral-400 font-mono">{l.value.toFixed(2)}</span>
+            <span className="text-xs text-neutral-400 font-mono">{fmt(l.value)}</span>
           </div>
         ))}
         <div className="flex items-center gap-1.5 ml-auto">
           <span className="text-[10px] text-neutral-600">prev close</span>
-          <span className="text-xs text-neutral-400 font-mono">{ohlcv.close?.toFixed(2)}</span>
+          <span className="text-xs text-neutral-400 font-mono">{fmt(ohlcv.close)}</span>
         </div>
       </div>
 

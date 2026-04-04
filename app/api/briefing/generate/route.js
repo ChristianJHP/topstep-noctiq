@@ -57,15 +57,21 @@ async function fetchHourlyCandles(ticker) {
 async function generateBriefing(label, ohlcv, levels) {
   const { text } = await generateText({
     model: 'anthropic/claude-haiku-4-5-20251001',
-    prompt: `You are a professional futures trader's research assistant. Write a concise pre-market briefing for ${label}.
+    prompt: `Write a 2-3 sentence pre-market briefing for ${label}. Plain text only — no markdown, no asterisks, no headers, no labels.
 
-Previous session: Open ${ohlcv.open?.toFixed(2)}  High ${ohlcv.high?.toFixed(2)}  Low ${ohlcv.low?.toFixed(2)}  Close ${ohlcv.close?.toFixed(2)}
-Pivot: ${levels.pivot.toFixed(2)} | R1: ${levels.r1.toFixed(2)} | R2: ${levels.r2.toFixed(2)} | S1: ${levels.s1.toFixed(2)} | S2: ${levels.s2.toFixed(2)}
+Previous session: Open ${ohlcv.open?.toFixed(2)} High ${ohlcv.high?.toFixed(2)} Low ${ohlcv.low?.toFixed(2)} Close ${ohlcv.close?.toFixed(2)}
+Pivot ${levels.pivot.toFixed(2)} | R1 ${levels.r1.toFixed(2)} | R2 ${levels.r2.toFixed(2)} | S1 ${levels.s1.toFixed(2)} | S2 ${levels.s2.toFixed(2)}
 
-Write 2-3 sentences covering: session bias based on close vs pivot, the most important level to watch, and what invalidates the bias. Direct trader tone, no fluff.`,
+Cover: bias (close above/below pivot), key level to watch, what invalidates it. Short sentences. No formatting whatsoever.`,
     maxTokens: 150,
   })
-  return text.trim()
+  // strip any markdown that slips through
+  return text
+    .replace(/\*\*/g, '')
+    .replace(/\*/g, '')
+    .replace(/#{1,6}\s/g, '')
+    .replace(/^#+/gm, '')
+    .trim()
 }
 
 export async function GET() {
