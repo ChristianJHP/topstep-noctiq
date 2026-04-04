@@ -49,3 +49,6 @@ CREATE TABLE IF NOT EXISTS daily_briefings (
 
 CREATE INDEX IF NOT EXISTS idx_daily_briefings_date
 ON daily_briefings(date DESC);
+
+-- Add meta column for risk sentiment, macro context, calendar
+ALTER TABLE daily_briefings ADD COLUMN IF NOT EXISTS meta JSONB;
