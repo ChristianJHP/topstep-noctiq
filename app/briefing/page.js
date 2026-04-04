@@ -54,7 +54,8 @@ function LevelChart({ candles, levels }) {
         handleScale: true,
       })
 
-      const series = chart.addCandlestickSeries({
+      const { CandlestickSeries } = await import('lightweight-charts')
+      const series = chart.addSeries(CandlestickSeries, {
         upColor: '#4ade80',
         downColor: '#f87171',
         borderVisible: false,

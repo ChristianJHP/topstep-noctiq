@@ -39,34 +39,60 @@ function calcLevels({ high, low, close }) {
   }
 }
 
+// Sanity ranges — reject bars clearly outside these (bad data / wrong contract)
+const VALID_RANGES = {
+  'NQ=F': { min: 10000, max: 35000 },
+  'CL=F': { min: 20,    max: 200   },
+  'GC=F': { min: 800,   max: 5000  },
+}
+
 async function fetchOHLCV(ticker) {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?range=5d&interval=1d`
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?range=10d&interval=1d&includePrePost=false`
   const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+  if (!res.ok) throw new Error(`Yahoo Finance ${res.status} for ${ticker}`)
+
   const json = await res.json()
-  const quotes = json.chart?.result?.[0]
-  if (!quotes) throw new Error(`No data for ${ticker}`)
+  const result = json.chart?.result?.[0]
+  if (!result) throw new Error(`No chart result for ${ticker}`)
 
-  const timestamps = quotes.timestamp
-  const { open, high, low, close, volume } = quotes.indicators.quote[0]
+  const { timestamp, indicators } = result
+  const { open, high, low, close, volume } = indicators.quote[0]
+  const range = VALID_RANGES[ticker]
 
-  const bars = timestamps
+  const bars = timestamp
     .map((t, i) => ({ time: t, open: open[i], high: high[i], low: low[i], close: close[i], volume: volume[i] }))
-    .filter(b => b.open && b.high && b.low && b.close)
+    .filter(b => b.open > 0 && b.high > 0 && b.low > 0 && b.close > 0)
+    .filter(b => b.close >= range.min && b.close <= range.max)
+    .sort((a, b) => a.time - b.time)
 
-  return bars[bars.length - 2] ?? bars[bars.length - 1]
+  if (!bars.length) throw new Error(`No valid bars in range for ${ticker} (check contract)`)
+
+  // Drop bars from today (may be incomplete) — compare date in ET
+  const todayET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' }) // YYYY-MM-DD
+  const prev = bars.filter(b => {
+    const d = new Date(b.time * 1000).toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
+    return d < todayET
+  })
+
+  const bar = prev.at(-1) ?? bars.at(-1)
+  console.log(`[briefing] ${ticker} prev session: O${bar.open} H${bar.high} L${bar.low} C${bar.close}`)
+  return bar
 }
 
 async function fetchHourlyCandles(ticker) {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?range=3d&interval=1h`
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?range=3d&interval=1h&includePrePost=false`
   const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })
   const json = await res.json()
-  const quotes = json.chart?.result?.[0]
-  if (!quotes) return []
+  const result = json.chart?.result?.[0]
+  if (!result) return []
 
-  const { open, high, low, close } = quotes.indicators.quote[0]
-  return quotes.timestamp
+  const { open, high, low, close } = result.indicators.quote[0]
+  const range = VALID_RANGES[ticker]
+
+  return result.timestamp
     .map((t, i) => ({ time: t, open: open[i], high: high[i], low: low[i], close: close[i] }))
-    .filter(b => b.open && b.high && b.low && b.close)
+    .filter(b => b.open > 0 && b.close > 0 && b.close >= range.min && b.close <= range.max)
+    .sort((a, b) => a.time - b.time)
 }
 
 async function fetchNews(newsTickers) {
