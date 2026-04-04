@@ -10,33 +10,57 @@ const POLY = process.env.POLYGON_API_KEY
 const FINN = process.env.NEXT_PUBLIC_FINNHUB_API_KEY
 
 const INSTRUMENTS = [
-  { key: 'nq', proxy: 'QQQ', label: 'NQ', full: 'E-mini Nasdaq 100', newsTickers: ['QQQ', 'SPY', 'AAPL', 'NVDA', 'MSFT'] },
-  { key: 'cl', proxy: 'USO', label: 'CL', full: 'Crude Oil',          newsTickers: ['USO', 'XLE']                         },
-  { key: 'gc', proxy: 'GLD', label: 'GC', full: 'Gold',               newsTickers: ['GLD', 'GDX']                         },
+  { key: 'nq', proxy: 'I:NDX',    label: 'NQ', full: 'E-mini Nasdaq 100', chartProxy: '^NDX',  newsTickers: ['QQQ', 'SPY', 'AAPL', 'NVDA', 'MSFT'] },
+  { key: 'cl', proxy: 'X:BCOUSD', label: 'CL', full: 'Crude Oil',          chartProxy: 'BZ=F',  newsTickers: ['USO', 'XLE']                         },
+  { key: 'gc', proxy: 'X:XAUUSD', label: 'GC', full: 'Gold',               chartProxy: 'GC=F',  newsTickers: ['GLD', 'GDX']                         },
 ]
+
+const VALID_RANGES = {
+  'I:NDX':    { min: 10000, max: 30000 },
+  'X:BCOUSD': { min: 20,    max: 200   },
+  'X:XAUUSD': { min: 1000,  max: 6000  },
+}
 
 // ── data fetchers ─────────────────────────────────────────────────────────────
 
 async function fetchPrevOHLCV(ticker) {
-  const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/prev?adjusted=true&apiKey=${POLY}`
+  const url = `https://api.polygon.io/v2/aggs/ticker/${encodeURIComponent(ticker)}/prev?adjusted=true&apiKey=${POLY}`
   const res = await fetch(url)
   const json = await res.json()
-  if (!json.results?.length) throw new Error(`No Polygon prev data for ${ticker}`)
+  if (!json.results?.length) throw new Error(`No Polygon prev data for ${ticker} — status: ${json.status}, detail: ${json.error ?? json.message ?? 'unknown'}`)
   const b = json.results[0]
+  const range = VALID_RANGES[ticker]
+  if (range && (b.c < range.min || b.c > range.max)) {
+    throw new Error(`${ticker} close ${b.c} outside expected range ${range.min}–${range.max}`)
+  }
   return { open: b.o, high: b.h, low: b.l, close: b.c, volume: b.v, timestamp: b.t }
 }
 
-async function fetchIntradayCandles(ticker) {
+// Hourly candles — try Polygon first, fall back to Yahoo Finance
+async function fetchIntradayCandles(polygonTicker, yahooTicker) {
   const to   = new Date().toISOString().split('T')[0]
   const from = new Date(Date.now() - 4 * 86_400_000).toISOString().split('T')[0]
-  const url  = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/hour/${from}/${to}?adjusted=true&sort=asc&limit=150&apiKey=${POLY}`
-  const res  = await fetch(url)
-  const json = await res.json()
-  if (!json.results?.length) return []
-  return json.results.map(b => ({
-    time:  Math.floor(b.t / 1000),
-    open:  b.o, high: b.h, low: b.l, close: b.c,
-  }))
+
+  try {
+    const url  = `https://api.polygon.io/v2/aggs/ticker/${encodeURIComponent(polygonTicker)}/range/1/hour/${from}/${to}?adjusted=true&sort=asc&limit=150&apiKey=${POLY}`
+    const json = await (await fetch(url)).json()
+    if (json.results?.length >= 10) {
+      return json.results.map(b => ({ time: Math.floor(b.t / 1000), open: b.o, high: b.h, low: b.l, close: b.c }))
+    }
+  } catch { /* fall through */ }
+
+  // Yahoo Finance fallback
+  try {
+    const url  = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooTicker}?range=4d&interval=1h&includePrePost=false`
+    const json = await (await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })).json()
+    const result = json.chart?.result?.[0]
+    if (!result) return []
+    const { open, high, low, close } = result.indicators.quote[0]
+    return result.timestamp
+      .map((t, i) => ({ time: t, open: open[i], high: high[i], low: low[i], close: close[i] }))
+      .filter(b => b.open > 0 && b.close > 0)
+      .sort((a, b) => a.time - b.time)
+  } catch { return [] }
 }
 
 const MACRO_INCLUDE = [
@@ -197,7 +221,7 @@ export async function GET() {
       INSTRUMENTS.map(async inst => {
         const [ohlcv, candles] = await Promise.all([
           fetchPrevOHLCV(inst.proxy),
-          fetchIntradayCandles(inst.proxy),
+          fetchIntradayCandles(inst.proxy, inst.chartProxy),
         ])
         const levels = calcLevels(ohlcv)
         const bias   = calcBias(ohlcv.close, levels)

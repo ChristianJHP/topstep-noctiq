@@ -18,9 +18,9 @@ const C = {
 }
 
 const INSTRUMENTS = [
-  { key: 'nq', label: 'NQ', full: 'E-mini Nasdaq 100', proxy: 'QQQ' },
-  { key: 'cl', label: 'CL', full: 'Crude Oil',          proxy: 'USO' },
-  { key: 'gc', label: 'GC', full: 'Gold',               proxy: 'GLD' },
+  { key: 'nq', label: 'NQ', full: 'E-mini Nasdaq 100', proxy: 'NDX Index' },
+  { key: 'cl', label: 'CL', full: 'Crude Oil',          proxy: 'Brent Spot' },
+  { key: 'gc', label: 'GC', full: 'Gold',               proxy: 'XAU Spot'  },
 ]
 
 const LEVEL_STYLE = {
