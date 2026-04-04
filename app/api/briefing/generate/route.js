@@ -7,7 +7,7 @@ const supabase = createClient(
 )
 
 const POLY = process.env.POLYGON_API_KEY
-const FINN = process.env.FINNHUB_API_KEY
+const FINN = process.env.NEXT_PUBLIC_FINNHUB_API_KEY
 
 const INSTRUMENTS = [
   { key: 'nq', proxy: 'QQQ', label: 'NQ', full: 'E-mini Nasdaq 100', newsTickers: ['QQQ', 'SPY', 'AAPL', 'NVDA', 'MSFT'] },
