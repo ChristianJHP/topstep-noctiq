@@ -8,22 +8,48 @@ const supabase = createClient(
 
 const TD   = process.env.TWELVE_DATA_API_KEY
 const FINN = process.env.NEXT_PUBLIC_FINNHUB_API_KEY
+const AV   = process.env.ALPHA_VANTAGE_API_KEY
 
 const INSTRUMENTS = [
   { key: 'nq', symbol: 'NDX',     label: 'NQ', full: 'E-mini Nasdaq 100' },
-  { key: 'cl', symbol: 'WTI/USD', label: 'CL', full: 'Crude Oil'         },
+  { key: 'cl', symbol: 'WTI',     label: 'CL', full: 'Crude Oil'         }, // Alpha Vantage
   { key: 'gc', symbol: 'XAU/USD', label: 'GC', full: 'Gold'              },
 ]
 
 const VALID_RANGES = {
   'NDX':     { min: 10000, max: 30000 },
-  'WTI/USD': { min: 20,    max: 200   },
+  'WTI':     { min: 20,    max: 200   },
   'XAU/USD': { min: 1000,  max: 6000  },
 }
 
 // ── data fetchers ─────────────────────────────────────────────────────────────
 
+async function fetchWTIPrevOHLCV() {
+  // Alpha Vantage WTI returns daily close values only (no OHLCV)
+  // Use two most recent entries: prev close + day-over-day range estimate
+  const url  = `https://www.alphavantage.co/query?function=WTI&interval=daily&apikey=${AV}`
+  const json = await (await fetch(url)).json()
+  const data = json.data
+  if (!data?.length) throw new Error(`Alpha Vantage WTI error: ${json.message ?? 'no data'}`)
+
+  const latest = parseFloat(data[0].value) // today / most recent
+  const prev   = parseFloat(data[1].value) // previous session close
+
+  if (isNaN(prev)) throw new Error('Alpha Vantage WTI returned invalid values')
+
+  const range = VALID_RANGES['WTI']
+  if (prev < range.min || prev > range.max) throw new Error(`WTI close ${prev} outside expected range`)
+
+  // AV only gives close — derive rough H/L from the two sessions
+  const high  = Math.max(latest, prev)
+  const low   = Math.min(latest, prev)
+  console.log(`[briefing] WTI prev close: ${prev} (range ${low}–${high})`)
+  return { open: prev, high, low, close: prev, datetime: data[1].date }
+}
+
 async function fetchPrevOHLCV(symbol) {
+  if (symbol === 'WTI') return fetchWTIPrevOHLCV()
+
   const url  = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=1day&outputsize=5&apikey=${TD}`
   const json = await (await fetch(url)).json()
 
@@ -31,7 +57,7 @@ async function fetchPrevOHLCV(symbol) {
   const values = json.values // newest first
   if (!values?.length) throw new Error(`No Twelve Data values for ${symbol}`)
 
-  // Second entry = previous completed session (index 0 = today/latest, index 1 = prev)
+  // index 0 = today/latest, index 1 = previous completed session
   const bar = values[1] ?? values[0]
   const o = parseFloat(bar.open), h = parseFloat(bar.high)
   const l = parseFloat(bar.low),  c = parseFloat(bar.close)
@@ -46,6 +72,21 @@ async function fetchPrevOHLCV(symbol) {
 }
 
 async function fetchIntradayCandles(symbol) {
+  // WTI: Alpha Vantage has no free intraday — use Yahoo Finance BZ=F (Brent, close proxy)
+  if (symbol === 'WTI') {
+    try {
+      const url  = `https://query1.finance.yahoo.com/v8/finance/chart/CL=F?range=4d&interval=1h&includePrePost=false`
+      const json = await (await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })).json()
+      const r    = json.chart?.result?.[0]
+      if (!r) return []
+      const { open, high, low, close } = r.indicators.quote[0]
+      return r.timestamp
+        .map((t, i) => ({ time: t, open: open[i], high: high[i], low: low[i], close: close[i] }))
+        .filter(b => b.open > 0 && b.close > 0)
+        .sort((a, b) => a.time - b.time)
+    } catch { return [] }
+  }
+
   const url  = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=1h&outputsize=72&apikey=${TD}`
   const json = await (await fetch(url)).json()
 
@@ -60,7 +101,7 @@ async function fetchIntradayCandles(symbol) {
       close: parseFloat(b.close),
     }))
     .filter(b => b.open > 0 && b.close > 0)
-    .sort((a, b) => a.time - b.time) // Twelve Data returns newest first, so sort asc
+    .sort((a, b) => a.time - b.time)
 }
 
 // ── news (Finnhub general market news) ───────────────────────────────────────
