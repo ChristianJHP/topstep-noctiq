@@ -7,9 +7,25 @@ const supabase = createClient(
 )
 
 const INSTRUMENTS = [
-  { key: 'nq', ticker: 'NQ=F', label: 'NQ (E-mini Nasdaq)' },
-  { key: 'cl', ticker: 'CL=F', label: 'CL (Crude Oil)' },
-  { key: 'gc', ticker: 'GC=F', label: 'GC (Gold)' },
+  {
+    key: 'nq',
+    ticker: 'NQ=F',
+    label: 'NQ (E-mini Nasdaq)',
+    // ETF proxies for Polygon news — free tier doesn't have futures tickers
+    newsTickers: ['QQQ', 'SPY', 'AAPL', 'NVDA'],
+  },
+  {
+    key: 'cl',
+    ticker: 'CL=F',
+    label: 'CL (Crude Oil)',
+    newsTickers: ['USO', 'XLE'],
+  },
+  {
+    key: 'gc',
+    ticker: 'GC=F',
+    label: 'GC (Gold)',
+    newsTickers: ['GLD', 'IAU'],
+  },
 ]
 
 function calcLevels({ high, low, close }) {
@@ -37,7 +53,6 @@ async function fetchOHLCV(ticker) {
     .map((t, i) => ({ time: t, open: open[i], high: high[i], low: low[i], close: close[i], volume: volume[i] }))
     .filter(b => b.open && b.high && b.low && b.close)
 
-  // Second-to-last = previous completed session
   return bars[bars.length - 2] ?? bars[bars.length - 1]
 }
 
@@ -54,18 +69,51 @@ async function fetchHourlyCandles(ticker) {
     .filter(b => b.open && b.high && b.low && b.close)
 }
 
-async function generateBriefing(label, ohlcv, levels) {
+async function fetchNews(newsTickers) {
+  const apiKey = process.env.POLYGON_API_KEY
+  if (!apiKey) return []
+
+  // yesterday in YYYY-MM-DD
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+
+  const headlines = []
+
+  for (const t of newsTickers) {
+    try {
+      const url = `https://api.polygon.io/v2/reference/news?ticker=${t}&limit=3&published_utc.gte=${yesterday}&order=desc&apiKey=${apiKey}`
+      const res = await fetch(url)
+      const json = await res.json()
+      if (json.results?.length) {
+        for (const article of json.results) {
+          headlines.push(article.title)
+        }
+      }
+    } catch {
+      // silently skip — news is supplementary
+    }
+    if (headlines.length >= 5) break
+  }
+
+  // deduplicate
+  return [...new Set(headlines)].slice(0, 5)
+}
+
+async function generateBriefing(label, ohlcv, levels, headlines) {
+  const newsBlock = headlines.length
+    ? `\nRecent headlines:\n${headlines.map(h => `- ${h}`).join('\n')}`
+    : ''
+
   const { text } = await generateText({
     model: 'anthropic/claude-haiku-4-5-20251001',
     prompt: `Write a 2-3 sentence pre-market briefing for ${label}. Plain text only — no markdown, no asterisks, no headers, no labels.
 
 Previous session: Open ${ohlcv.open?.toFixed(2)} High ${ohlcv.high?.toFixed(2)} Low ${ohlcv.low?.toFixed(2)} Close ${ohlcv.close?.toFixed(2)}
-Pivot ${levels.pivot.toFixed(2)} | R1 ${levels.r1.toFixed(2)} | R2 ${levels.r2.toFixed(2)} | S1 ${levels.s1.toFixed(2)} | S2 ${levels.s2.toFixed(2)}
+Pivot ${levels.pivot.toFixed(2)} | R1 ${levels.r1.toFixed(2)} | R2 ${levels.r2.toFixed(2)} | S1 ${levels.s1.toFixed(2)} | S2 ${levels.s2.toFixed(2)}${newsBlock}
 
-Cover: bias (close above/below pivot), key level to watch, what invalidates it. Short sentences. No formatting whatsoever.`,
-    maxTokens: 150,
+Cover: bias (close above/below pivot), key level to watch, what invalidates it. If any headlines are directly relevant to price action, factor them in briefly. Short sentences. No formatting.`,
+    maxTokens: 175,
   })
-  // strip any markdown that slips through
+
   return text
     .replace(/\*\*/g, '')
     .replace(/\*/g, '')
@@ -80,11 +128,14 @@ export async function GET() {
     const result = {}
 
     for (const inst of INSTRUMENTS) {
-      const ohlcv = await fetchOHLCV(inst.ticker)
+      const [ohlcv, candles, headlines] = await Promise.all([
+        fetchOHLCV(inst.ticker),
+        fetchHourlyCandles(inst.ticker),
+        fetchNews(inst.newsTickers),
+      ])
       const levels = calcLevels(ohlcv)
-      const candles = await fetchHourlyCandles(inst.ticker)
-      const briefingText = await generateBriefing(inst.label, ohlcv, levels)
-      result[inst.key] = { ohlcv, levels, candles, briefing: briefingText }
+      const briefingText = await generateBriefing(inst.label, ohlcv, levels, headlines)
+      result[inst.key] = { ohlcv, levels, candles, briefing: briefingText, headlines }
     }
 
     const { error } = await supabase

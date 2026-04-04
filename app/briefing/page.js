@@ -172,6 +172,23 @@ function InstrumentCard({ data, label, full }) {
       <div className="px-5 py-4 border-t border-white/[0.06]">
         <p className="text-xs text-neutral-400 leading-relaxed">{briefing}</p>
       </div>
+
+      {/* headlines */}
+      {data.headlines?.length > 0 && (
+        <div className="px-5 pb-4 border-t border-white/[0.04]">
+          <div className="flex items-center gap-2 mt-3 mb-2">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600">Headlines</span>
+          </div>
+          <ul className="space-y-1.5">
+            {data.headlines.map((h, i) => (
+              <li key={i} className="flex items-start gap-2 text-[11px] text-neutral-600 leading-snug">
+                <span className="mt-[3px] shrink-0 w-1 h-1 rounded-full bg-neutral-700" />
+                {h}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }
