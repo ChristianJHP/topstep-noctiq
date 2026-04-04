@@ -68,12 +68,7 @@ Write 2-3 sentences covering: session bias based on close vs pivot, the most imp
   return text.trim()
 }
 
-export async function GET(req) {
-  const authHeader = req.headers.get('authorization')
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+export async function GET() {
   try {
     const today = new Date().toISOString().split('T')[0]
     const result = {}

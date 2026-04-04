@@ -11,8 +11,8 @@ export async function GET() {
     .select('*')
     .order('date', { ascending: false })
     .limit(1)
-    .single()
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
-  return Response.json(data)
+  if (!data || data.length === 0) return Response.json({ error: 'No briefing yet — hit /api/briefing/generate first' }, { status: 404 })
+  return Response.json(data[0])
 }
