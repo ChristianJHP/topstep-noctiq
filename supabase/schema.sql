@@ -36,3 +36,16 @@ ON alerts(created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_alerts_account
 ON alerts(account);
+
+-- Daily pre-market briefings
+CREATE TABLE IF NOT EXISTS daily_briefings (
+  id BIGSERIAL PRIMARY KEY,
+  date DATE UNIQUE NOT NULL,
+  nq JSONB,
+  cl JSONB,
+  gc JSONB,
+  generated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_daily_briefings_date
+ON daily_briefings(date DESC);
