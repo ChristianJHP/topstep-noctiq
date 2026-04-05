@@ -2,6 +2,28 @@
 
 import { useState, useEffect, useRef } from 'react'
 
+async function parseApiJson(res, endpointLabel) {
+  const contentType = res.headers.get('content-type') || ''
+  const isJson = contentType.toLowerCase().includes('application/json')
+  const bodyText = await res.text()
+
+  if (!res.ok) {
+    throw new Error(`${endpointLabel} returned ${res.status}: ${bodyText.slice(0, 180)}`)
+  }
+
+  if (!isJson) {
+    throw new Error(
+      `${endpointLabel} returned non-JSON content-type "${contentType || 'unknown'}": ${bodyText.slice(0, 180)}`
+    )
+  }
+
+  try {
+    return JSON.parse(bodyText)
+  } catch (error) {
+    throw new Error(`${endpointLabel} returned invalid JSON: ${error.message}`)
+  }
+}
+
 function LiveClock({ timezone = 'America/New_York' }) {
   const [time, setTime] = useState('')
 
@@ -461,13 +483,12 @@ function MarketBrief() {
     try {
       const url = forceRefresh ? '/api/market/brief?refresh=true' : '/api/market/brief'
       const res = await fetch(url)
-      if (res.ok) {
-        const data = await res.json()
-        setBrief(data.brief)
-        setGeneratedAt(data.generatedAt)
-      }
+      const data = await parseApiJson(res, 'Market brief API')
+      setBrief(data.brief)
+      setGeneratedAt(data.generatedAt)
     } catch (err) {
       console.error('Failed to fetch brief:', err)
+      setBrief(null)
     }
   }
 
@@ -565,13 +586,12 @@ function TradingSummary() {
     try {
       const url = forceRefresh ? '/api/trading/summary?refresh=true' : '/api/trading/summary'
       const res = await fetch(url)
-      if (res.ok) {
-        const data = await res.json()
-        setSummary(data.summary)
-        setGeneratedAt(data.generatedAt)
-      }
+      const data = await parseApiJson(res, 'Trading summary API')
+      setSummary(data.summary)
+      setGeneratedAt(data.generatedAt)
     } catch (err) {
       console.error('Failed to fetch trading summary:', err)
+      setSummary(null)
     }
   }
 
@@ -670,12 +690,11 @@ export default function Dashboard() {
   const fetchRealPnl = async () => {
     try {
       const res = await fetch('/api/trading/pnl?days=30')
-      if (res.ok) {
-        const data = await res.json()
-        setRealPnl(data)
-      }
+      const data = await parseApiJson(res, 'Real P&L API')
+      setRealPnl(data)
     } catch (err) {
       console.error('Failed to fetch real P&L:', err)
+      setRealPnl(null)
     }
   }
 
@@ -686,14 +705,23 @@ export default function Dashboard() {
         fetch('/api/trading/trades'),
       ])
 
-      if (statusRes.ok) {
-        const data = await statusRes.json()
-        setStatus(data)
+      const [statusResult, tradesResult] = await Promise.allSettled([
+        parseApiJson(statusRes, 'Trading status API'),
+        parseApiJson(tradesRes, 'Trading trades API'),
+      ])
+
+      if (statusResult.status === 'fulfilled') {
+        setStatus(statusResult.value)
+      } else {
+        console.error('Failed to parse status API response:', statusResult.reason)
+        setStatus(null)
       }
 
-      if (tradesRes.ok) {
-        const data = await tradesRes.json()
-        setTrades(data.trades || [])
+      if (tradesResult.status === 'fulfilled') {
+        setTrades(tradesResult.value.trades || [])
+      } else {
+        console.error('Failed to parse trades API response:', tradesResult.reason)
+        setTrades([])
       }
 
       setLastUpdate(new Date())
