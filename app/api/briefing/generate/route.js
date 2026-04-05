@@ -6,41 +6,56 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-const POLY = process.env.POLYGON_API_KEY
 const FINN = process.env.NEXT_PUBLIC_FINNHUB_API_KEY
 
 const INSTRUMENTS = [
-  { key: 'nq', symbol: 'I:NDX',    label: 'NQ', full: 'E-mini Nasdaq 100' },
-  { key: 'cl', symbol: 'X:WTICOUSD', label: 'CL', full: 'Crude Oil'       },
-  { key: 'gc', symbol: 'X:XAUUSD', label: 'GC', full: 'Gold'              },
+  { key: 'nq', symbol: 'NQ.c.0', label: 'NQ', full: 'E-mini Nasdaq 100' },
+  { key: 'cl', symbol: 'CL.c.0', label: 'CL', full: 'Crude Oil' },
+  { key: 'gc', symbol: 'GC.c.0', label: 'GC', full: 'Gold' },
 ]
-
-const VALID_RANGES = {
-  'I:NDX':      { min: 10000, max: 30000 },
-  'X:WTICOUSD': { min: 20,    max: 200   },
-  'X:XAUUSD':   { min: 1000,  max: 6000  },
-}
 
 // ── data fetchers ─────────────────────────────────────────────────────────────
 
-async function fetchPrevOHLCV(symbol) {
-  const url  = `https://api.polygon.io/v2/aggs/ticker/${encodeURIComponent(symbol)}/prev?adjusted=true&apiKey=${POLY}`
-  const json = await (await fetch(url)).json()
-  if (!json.results?.length) throw new Error(`Polygon no data for ${symbol}: ${json.error ?? json.message ?? json.status}`)
-  const b     = json.results[0]
-  const range = VALID_RANGES[symbol]
-  if (range && (b.c < range.min || b.c > range.max)) throw new Error(`${symbol} close ${b.c} outside range ${range.min}–${range.max}`)
-  console.log(`[briefing] ${symbol} prev: O${b.o} H${b.h} L${b.l} C${b.c}`)
-  return { open: b.o, high: b.h, low: b.l, close: b.c, volume: b.v }
+async function fetchMarketData(baseUrl) {
+  const [d1dRes, d1hRes] = await Promise.all([
+    fetch(`${baseUrl}/api/market-data?schema=1d&refresh=true`),
+    fetch(`${baseUrl}/api/market-data?schema=1h&refresh=true`),
+  ])
+
+  const [d1d, d1h] = await Promise.all([d1dRes.json(), d1hRes.json()])
+
+  if (!d1dRes.ok) throw new Error(`market-data 1d failed: ${d1d.error ?? d1dRes.status}`)
+  if (!d1hRes.ok) throw new Error(`market-data 1h failed: ${d1h.error ?? d1hRes.status}`)
+
+  return { daily: d1d.data ?? {}, hourly: d1h.data ?? {} }
 }
 
-async function fetchIntradayCandles(symbol) {
-  const to   = new Date().toISOString().split('T')[0]
-  const from = new Date(Date.now() - 4 * 86_400_000).toISOString().split('T')[0]
-  const url  = `https://api.polygon.io/v2/aggs/ticker/${encodeURIComponent(symbol)}/range/1/hour/${from}/${to}?adjusted=true&sort=asc&limit=150&apiKey=${POLY}`
-  const json = await (await fetch(url)).json()
-  if (!json.results?.length) return []
-  return json.results.map(b => ({ time: Math.floor(b.t / 1000), open: b.o, high: b.h, low: b.l, close: b.c }))
+function extractInstrumentData(marketData, instrument) {
+  const dailyBars = marketData.daily?.[instrument.symbol] ?? []
+  const hourlyBars = marketData.hourly?.[instrument.symbol] ?? []
+
+  // Use previous completed daily bar for pivot inputs (same behavior as market/brief)
+  const prevDaily = dailyBars.length >= 2 ? dailyBars[dailyBars.length - 2] : null
+  if (!prevDaily) {
+    throw new Error(`Databento no previous daily bar for ${instrument.symbol}`)
+  }
+
+  return {
+    ohlcv: {
+      open: Number(prevDaily.open),
+      high: Number(prevDaily.high),
+      low: Number(prevDaily.low),
+      close: Number(prevDaily.close),
+      volume: Number(prevDaily.volume ?? 0),
+    },
+    candles: hourlyBars.map(b => ({
+      time: Number(b.time),
+      open: Number(b.open),
+      high: Number(b.high),
+      low: Number(b.low),
+      close: Number(b.close),
+    })),
+  }
 }
 
 // ── news (Finnhub general market news) ───────────────────────────────────────
@@ -59,7 +74,7 @@ const NOISE_EXCLUDE = [
 async function fetchNews() {
   if (!FINN) return []
   try {
-    const url  = `https://finnhub.io/api/v1/news?category=general&token=${FINN}`
+    const url = `https://finnhub.io/api/v1/news?category=general&token=${FINN}`
     const json = await (await fetch(url)).json()
     const seen = new Map()
     for (const a of json ?? []) {
@@ -68,36 +83,40 @@ async function fetchNews() {
       if (NOISE_EXCLUDE.some(k => low.includes(k))) continue
       if (MACRO_INCLUDE.some(k => low.includes(k))) {
         seen.set(a.headline, {
-          title:  a.headline,
+          title: a.headline,
           source: a.source ?? '',
-          time:   a.datetime ? new Date(a.datetime * 1000).toISOString() : '',
+          time: a.datetime ? new Date(a.datetime * 1000).toISOString() : '',
         })
       }
     }
     return [...seen.values()].slice(0, 6)
-  } catch { return [] }
+  } catch {
+    return []
+  }
 }
 
 // ── economic calendar (Finnhub) ───────────────────────────────────────────────
 
 async function fetchCalendar() {
   if (!FINN) return []
-  const today    = new Date().toISOString().split('T')[0]
+  const today = new Date().toISOString().split('T')[0]
   const tomorrow = new Date(Date.now() + 86_400_000).toISOString().split('T')[0]
   try {
-    const url  = `https://finnhub.io/api/v1/calendar/economic?from=${today}&to=${tomorrow}&token=${FINN}`
+    const url = `https://finnhub.io/api/v1/calendar/economic?from=${today}&to=${tomorrow}&token=${FINN}`
     const json = await (await fetch(url)).json()
     return (json.economicCalendar?.economicData ?? [])
       .filter(e => e.impact === 'high' && e.country === 'US')
       .map(e => ({
-        time:     e.time,
-        event:    e.event,
-        actual:   e.actual   ?? null,
+        time: e.time,
+        event: e.event,
+        actual: e.actual ?? null,
         estimate: e.estimate ?? null,
-        prev:     e.prev     ?? null,
-        unit:     e.unit     ?? '',
+        prev: e.prev ?? null,
+        unit: e.unit ?? '',
       }))
-  } catch { return [] }
+  } catch {
+    return []
+  }
 }
 
 // ── calculations ──────────────────────────────────────────────────────────────
@@ -114,7 +133,7 @@ function calcLevels({ high, low, close }) {
 }
 
 function calcBias(price, levels) {
-  const all   = [levels.s2, levels.s1, levels.pivot, levels.r1, levels.r2]
+  const all = [levels.s2, levels.s1, levels.pivot, levels.r1, levels.r2]
   const above = all.filter(l => price > l).length
   const score = above / all.length
   if (score > 0.6) return { label: 'BULLISH', pct: Math.round(score * 100) }
@@ -127,14 +146,14 @@ function calcBias(price, levels) {
 async function generateContent(instruments, news, calendar) {
   const calText = calendar.length
     ? calendar.map(e => {
-        const t      = new Date(e.time).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' })
-        const actual = e.actual != null ? ` ACTUAL: ${e.actual}${e.unit}` : ''
-        return `${t} ET — ${e.event}: est ${e.estimate}${e.unit} prev ${e.prev}${e.unit}${actual}`
-      }).join('\n')
+      const t = new Date(e.time).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' })
+      const actual = e.actual != null ? ` ACTUAL: ${e.actual}${e.unit}` : ''
+      return `${t} ET — ${e.event}: est ${e.estimate}${e.unit} prev ${e.prev}${e.unit}${actual}`
+    }).join('\n')
     : 'No high-impact US events today or tomorrow.'
 
-  const newsText  = news.length ? news.map(n => `- ${n.title}`).join('\n') : 'No macro headlines.'
-  const instText  = instruments.map(({ label, ohlcv, levels, bias }) =>
+  const newsText = news.length ? news.map(n => `- ${n.title}`).join('\n') : 'No macro headlines.'
+  const instText = instruments.map(({ label, ohlcv, levels, bias }) =>
     `${label}: O${ohlcv.open} H${ohlcv.high} L${ohlcv.low} C${ohlcv.close} | PP ${levels.pivot.toFixed(2)} R1 ${levels.r1.toFixed(2)} R2 ${levels.r2.toFixed(2)} S1 ${levels.s1.toFixed(2)} S2 ${levels.s2.toFixed(2)} | ${bias.label} ${bias.pct}%`
   ).join('\n')
 
@@ -142,7 +161,7 @@ async function generateContent(instruments, news, calendar) {
     model: 'anthropic/claude-haiku-4-5-20251001',
     prompt: `You are a blunt, data-driven futures trading analyst. No fluff. Only reference specific price levels or confirmed macro events from the data below. Plain text only — no markdown, no asterisks, no headers.
 
-INSTRUMENT DATA (previous session, index/spot proxies):
+INSTRUMENT DATA (previous session):
 ${instText}
 
 HIGH-IMPACT ECONOMIC CALENDAR:
@@ -156,9 +175,9 @@ Return ONLY a valid JSON object — no markdown fences, no extra text:
   "riskSentiment": "RISK_ON" | "RISK_OFF" | "NEUTRAL",
   "riskReason": "one direct sentence citing specific data above",
   "macroContext": "3-4 sentences. Only cite confirmed headlines or calendar events above. No invented news.",
-  "nq": "2-3 sentences on NDX levels, what broke or held, what confirms or invalidates.",
-  "cl": "2-3 sentences on WTI levels, energy/OPEC context from headlines, key level to watch.",
-  "gc": "2-3 sentences on gold levels, safe-haven or dollar context, what confirms the move."
+  "nq": "2-3 sentences on NQ levels, what broke or held, what confirms or invalidates.",
+  "cl": "2-3 sentences on CL levels, energy/OPEC context from headlines, key level to watch.",
+  "gc": "2-3 sentences on GC levels, safe-haven or dollar context, what confirms the move."
 }`,
     maxTokens: 700,
   })
@@ -173,25 +192,25 @@ Return ONLY a valid JSON object — no markdown fences, no extra text:
 
 // ── handler ───────────────────────────────────────────────────────────────────
 
-export async function GET() {
+export async function GET(request) {
   try {
     const today = new Date().toISOString().split('T')[0]
+    const baseUrl = new URL(request.url).origin
 
-    const [calendar, news] = await Promise.all([fetchCalendar(), fetchNews()])
+    const [calendar, news, marketData] = await Promise.all([
+      fetchCalendar(),
+      fetchNews(),
+      fetchMarketData(baseUrl),
+    ])
 
-    const instData = await Promise.all(
-      INSTRUMENTS.map(async inst => {
-        const [ohlcv, candles] = await Promise.all([
-          fetchPrevOHLCV(inst.symbol),
-          fetchIntradayCandles(inst.symbol),
-        ])
-        const levels = calcLevels(ohlcv)
-        const bias   = calcBias(ohlcv.close, levels)
-        return { ...inst, ohlcv, candles, levels, bias }
-      })
-    )
+    const instData = INSTRUMENTS.map(inst => {
+      const { ohlcv, candles } = extractInstrumentData(marketData, inst)
+      const levels = calcLevels(ohlcv)
+      const bias = calcBias(ohlcv.close, levels)
+      return { ...inst, ohlcv, candles, levels, bias }
+    })
 
-    const llm    = await generateContent(instData, news, calendar)
+    const llm = await generateContent(instData, news, calendar)
     const result = {}
     for (const inst of instData) {
       result[inst.key] = { ohlcv: inst.ohlcv, levels: inst.levels, bias: inst.bias, candles: inst.candles, briefing: llm[inst.key] ?? '', news }
