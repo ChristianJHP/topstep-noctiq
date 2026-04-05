@@ -25,6 +25,13 @@ const INSTRUMENTS = [
   { key: 'GC.c.0', label: 'GC', full: 'Gold Futures'              },
 ]
 
+function getInstrumentSeries(data, inst) {
+  if (!data) return null
+  if (Array.isArray(data?.[inst.key])) return data[inst.key]
+  const matchKey = Object.keys(data).find(k => k === inst.key || k.startsWith(`${inst.label}.`) || k.startsWith(inst.label))
+  return matchKey ? data[matchKey] : null
+}
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 function fmt(v, d = 2) {
@@ -452,8 +459,8 @@ export default function BriefingPage() {
               key={inst.key}
               label={inst.label}
               full={inst.full}
-              daily={daily1d?.[inst.key] ?? (loading ? null : [])}
-              candles1h={hourly1h?.[inst.key] ?? []}
+              daily={getInstrumentSeries(daily1d, inst) ?? (loading ? null : [])}
+              candles1h={getInstrumentSeries(hourly1h, inst) ?? []}
             />
           ))}
 
