@@ -50,11 +50,23 @@ function sessionLevels(bars1h) {
   }
 }
 
-async function fetchMarketContext() {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+async function fetchMarketContext(base) {
+  const fetchJson = async (url) => {
+    const res = await fetch(url)
+    const text = await res.text()
+    try {
+      const json = JSON.parse(text)
+      if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
+      return json
+    } catch (err) {
+      if (!res.ok) throw err
+      throw new Error(`Invalid JSON from ${url}: ${text.slice(0, 120)}`)
+    }
+  }
+
   const [d1d, d1h] = await Promise.all([
-    fetch(`${base}/api/market-data?schema=1d`).then(r => r.json()),
-    fetch(`${base}/api/market-data?schema=1h`).then(r => r.json()),
+    fetchJson(`${base}/api/market-data?schema=1d`),
+    fetchJson(`${base}/api/market-data?schema=1h`),
   ])
 
   const context = {}
@@ -137,7 +149,8 @@ export async function GET(request) {
     const etDate = new Date().toLocaleDateString('en-US', { timeZone: 'America/New_York', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
     const etTime = new Date().toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true })
 
-    const ctx    = await fetchMarketContext()
+    const base = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin
+    const ctx    = await fetchMarketContext(base)
     const prompt = buildPrompt(ctx, etDate, etTime)
 
     const { text } = await generateText({
