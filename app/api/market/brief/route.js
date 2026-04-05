@@ -60,6 +60,8 @@ async function fetchMarketContext(base) {
       return json
     } catch (err) {
       if (!res.ok) throw err
+
+
       throw new Error(`Invalid JSON from ${url}: ${text.slice(0, 120)}`)
     }
   }
