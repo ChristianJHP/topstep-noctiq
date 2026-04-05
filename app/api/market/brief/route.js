@@ -20,58 +20,36 @@ let briefCache = {
 const CACHE_DURATION_MS = 1 * 60 * 60 * 1000; // 1 hour
 
 /**
- * Fetch real-time NQ futures data from Yahoo Finance
+ * Fetch NQ data from internal /api/market-data endpoint (Databento)
  */
 async function fetchNQData() {
   try {
-    // NQ=F is Nasdaq 100 E-mini futures on Yahoo Finance
-    const response = await fetch(
-      'https://query1.finance.yahoo.com/v8/finance/chart/NQ=F?interval=1d&range=5d',
-      {
-        headers: {
-          'User-Agent': 'Mozilla/5.0',
-        },
-      }
-    );
+    const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+    const res  = await fetch(`${base}/api/market-data?schema=1d`)
+    if (!res.ok) throw new Error(`market-data ${res.status}`)
+    const json = await res.json()
 
-    if (!response.ok) {
-      console.error('[MarketBrief] Yahoo Finance API error:', response.status);
-      return null;
-    }
+    // Find NQ.c.0 bars
+    const bars = json.data?.['NQ.c.0'] ?? []
+    if (!bars.length) return null
 
-    const data = await response.json();
-    const result = data?.chart?.result?.[0];
-
-    if (!result) return null;
-
-    const meta = result.meta;
-    const quote = result.indicators?.quote?.[0];
-    const closes = quote?.close?.filter(c => c !== null) || [];
-
-    // Get current price and previous close
-    const currentPrice = meta?.regularMarketPrice || closes[closes.length - 1];
-    const previousClose = meta?.previousClose || closes[closes.length - 2];
-
-    // Calculate change
-    const change = currentPrice - previousClose;
-    const changePercent = ((change / previousClose) * 100).toFixed(2);
-
-    // Get high/low for context
-    const dayHigh = meta?.regularMarketDayHigh || Math.max(...(quote?.high?.filter(h => h) || [currentPrice]));
-    const dayLow = meta?.regularMarketDayLow || Math.min(...(quote?.low?.filter(l => l) || [currentPrice]));
+    const prev    = bars[bars.length - 2] ?? bars[bars.length - 1]
+    const current = bars[bars.length - 1]
+    const change  = current.close - prev.close
+    const changePct = ((change / prev.close) * 100).toFixed(2)
 
     return {
-      symbol: 'NQ',
-      price: currentPrice?.toFixed(2),
-      change: change?.toFixed(2),
-      changePercent,
-      dayHigh: dayHigh?.toFixed(2),
-      dayLow: dayLow?.toFixed(2),
-      previousClose: previousClose?.toFixed(2),
-    };
-  } catch (error) {
-    console.error('[MarketBrief] Error fetching NQ data:', error);
-    return null;
+      symbol:        'NQ',
+      price:         current.close.toFixed(2),
+      change:        change.toFixed(2),
+      changePercent: changePct,
+      dayHigh:       current.high.toFixed(2),
+      dayLow:        current.low.toFixed(2),
+      previousClose: prev.close.toFixed(2),
+    }
+  } catch (err) {
+    console.error('[MarketBrief] Databento fetch failed, no NQ data:', err.message)
+    return null
   }
 }
 
