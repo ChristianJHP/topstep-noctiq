@@ -34,16 +34,17 @@ function daysAgo(n) {
 
 async function estimateCost(schema, start) {
   try {
+    const params = new URLSearchParams({
+      dataset:  DATASET,
+      symbols:  SYMBOLS.join(','),
+      schema,
+      start,
+      stype_in: 'continuous',
+    })
     const res  = await fetch(`${BASE_URL}/metadata.get_cost`, {
       method:  'POST',
-      headers: { ...authHeader(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        dataset:  DATASET,
-        symbols:  SYMBOLS,
-        schema,
-        start,
-        stype_in: 'continuous',
-      }),
+      headers: { ...authHeader(), 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
     })
     const json = await res.json()
     console.log(`[market-data] Databento cost estimate for ${schema} since ${start}: $${json.cost ?? 'unknown'}`)
@@ -58,17 +59,19 @@ async function fetchFromDatabento(schema) {
   // Log cost estimate before the pull
   await estimateCost(schema, start)
 
+  const params = new URLSearchParams({
+    dataset:   DATASET,
+    symbols:   SYMBOLS.join(','),
+    schema:    `ohlcv-${schema}`,
+    start,
+    stype_in:  'continuous',
+    encoding:  'json',
+  })
+
   const res = await fetch(`${BASE_URL}/timeseries.get_range`, {
     method:  'POST',
-    headers: { ...authHeader(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      dataset:   DATASET,
-      symbols:   SYMBOLS,
-      schema:    `ohlcv-${schema}`,
-      start,
-      stype_in:  'continuous',
-      encoding:  'json',
-    }),
+    headers: { ...authHeader(), 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
   })
 
   if (!res.ok) {
