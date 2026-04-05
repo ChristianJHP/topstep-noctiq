@@ -18,9 +18,9 @@ const C = {
 }
 
 const INSTRUMENTS = [
-  { key: 'nq', label: 'NQ', full: 'E-mini Nasdaq 100', proxy: 'NDX' },
-  { key: 'cl', label: 'CL', full: 'Crude Oil',          proxy: 'WTI/USD' },
-  { key: 'gc', label: 'GC', full: 'Gold',               proxy: 'XAU/USD' },
+  { key: 'nq', label: 'NQ', full: 'E-mini Nasdaq 100', proxy: 'I:NDX'      },
+  { key: 'cl', label: 'CL', full: 'Crude Oil',          proxy: 'X:WTICOUSD' },
+  { key: 'gc', label: 'GC', full: 'Gold',               proxy: 'X:XAUUSD'   },
 ]
 
 const LEVEL_STYLE = {
@@ -506,7 +506,7 @@ export default function BriefingPage() {
       {/* footer */}
       <div style={{ padding: '16px 24px', borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 10, color: '#333', fontFamily: 'ui-monospace,monospace' }}>
-          DATA VIA TWELVE DATA · CALENDAR &amp; NEWS VIA FINNHUB · REFRESHES 7:45AM ET
+          DATA VIA POLYGON.IO · CALENDAR &amp; NEWS VIA FINNHUB · REFRESHES 7:45AM ET
         </span>
         <Link href="/dashboard" style={{ fontSize: 10, color: C.dim, textDecoration: 'none' }}>
           LIVE CHARTS →
