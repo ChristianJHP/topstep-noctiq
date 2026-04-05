@@ -85,9 +85,52 @@ function fmtAge(ts) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+// ── session level helpers (client-side) ───────────────────────────────────────
+
+function etHourFromTs(ts) {
+  return parseInt(new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York', hour: 'numeric', hour12: false,
+  }).format(new Date(Number(ts) * 1000)))
+}
+
+function computeSessionLevels(bars1h) {
+  if (!bars1h?.length) return null
+  const london = [], overnight = [], prevDay = []
+
+  // Today in ET
+  const todayET = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date())
+
+  for (const b of bars1h) {
+    const tsMs = Number(b.time) * 1000
+    const dateET = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date(tsMs))
+    const h = etHourFromTs(b.time)
+    const isToday = dateET === todayET
+
+    if (isToday && h >= 3 && h < 9)  london.push(b)
+    if (isToday && (h >= 18 || h < 3)) overnight.push(b)
+    if (!isToday) prevDay.push(b)
+  }
+
+  const hi = arr => arr.length ? Math.max(...arr.map(b => Number(b.high))) : null
+  const lo = arr => arr.length ? Math.min(...arr.map(b => Number(b.low)))  : null
+
+  return {
+    londonH:    hi(london),
+    londonL:    lo(london),
+    overnightH: hi(overnight),
+    overnightL: lo(overnight),
+    prevDayH:   hi(prevDay),
+    prevDayL:   lo(prevDay),
+  }
+}
+
 // ── chart ─────────────────────────────────────────────────────────────────────
 
-function Chart({ candles, levels, height = 200 }) {
+function Chart({ candles, levels, sessionLvls, height = 200 }) {
   const ref = useRef(null)
 
   useEffect(() => {
@@ -123,16 +166,33 @@ function Chart({ candles, levels, height = 200 }) {
 
       series.setData(sorted)
 
+      // Pivot levels
       if (levels) {
-        const lines = [
+        const pivotLines = [
           { key: 'r2',    color: C.red,    label: 'R2', style: 2 },
           { key: 'r1',    color: '#e57373', label: 'R1', style: 2 },
           { key: 'pivot', color: C.blue,   label: 'PP', style: 0 },
           { key: 's1',    color: '#81c784', label: 'S1', style: 2 },
           { key: 's2',    color: C.green,  label: 'S2', style: 2 },
         ]
-        for (const { key, color, label, style } of lines) {
+        for (const { key, color, label, style } of pivotLines) {
           const price = levels[key]
+          if (!price) continue
+          series.createPriceLine({ price: Number(price), color, lineWidth: 1, lineStyle: style, axisLabelVisible: true, title: label })
+        }
+      }
+
+      // Session levels (London H/L, prev day H/L, overnight H/L)
+      if (sessionLvls) {
+        const sessionLines = [
+          { price: sessionLvls.londonH,    color: C.orange, label: 'LON H', style: 3 },
+          { price: sessionLvls.londonL,    color: C.orange, label: 'LON L', style: 3 },
+          { price: sessionLvls.prevDayH,   color: '#9c27b0', label: 'PDH',   style: 3 },
+          { price: sessionLvls.prevDayL,   color: '#9c27b0', label: 'PDL',   style: 3 },
+          { price: sessionLvls.overnightH, color: '#607d8b', label: 'ONH',   style: 3 },
+          { price: sessionLvls.overnightL, color: '#607d8b', label: 'ONL',   style: 3 },
+        ]
+        for (const { price, color, label, style } of sessionLines) {
           if (!price) continue
           series.createPriceLine({ price: Number(price), color, lineWidth: 1, lineStyle: style, axisLabelVisible: true, title: label })
         }
@@ -148,7 +208,7 @@ function Chart({ candles, levels, height = 200 }) {
     })()
 
     return () => chart?.remove()
-  }, [candles, levels, height])
+  }, [candles, levels, sessionLvls, height])
 
   return <div ref={ref} style={{ width: '100%', height, background: 'transparent' }} />
 }
@@ -156,11 +216,11 @@ function Chart({ candles, levels, height = 200 }) {
 // ── instrument card ───────────────────────────────────────────────────────────
 
 function InstrumentCard({ label, full, daily, candles1h }) {
-  const hasData = daily?.length >= 1
-
+  const hasData   = daily?.length >= 1
   const prevBar   = hasData ? (daily.length >= 2 ? daily[daily.length - 2] : null) : null
   const todayBar  = hasData ? daily[daily.length - 1] : null
   const levels    = computePivots(prevBar)
+  const sessLvls  = computeSessionLevels(candles1h)
   const close     = todayBar ? Number(todayBar.close) : null
   const open      = todayBar ? Number(todayBar.open)  : null
   const change    = close != null && open != null ? close - open : null
@@ -170,20 +230,15 @@ function InstrumentCard({ label, full, daily, candles1h }) {
 
   return (
     <div style={{ borderBottom: `1px solid ${C.border}` }}>
-      {/* header row */}
-      <div style={{ padding: '14px 20px', background: C.panel, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${C.border}` }}>
+      {/* header */}
+      <div style={{ padding: '12px 20px', background: C.panel, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${C.border}` }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
           <span style={{ fontFamily: 'ui-monospace,monospace', fontSize: 15, fontWeight: 700, color: C.text }}>{label}</span>
           <span style={{ fontSize: 11, color: C.dim }}>{full}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           {hasData && (
-            <span style={{
-              fontSize: 10, fontWeight: 700, letterSpacing: '0.07em',
-              fontFamily: 'ui-monospace,monospace',
-              color: bias.color, border: `1px solid ${bias.color}`,
-              padding: '2px 8px',
-            }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', fontFamily: 'ui-monospace,monospace', color: bias.color, border: `1px solid ${bias.color}`, padding: '2px 8px' }}>
               {bias.label}
             </span>
           )}
@@ -202,11 +257,11 @@ function InstrumentCard({ label, full, daily, candles1h }) {
       </div>
 
       {/* chart */}
-      <div style={{ background: C.card, minHeight: 200 }}>
+      <div style={{ background: C.card, minHeight: 220 }}>
         {candles1h?.length > 0
-          ? <Chart candles={candles1h} levels={levels} height={200} />
+          ? <Chart candles={candles1h} levels={levels} sessionLvls={sessLvls} height={220} />
           : (
-            <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6 }}>
+            <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6 }}>
               <div style={{ width: 24, height: 24, border: `2px solid ${C.border}`, borderTop: `2px solid ${C.dim}`, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
               <span style={{ fontSize: 10, color: C.dim, fontFamily: 'ui-monospace,monospace' }}>LOADING CHART</span>
             </div>
@@ -214,32 +269,44 @@ function InstrumentCard({ label, full, daily, candles1h }) {
         }
       </div>
 
-      {/* pivot levels */}
-      <div style={{ display: 'flex', gap: 0, borderTop: `1px solid ${C.border}`, background: C.panel, overflowX: 'auto' }}>
-        {levels
-          ? [
-              { k: 'R2', v: levels.r2,    c: C.red    },
-              { k: 'R1', v: levels.r1,    c: '#e57373' },
-              { k: 'PP', v: levels.pivot, c: C.blue   },
-              { k: 'S1', v: levels.s1,    c: '#81c784' },
-              { k: 'S2', v: levels.s2,    c: C.green  },
-            ].map((l, i) => (
-              <div key={l.k} style={{
-                flex: 1, padding: '8px 12px', textAlign: 'center',
-                borderRight: i < 4 ? `1px solid ${C.border}` : 'none',
-                minWidth: 80,
-              }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: l.c, fontFamily: 'ui-monospace,monospace', letterSpacing: '0.05em', marginBottom: 3 }}>{l.k}</div>
-                <div style={{ fontSize: 12, fontFamily: 'ui-monospace,monospace', color: C.text }}>{fmt(l.v)}</div>
-              </div>
-            ))
-          : (
-            <div style={{ flex: 1, padding: '8px 16px', fontSize: 10, color: C.dim, fontFamily: 'ui-monospace,monospace' }}>
-              PIVOT LEVELS — AWAITING DAILY DATA
-            </div>
-          )
-        }
+      {/* level rows */}
+      <div style={{ background: C.panel, borderTop: `1px solid ${C.border}` }}>
+        {/* pivot levels */}
+        <div style={{ display: 'flex', overflowX: 'auto', borderBottom: `1px solid ${C.border}` }}>
+          {levels
+            ? [
+                { k: 'R2', v: levels.r2,    c: C.red    },
+                { k: 'R1', v: levels.r1,    c: '#e57373' },
+                { k: 'PP', v: levels.pivot, c: C.blue   },
+                { k: 'S1', v: levels.s1,    c: '#81c784' },
+                { k: 'S2', v: levels.s2,    c: C.green  },
+              ].map((l, i) => (
+                <div key={l.k} style={{ flex: 1, padding: '7px 12px', textAlign: 'center', borderRight: i < 4 ? `1px solid ${C.border}` : 'none', minWidth: 75 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: l.c, fontFamily: 'ui-monospace,monospace', marginBottom: 3 }}>{l.k}</div>
+                  <div style={{ fontSize: 11, fontFamily: 'ui-monospace,monospace', color: C.text }}>{fmt(l.v)}</div>
+                </div>
+              ))
+            : <div style={{ flex: 1, padding: '8px 16px', fontSize: 10, color: C.dim, fontFamily: 'ui-monospace,monospace' }}>PIVOTS — AWAITING DATA</div>
+          }
+        </div>
+        {/* session levels */}
+        {sessLvls && (sessLvls.londonH || sessLvls.prevDayH) && (
+          <div style={{ display: 'flex', gap: 16, padding: '7px 16px', overflowX: 'auto' }}>
+            {sessLvls.londonH  && <><Tag color={C.orange} label="LON H" val={sessLvls.londonH}  /><Tag color={C.orange}  label="LON L" val={sessLvls.londonL}  /></>}
+            {sessLvls.prevDayH && <><Tag color="#ab47bc" label="PDH"   val={sessLvls.prevDayH} /><Tag color="#ab47bc"    label="PDL"   val={sessLvls.prevDayL} /></>}
+            {sessLvls.overnightH && <><Tag color="#78909c" label="ONH" val={sessLvls.overnightH} /><Tag color="#78909c"  label="ONL"   val={sessLvls.overnightL} /></>}
+          </div>
+        )}
       </div>
+    </div>
+  )
+}
+
+function Tag({ color, label, val }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+      <span style={{ fontSize: 9, fontWeight: 700, color, fontFamily: 'ui-monospace,monospace' }}>{label}</span>
+      <span style={{ fontSize: 11, fontFamily: 'ui-monospace,monospace', color: C.text }}>{fmt(val)}</span>
     </div>
   )
 }
@@ -251,6 +318,7 @@ export default function BriefingPage() {
   const [hourly1h,   setHourly1h]   = useState(null)
   const [news,       setNews]       = useState([])
   const [brief,      setBrief]      = useState(null)
+  const [briefRaw,   setBriefRaw]   = useState(null)
   const [briefMeta,  setBriefMeta]  = useState(null)
   const [loading,    setLoading]    = useState(true)
   const [session,    setSession]    = useState(() => getSession())
@@ -283,6 +351,7 @@ export default function BriefingPage() {
       setHourly1h(d1h.data ?? null)
       setNews(newsJson.news ?? [])
       setBrief(briefJson.brief ?? null)
+      setBriefRaw(briefJson.raw ?? null)
       setBriefMeta(briefJson)
       setFetchedAt(d1d.fetchedAt ?? null)
     } catch (e) {
@@ -399,14 +468,36 @@ export default function BriefingPage() {
         {/* RIGHT: brief + news */}
         <div style={{ width: 360, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
 
-          {/* AI brief */}
-          <div style={{ borderBottom: `1px solid ${C.border}`, padding: '16px 18px' }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              marginBottom: 12,
-            }}>
+          {/* probability bar */}
+          {briefRaw && (
+            <div style={{ borderBottom: `1px solid ${C.border}`, padding: '14px 18px' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: C.dim, fontFamily: 'ui-monospace,monospace', marginBottom: 10 }}>
+                TODAY'S BIAS PROBABILITY
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 10, color: C.green, fontFamily: 'ui-monospace,monospace', width: 32 }}>
+                  {briefRaw.bullPct}%
+                </span>
+                <div style={{ flex: 1, height: 8, background: '#1a1a1a', borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
+                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${briefRaw.bullPct}%`, background: `linear-gradient(90deg, ${C.green}, #00c853)`, borderRadius: 4 }} />
+                  <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: `${briefRaw.bearPct}%`, background: `linear-gradient(90deg, #c62828, ${C.red})`, borderRadius: 4 }} />
+                </div>
+                <span style={{ fontSize: 10, color: C.red, fontFamily: 'ui-monospace,monospace', width: 32, textAlign: 'right' }}>
+                  {briefRaw.bearPct}%
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 9, color: C.green, fontFamily: 'ui-monospace,monospace' }}>BULL</span>
+                <span style={{ fontSize: 9, color: C.red,   fontFamily: 'ui-monospace,monospace' }}>BEAR</span>
+              </div>
+            </div>
+          )}
+
+          {/* AI brief / scenarios */}
+          <div style={{ borderBottom: `1px solid ${C.border}`, padding: '14px 18px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: C.dim, fontFamily: 'ui-monospace,monospace' }}>
-                AI MARKET BRIEF
+                AI ANALYSIS
               </span>
               {briefMeta?.generatedAt && (
                 <span style={{ fontSize: 9, color: '#333', fontFamily: 'ui-monospace,monospace' }}>
@@ -414,42 +505,41 @@ export default function BriefingPage() {
                 </span>
               )}
             </div>
-            {brief
-              ? brief.split('\n').filter(Boolean).map((line, i) => (
-                  <p key={i} style={{ fontSize: 12, color: '#bbb', lineHeight: 1.75, margin: '0 0 6px', letterSpacing: '0.01em' }}>
-                    {line}
-                  </p>
-                ))
-              : (
-                <div style={{ fontSize: 11, color: C.dim, fontFamily: 'ui-monospace,monospace' }}>
-                  GENERATING BRIEF...
-                </div>
-              )
-            }
+            {briefRaw?.summary && (
+              <p style={{ fontSize: 12, color: '#bbb', lineHeight: 1.75, margin: '0 0 10px' }}>
+                {briefRaw.summary}
+              </p>
+            )}
+            {briefRaw?.bullCase && (
+              <div style={{ padding: '8px 10px', background: '#001a0d', border: `1px solid ${C.green}22`, marginBottom: 6 }}>
+                <div style={{ fontSize: 9, color: C.green, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>BULL CASE</div>
+                <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, margin: 0 }}>{briefRaw.bullCase}</p>
+              </div>
+            )}
+            {briefRaw?.bearCase && (
+              <div style={{ padding: '8px 10px', background: '#1a0008', border: `1px solid ${C.red}22`, marginBottom: 6 }}>
+                <div style={{ fontSize: 9, color: C.red, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>BEAR CASE</div>
+                <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, margin: 0 }}>{briefRaw.bearCase}</p>
+              </div>
+            )}
+            {!brief && (
+              <div style={{ fontSize: 11, color: C.dim, fontFamily: 'ui-monospace,monospace' }}>GENERATING...</div>
+            )}
           </div>
 
           {/* what to watch */}
-          {daily1d && (
-            <div style={{ borderBottom: `1px solid ${C.border}`, padding: '14px 18px' }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: C.dim, fontFamily: 'ui-monospace,monospace', marginBottom: 12 }}>
-                KEY LEVELS TO WATCH
+          {briefRaw?.watch && (
+            <div style={{ borderBottom: `1px solid ${C.border}`, padding: '12px 18px' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: C.dim, fontFamily: 'ui-monospace,monospace', marginBottom: 10 }}>
+                WATCH TODAY
               </div>
-              {INSTRUMENTS.map(inst => {
-                const bars   = daily1d[inst.key]
-                if (!bars?.length) return null
-                const prevBar = bars.length >= 2 ? bars[bars.length - 2] : null
-                const today   = bars[bars.length - 1]
-                const levels  = computePivots(prevBar)
-                if (!levels) return null
-                return (
-                  <div key={inst.key} style={{ marginBottom: 10 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, fontFamily: 'ui-monospace,monospace' }}>{inst.label}  </span>
-                    <span style={{ fontSize: 10, color: C.blue,   fontFamily: 'ui-monospace,monospace' }}>PP {fmt(levels.pivot)}  </span>
-                    <span style={{ fontSize: 10, color: '#e57373', fontFamily: 'ui-monospace,monospace' }}>R1 {fmt(levels.r1)}  </span>
-                    <span style={{ fontSize: 10, color: '#81c784', fontFamily: 'ui-monospace,monospace' }}>S1 {fmt(levels.s1)}</span>
-                  </div>
-                )
-              })}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {briefRaw.watch.split(',').map(w => w.trim()).filter(Boolean).map((w, i) => (
+                  <span key={i} style={{ fontSize: 10, fontFamily: 'ui-monospace,monospace', color: C.muted, background: '#1a1a1a', padding: '3px 8px', border: `1px solid ${C.border}` }}>
+                    {w}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 
