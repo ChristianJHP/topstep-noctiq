@@ -29,9 +29,9 @@ function daysAgo(n) {
 async function fetchDatabento(schema) {
   const start = schema === '1d' ? daysAgo(7) : daysAgo(4)
 
-  const body = {
+  const payload = {
     dataset:  DATASET,
-    symbols:  SYMBOLS.join(','),       // string, not array
+    symbols:  SYMBOLS.join(','),
     schema:   `ohlcv-${schema}`,
     start,
     stype_in: 'continuous',
@@ -39,20 +39,63 @@ async function fetchDatabento(schema) {
     encoding: 'json',
   }
 
-  console.log('[market-data] Databento request body:', JSON.stringify(body))
+  console.log('[market-data] Databento request payload:', JSON.stringify(payload))
 
-  const res = await fetch(`${BASE_URL}/timeseries.get_range`, {
-    method:  'POST',
-    headers: { ...authHeader(), 'Content-Type': 'application/json' },
-    body:    JSON.stringify(body),
-  })
+  const endpoint = `${BASE_URL}/timeseries.get_range`
 
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`Databento ${res.status}: ${err}`)
+  const requestStrategies = [
+    async () => fetch(endpoint, {
+      method: 'POST',
+      headers: { ...authHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }),
+    async () => fetch(endpoint, {
+      method: 'POST',
+      headers: { ...authHeader(), 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(payload).toString(),
+    }),
+    async () => fetch(`${endpoint}?${new URLSearchParams(payload).toString()}`, {
+      method: 'GET',
+      headers: authHeader(),
+    }),
+  ]
+
+  let lastError = null
+  let text = ''
+
+  for (let i = 0; i < requestStrategies.length; i++) {
+    const res = await requestStrategies[i]()
+    text = await res.text()
+
+    if (res.ok) {
+      console.log(`[market-data] Databento request strategy ${i + 1} succeeded`)
+      break
+    }
+
+    lastError = `Databento ${res.status}: ${text}`
+
+    // Common proxy/body-strip case from deployment edge: FastAPI sees null body.
+    const looksLikeMissingBody = res.status === 422 && text.includes('"loc":["body","dataset"]')
+    if (i < requestStrategies.length - 1 && looksLikeMissingBody) {
+      console.warn(`[market-data] strategy ${i + 1} failed with missing body; retrying with fallback strategy ${i + 2}`)
+      continue
+    }
+
+    if (i < requestStrategies.length - 1) {
+      console.warn(`[market-data] strategy ${i + 1} failed; retrying with fallback strategy ${i + 2}`)
+      continue
+    }
   }
 
-  const text  = await res.text()
+  if (lastError && !text.trim().startsWith('{') && !text.trim().startsWith('[')) {
+    throw new Error(lastError)
+  }
+  if (lastError && text.includes('"error"')) {
+    throw new Error(lastError)
+  }
+  if (lastError && text.includes('"detail"')) {
+    throw new Error(lastError)
+  }
   const lines = text.trim().split('\n').filter(Boolean)
   const bySymbol = {}
 

@@ -59,6 +59,9 @@ async function fetchMarketContext(base) {
       if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
       return json
     } catch (err) {
+      if (!res.ok) throw err
+
+
       throw new Error(`Invalid JSON from ${url}: ${text.slice(0, 120)}`)
     }
   }
