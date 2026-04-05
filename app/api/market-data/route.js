@@ -35,6 +35,7 @@ async function fetchDatabento(schema) {
     schema:   `ohlcv-${schema}`,
     start,
     stype_in: 'continuous',
+    stype_out: 'continuous',
     encoding: 'json',
   }
 
@@ -59,7 +60,7 @@ async function fetchDatabento(schema) {
     try {
       const r = JSON.parse(line)
       if (r.open == null) continue
-      const sym = r.symbol ?? r.hd?.symbol
+      const sym = r.symbol ?? r.hd?.symbol ?? r.raw_symbol ?? r.s
       if (!sym) continue
       if (!bySymbol[sym]) bySymbol[sym] = []
       bySymbol[sym].push({
