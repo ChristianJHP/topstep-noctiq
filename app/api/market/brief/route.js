@@ -98,39 +98,50 @@ async function fetchMarketContext(base) {
   return context
 }
 
-function buildPrompt(ctx, etDate, etTime) {
+function buildPrompt(ctx, etDate, etTime, newsHeadlines) {
   const lines = []
   for (const [sym, d] of Object.entries(ctx)) {
     if (d.price === 'N/A') continue
     const pp = d.pivots
     lines.push(`${sym}: ${d.price} (${d.changePct >= 0 ? '+' : ''}${d.changePct}%)`)
-    if (pp) lines.push(`  Pivot levels — PP:${pp.pivot} R1:${pp.r1} R2:${pp.r2} S1:${pp.s1} S2:${pp.s2}`)
-    if (d.sessions.londonH) lines.push(`  London session — H:${d.sessions.londonH.toFixed(2)} L:${d.sessions.londonL.toFixed(2)}`)
-    if (d.sessions.overnightH) lines.push(`  Overnight range — H:${d.sessions.overnightH.toFixed(2)} L:${d.sessions.overnightL.toFixed(2)}`)
-    lines.push(`  Prev day — H:${d.prevHigh} L:${d.prevLow}`)
+    if (pp) lines.push(`  Classic Pivots — PP:${pp.pivot} R1:${pp.r1} R2:${pp.r2} S1:${pp.s1} S2:${pp.s2}`)
+    if (d.sessions.londonH) lines.push(`  London session (ICT killzone 2-5am ET) — H:${d.sessions.londonH.toFixed(2)} L:${d.sessions.londonL.toFixed(2)}`)
+    if (d.sessions.overnightH) lines.push(`  Overnight/Asia range — H:${d.sessions.overnightH.toFixed(2)} L:${d.sessions.overnightL.toFixed(2)}`)
+    lines.push(`  Prev day PDH:${d.prevHigh} PDL:${d.prevLow}`)
   }
 
-  return `You are an elite futures trader and technical analyst. Analyze the following real-time market data for ${etDate} at ${etTime} ET and generate a structured pre-market / intraday briefing.
+  const newsSection = newsHeadlines?.length
+    ? `\nMACROECONOMIC HEADLINES:\n${newsHeadlines.slice(0, 5).map(h => `- ${h}`).join('\n')}`
+    : ''
+
+  return `You are an elite ICT-trained futures trader. Analyze the following data for ${etDate} at ${etTime} ET.
 
 LIVE MARKET DATA:
-${lines.join('\n')}
+${lines.join('\n')}${newsSection}
+
+ICT FRAMEWORK TO APPLY:
+- Identify if price is trading above or below the previous day high/low (PDH/PDL) — these are key liquidity levels
+- London killzone highs/lows are liquidity pools; price often sweeps them before reversing
+- Look for fair value gaps (FVG): if price gapped between sessions, that imbalance attracts price
+- Premium/discount: price above PP or PDH = premium (look for sells); below PP or PDL = discount (look for buys)
+- NY open (9:30am ET) often creates the actual trend direction by sweeping London liquidity first
+- Macro news (CPI, FOMC, jobs data) acts as a catalyst for liquidity sweeps
 
 Your response MUST follow this EXACT format (no extra text, no markdown):
 
 BULL_PCT: [0-100]
 BEAR_PCT: [0-100]
-BULL_CASE: [1-2 sentence bull scenario with specific price targets — which level to break and where price goes]
-BEAR_CASE: [1-2 sentence bear scenario with specific price targets — which level to fail at and where price falls]
-SUMMARY: [2-3 sentences: overall market bias, key driver, what to watch for. Be specific with levels. Reference London session high/low and pivot levels when relevant. No fluff.]
-WATCH: [Comma-separated list of 3-5 exact price levels or events to monitor today, e.g. "NQ PP 18432, NQ R1 18654, CL OPEC headlines, GC 3050 support"]
+BULL_CASE: [1-2 sentences — which liquidity level gets swept/broken, where price targets next, specific levels only]
+BEAR_CASE: [1-2 sentences — which level fails or gets swept, where price drops to, specific levels only]
+SUMMARY: [2-3 sentences: ICT bias (premium/discount), key liquidity above and below, macro catalyst if any, what the NY open setup looks like]
+WATCH: [3-5 exact levels/events, e.g. "NQ London high 19842 sweep, NQ PDL 19540 target, FOMC minutes 2pm, GC PDH 3120 resistance"]
 
 Rules:
-- Base probability on where price sits relative to pivots and session ranges
-- If price is above London high and above PP → bullish lean
-- If price rejected London high or below PP → bearish lean
-- DO NOT make up price levels — use only the numbers provided
+- DO NOT make up price levels — use only the numbers provided above
 - Do NOT use **, ##, or any markdown formatting
-- Be direct and professional, like a Bloomberg terminal analyst`
+- Reference PDH/PDL and London H/L as ICT liquidity levels explicitly
+- If macro news is present, factor it into the bias and WATCH list
+- Be direct and concise, like a Bloomberg terminal analyst`
 }
 
 // ── handler ───────────────────────────────────────────────────────────────────
@@ -153,8 +164,12 @@ export async function GET(request) {
     const etTime = new Date().toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true })
 
     const base = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin
-    const ctx    = await fetchMarketContext(base)
-    const prompt = buildPrompt(ctx, etDate, etTime)
+    const [ctx, newsRes] = await Promise.all([
+      fetchMarketContext(base),
+      fetch(`${base}/api/news`).then(r => r.json()).catch(() => ({ news: [] })),
+    ])
+    const newsHeadlines = (newsRes.news ?? []).map(n => n.headline)
+    const prompt = buildPrompt(ctx, etDate, etTime, newsHeadlines)
 
     const anthropic = createAnthropic({
       baseURL: 'https://ai-gateway.vercel.sh/v1',
