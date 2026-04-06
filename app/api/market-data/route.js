@@ -3,11 +3,12 @@
  * Returns OHLCV bars for NQ.c.0, CL.c.0, GC.c.0 via Databento.
  * ?schema=1h (default) | 1d
  * ?refresh=true
+ *
+ * Runs on Edge runtime so fetch uses Cloudflare's native Web Fetch API
+ * (not the Node.js / Next.js patched version that strips POST bodies).
  */
 
-import { request as undiciRequest } from 'undici'
-
-export const runtime = 'nodejs'
+export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 const DATABENTO_KEY = process.env.DATABENTO_API_KEY
@@ -15,6 +16,7 @@ const SYMBOLS       = ['NQ.c.0', 'CL.c.0', 'GC.c.0']
 const DATASET       = 'GLBX.MDP3'
 const PRICE_SCALE   = 1e-9
 
+// Module-level cache — persists across warm edge invocations within a region
 const cache = {
   '1h': { data: null, fetchedAt: 0 },
   '1d': { data: null, fetchedAt: 0 },
@@ -39,26 +41,21 @@ async function fetchDatabento(schema) {
 
   console.log('[market-data] Databento request payload:', bodyStr)
 
-  const encoded = Buffer.from(`${DATABENTO_KEY}:`).toString('base64')
+  const res = await fetch('https://hist.databento.com/v0/timeseries.get_range', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${btoa(`${DATABENTO_KEY}:`)}`,
+      'Content-Type':  'application/json',
+    },
+    body: bodyStr,
+  })
 
-  const { statusCode, body } = await undiciRequest(
-    'https://hist.databento.com/v0/timeseries.get_range',
-    {
-      method: 'POST',
-      headers: {
-        'authorization':  `Basic ${encoded}`,
-        'content-type':   'application/json',
-        'content-length': String(Buffer.byteLength(bodyStr, 'utf8')),
-      },
-      body: bodyStr,
-    }
-  )
+  console.log('[market-data] Databento response status:', res.status)
 
-  const text = await body.text()
-  console.log('[market-data] Databento response status:', statusCode)
+  const text = await res.text()
 
-  if (statusCode !== 200) {
-    throw new Error(`Databento ${statusCode}: ${text.slice(0, 300)}`)
+  if (!res.ok) {
+    throw new Error(`Databento ${res.status}: ${text.slice(0, 300)}`)
   }
 
   const lines    = text.trim().split('\n').filter(Boolean)
