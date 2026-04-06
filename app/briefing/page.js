@@ -53,14 +53,22 @@ function computePivots(bar) {
   return { pivot: p, r1: 2*p - l, r2: p + (h-l), s1: 2*p - h, s2: p - (h-l) }
 }
 
-function getBias(close, levels) {
-  if (!levels || !close) return { label: 'NEUTRAL', color: C.yellow }
+function getBias(close, levels, open = null) {
+  if (!close) return { label: 'AWAITING', color: C.dim }
+  if (!levels) {
+    if (open == null) return { label: 'AWAITING', color: C.dim }
+    return Number(close) >= Number(open)
+      ? { label: 'BULLISH', color: C.green }
+      : { label: 'BEARISH', color: C.red }
+  }
   const c = Number(close)
   if (c > levels.r1)    return { label: 'STRONG BULL', color: C.green  }
   if (c > levels.pivot) return { label: 'BULLISH',     color: C.green  }
   if (c < levels.s1)    return { label: 'STRONG BEAR', color: C.red    }
   if (c < levels.pivot) return { label: 'BEARISH',     color: C.red    }
-  return                       { label: 'NEUTRAL',     color: C.yellow }
+  return c >= levels.pivot
+    ? { label: 'BULLISH', color: C.green }
+    : { label: 'BEARISH', color: C.red }
 }
 
 function getSession() {
@@ -137,7 +145,7 @@ function computeSessionLevels(bars1h) {
 
 // ── chart ─────────────────────────────────────────────────────────────────────
 
-function Chart({ candles, levels, sessionLvls, height = 200 }) {
+function Chart({ candles, levels, sessionLvls, height = 110 }) {
   const ref = useRef(null)
 
   useEffect(() => {
@@ -162,8 +170,11 @@ function Chart({ candles, levels, sessionLvls, height = 200 }) {
       })
 
       const series = chart.addSeries(CandlestickSeries, {
-        upColor: C.green, downColor: C.red,
-        borderVisible: false, wickUpColor: C.green, wickDownColor: C.red,
+        upColor: '#5aa2ff',
+        downColor: '#8b93a6',
+        borderVisible: false,
+        wickUpColor: '#5aa2ff',
+        wickDownColor: '#8b93a6',
       })
 
       const sorted = [...candles]
@@ -206,6 +217,7 @@ function Chart({ candles, levels, sessionLvls, height = 200 }) {
       }
 
       chart.timeScale().fitContent()
+      chart.timeScale().scrollToRealTime()
 
       const ro = new ResizeObserver(() => {
         if (el && chart) chart.applyOptions({ width: el.clientWidth })
@@ -232,7 +244,7 @@ function InstrumentCard({ label, full, daily, candles1h }) {
   const open      = todayBar ? Number(todayBar.open)  : null
   const change    = close != null && open != null ? close - open : null
   const changePct = change != null && open ? ((change / open) * 100).toFixed(2) : null
-  const bias      = getBias(close, levels)
+  const bias      = getBias(close, levels, open)
   const isUp      = change != null ? change >= 0 : null
 
   return (
@@ -264,11 +276,11 @@ function InstrumentCard({ label, full, daily, candles1h }) {
       </div>
 
       {/* chart */}
-      <div style={{ background: C.card, minHeight: 220 }}>
+      <div style={{ background: C.card, minHeight: 110 }}>
         {candles1h?.length > 0
-          ? <Chart candles={candles1h} levels={levels} sessionLvls={sessLvls} height={220} />
+          ? <Chart candles={candles1h} levels={levels} sessionLvls={sessLvls} height={110} />
           : (
-            <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6 }}>
+            <div style={{ height: 110, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6 }}>
               <div style={{ width: 24, height: 24, border: `2px solid ${C.border}`, borderTop: `2px solid ${C.dim}`, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
               <span style={{ fontSize: 10, color: C.dim, fontFamily: 'ui-monospace,monospace' }}>LOADING CHART</span>
             </div>
@@ -375,6 +387,12 @@ export default function BriefingPage() {
 
   useEffect(() => { load() }, [])
 
+  // Auto-refresh every hour so briefing stays current with hourly cache windows.
+  useEffect(() => {
+    const iv = setInterval(() => { load(true) }, 60 * 60 * 1000)
+    return () => clearInterval(iv)
+  }, [])
+
   const handleRefresh = async () => {
     setRefreshing(true)
     await load(true)
@@ -480,28 +498,13 @@ export default function BriefingPage() {
         {/* RIGHT: brief + news */}
         <div style={{ width: 360, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
 
-          {/* probability bar */}
-          {briefRaw && (
-            <div style={{ borderBottom: `1px solid ${C.border}`, padding: '14px 18px' }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: C.dim, fontFamily: 'ui-monospace,monospace', marginBottom: 10 }}>
-                TODAY'S BIAS PROBABILITY
+          {/* daily thesis */}
+          {briefRaw?.thesis && (
+            <div style={{ borderBottom: `1px solid ${C.border}`, padding: '14px 18px', background: '#0b0b0b' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: C.dim, fontFamily: 'ui-monospace,monospace', marginBottom: 8 }}>
+                DAILY THESIS
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 10, color: C.green, fontFamily: 'ui-monospace,monospace', width: 32 }}>
-                  {briefRaw.bullPct}%
-                </span>
-                <div style={{ flex: 1, height: 8, background: '#1a1a1a', borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
-                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${briefRaw.bullPct}%`, background: `linear-gradient(90deg, ${C.green}, #00c853)`, borderRadius: 4 }} />
-                  <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: `${briefRaw.bearPct}%`, background: `linear-gradient(90deg, #c62828, ${C.red})`, borderRadius: 4 }} />
-                </div>
-                <span style={{ fontSize: 10, color: C.red, fontFamily: 'ui-monospace,monospace', width: 32, textAlign: 'right' }}>
-                  {briefRaw.bearPct}%
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 9, color: C.green, fontFamily: 'ui-monospace,monospace' }}>BULL</span>
-                <span style={{ fontSize: 9, color: C.red,   fontFamily: 'ui-monospace,monospace' }}>BEAR</span>
-              </div>
+              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: '#ddd' }}>{briefRaw.thesis}</p>
             </div>
           )}
 
@@ -511,27 +514,80 @@ export default function BriefingPage() {
               <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: C.dim, fontFamily: 'ui-monospace,monospace' }}>
                 AI ANALYSIS
               </span>
-              {briefMeta?.generatedAt && (
-                <span style={{ fontSize: 9, color: '#333', fontFamily: 'ui-monospace,monospace' }}>
-                  {fmtAge(briefMeta.generatedAt)}
-                </span>
-              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {briefRaw?.provenance?.mode === 'deterministic' && (
+                  <span style={{ fontSize: 9, color: C.blue, fontFamily: 'ui-monospace,monospace' }}>GROUNDED</span>
+                )}
+                {briefMeta?.generatedAt && (
+                  <span style={{ fontSize: 9, color: '#333', fontFamily: 'ui-monospace,monospace' }}>
+                    {fmtAge(briefMeta.generatedAt)}
+                  </span>
+                )}
+              </div>
             </div>
-            {briefRaw?.summary && (
-              <p style={{ fontSize: 12, color: '#bbb', lineHeight: 1.75, margin: '0 0 10px' }}>
-                {briefRaw.summary}
-              </p>
-            )}
-            {briefRaw?.bullCase && (
-              <div style={{ padding: '8px 10px', background: '#001a0d', border: `1px solid ${C.green}22`, marginBottom: 6 }}>
-                <div style={{ fontSize: 9, color: C.green, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>BULL CASE</div>
-                <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, margin: 0 }}>{briefRaw.bullCase}</p>
+            {briefRaw?.primaryBias && (
+              <div style={{ marginBottom: 10 }}>
+                <span style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  fontFamily: 'ui-monospace,monospace',
+                  color: briefRaw.primaryBias === 'BULLISH' ? C.green : C.red,
+                  border: `1px solid ${briefRaw.primaryBias === 'BULLISH' ? C.green : C.red}`,
+                  padding: '2px 8px',
+                  letterSpacing: '0.08em',
+                }}>
+                  PRIMARY BIAS: {briefRaw.primaryBias}
+                </span>
               </div>
             )}
-            {briefRaw?.bearCase && (
+            {briefRaw?.macroContext?.length > 0 && (
+              <div style={{ padding: '8px 10px', background: '#121314', border: `1px solid ${C.border}`, marginBottom: 6 }}>
+                <div style={{ fontSize: 9, color: C.blue, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>MACRO CONTEXT</div>
+                <ul style={{ margin: 0, paddingLeft: 16 }}>
+                  {briefRaw.macroContext.map((x, i) => (
+                    <li key={i} style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, marginBottom: 3 }}>{x}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {briefRaw?.structure && (
+              <div style={{ padding: '8px 10px', background: '#111111', border: `1px solid ${C.border}`, marginBottom: 6 }}>
+                <div style={{ fontSize: 9, color: C.orange, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>STRUCTURE</div>
+                <div style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6 }}>
+                  <div>PDH: {briefRaw.structure.pdh} | PDL: {briefRaw.structure.pdl}</div>
+                  <div>Asia: {briefRaw.structure.asiaRange}</div>
+                  <div>London: {briefRaw.structure.londonRange}</div>
+                </div>
+              </div>
+            )}
+            {briefRaw?.liquidityIntent && (
+              <div style={{ padding: '8px 10px', background: '#111111', border: `1px solid ${C.border}`, marginBottom: 6 }}>
+                <div style={{ fontSize: 9, color: C.yellow, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>LIQUIDITY + INTENT</div>
+                <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, margin: 0 }}>{briefRaw.liquidityIntent}</p>
+              </div>
+            )}
+            {briefRaw?.setups?.shortSetup && (
               <div style={{ padding: '8px 10px', background: '#1a0008', border: `1px solid ${C.red}22`, marginBottom: 6 }}>
-                <div style={{ fontSize: 9, color: C.red, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>BEAR CASE</div>
-                <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, margin: 0 }}>{briefRaw.bearCase}</p>
+                <div style={{ fontSize: 9, color: C.red, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>SHORT SETUP</div>
+                <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, margin: 0 }}>{briefRaw.setups.shortSetup}</p>
+              </div>
+            )}
+            {briefRaw?.setups?.longSetup && (
+              <div style={{ padding: '8px 10px', background: '#001a0d', border: `1px solid ${C.green}22`, marginBottom: 6 }}>
+                <div style={{ fontSize: 9, color: C.green, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>LONG SETUP</div>
+                <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, margin: 0 }}>{briefRaw.setups.longSetup}</p>
+              </div>
+            )}
+            {briefRaw?.invalidation && (
+              <div style={{ padding: '8px 10px', background: '#141100', border: `1px solid ${C.yellow}33`, marginBottom: 6 }}>
+                <div style={{ fontSize: 9, color: C.yellow, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>INVALIDATION</div>
+                <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, margin: 0 }}>{briefRaw.invalidation}</p>
+              </div>
+            )}
+            {brief && (
+              <div style={{ padding: '8px 10px', background: '#101010', border: `1px solid ${C.border}`, marginBottom: 6 }}>
+                <div style={{ fontSize: 9, color: C.muted, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>SUMMARY</div>
+                <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-line' }}>{brief}</p>
               </div>
             )}
             {!brief && (
@@ -540,13 +596,13 @@ export default function BriefingPage() {
           </div>
 
           {/* what to watch */}
-          {briefRaw?.watch && (
+          {briefRaw?.watch?.length > 0 && (
             <div style={{ borderBottom: `1px solid ${C.border}`, padding: '12px 18px' }}>
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: C.dim, fontFamily: 'ui-monospace,monospace', marginBottom: 10 }}>
                 WATCH TODAY
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {briefRaw.watch.split(',').map(w => w.trim()).filter(Boolean).map((w, i) => (
+                {briefRaw.watch.map((w, i) => (
                   <span key={i} style={{ fontSize: 10, fontFamily: 'ui-monospace,monospace', color: C.muted, background: '#1a1a1a', padding: '3px 8px', border: `1px solid ${C.border}` }}>
                     {w}
                   </span>

@@ -1,12 +1,8 @@
 /**
  * GET /api/market/brief
- * AI Market Brief with full multi-instrument context, session levels,
- * bullish/bearish probability and scenario analysis.
+ * AI Market Brief with macro + ICT structure and actionable setups.
  * Cached 1 hour.
  */
-
-import { generateText } from 'ai'
-import { createAnthropic } from '@ai-sdk/anthropic'
 
 let briefCache = { content: null, generatedAt: null, expiresAt: null, raw: null }
 const CACHE_DURATION_MS = 60 * 60 * 1000
@@ -51,6 +47,11 @@ function sessionLevels(bars1h) {
   }
 }
 
+function f2(v) {
+  const n = Number(v)
+  return Number.isFinite(n) ? n.toFixed(2) : 'N/A'
+}
+
 async function fetchMarketContext(base) {
   const fetchJson = async (url) => {
     const res = await fetch(url)
@@ -86,62 +87,114 @@ async function fetchMarketContext(base) {
     const changePct = change && prevClose ? ((change/prevClose)*100).toFixed(2) : null
 
     context[inst.label] = {
-      price:    curPrice?.toFixed(2)    ?? 'N/A',
-      change:   change?.toFixed(2)      ?? 'N/A',
-      changePct: changePct              ?? 'N/A',
-      prevHigh: prevBar?.high?.toFixed ? Number(prevBar.high).toFixed(2) : 'N/A',
-      prevLow:  prevBar?.low?.toFixed  ? Number(prevBar.low).toFixed(2)  : 'N/A',
-      pivots:   pp,
-      sessions: sess,
+      price:      curPrice?.toFixed(2)  ?? 'N/A',
+      change:     change?.toFixed(2)    ?? 'N/A',
+      changePct:  changePct             ?? 'N/A',
+      prevHigh:   prevBar ? f2(prevBar.high) : 'N/A',
+      prevLow:    prevBar ? f2(prevBar.low)  : 'N/A',
+      pivots:     pp,
+      sessions:   sess,
+      rawPrice:   curPrice,
+      rawPrevHigh: prevBar ? Number(prevBar.high) : null,
+      rawPrevLow:  prevBar ? Number(prevBar.low) : null,
     }
   }
   return context
 }
 
-function buildPrompt(ctx, etDate, etTime, newsHeadlines) {
-  const lines = []
-  for (const [sym, d] of Object.entries(ctx)) {
-    if (d.price === 'N/A') continue
-    const pp = d.pivots
-    lines.push(`${sym}: ${d.price} (${d.changePct >= 0 ? '+' : ''}${d.changePct}%)`)
-    if (pp) lines.push(`  Classic Pivots — PP:${pp.pivot} R1:${pp.r1} R2:${pp.r2} S1:${pp.s1} S2:${pp.s2}`)
-    if (d.sessions.londonH) lines.push(`  London session (ICT killzone 2-5am ET) — H:${d.sessions.londonH.toFixed(2)} L:${d.sessions.londonL.toFixed(2)}`)
-    if (d.sessions.overnightH) lines.push(`  Overnight/Asia range — H:${d.sessions.overnightH.toFixed(2)} L:${d.sessions.overnightL.toFixed(2)}`)
-    lines.push(`  Prev day PDH:${d.prevHigh} PDL:${d.prevLow}`)
+function computeMacroBias(ctx, newsHeadlines) {
+  const text = (newsHeadlines ?? []).join(' | ').toLowerCase()
+  const nq = ctx.NQ
+  const cl = ctx.CL
+  const gc = ctx.GC
+
+  let score = 0
+  const reasons = []
+
+  const hasRiskOffHeadline = /(iran|middle east|war|missile|attack|geopolit|sanction|strait|opec cut|supply disruption)/.test(text)
+  const hasInflationHeadline = /(inflation|cpi|ppi|wage|hot print|sticky inflation)/.test(text)
+  const hasHawkishHeadline = /(higher for longer|hawkish|rate hike|yields rise|treasury yield)/.test(text)
+  const hasDovishHeadline = /(rate cut|cooling inflation|disinflation|dovish|yields fall)/.test(text)
+
+  if (hasRiskOffHeadline) {
+    score -= 2
+    reasons.push('Geopolitical risk headline flow is elevated (risk-off).')
+  }
+  if (hasInflationHeadline) {
+    score -= 1
+    reasons.push('Inflation-sensitive headlines increase higher-for-longer risk.')
+  }
+  if (hasHawkishHeadline) {
+    score -= 1
+    reasons.push('Rates/yield tone is hawkish, pressuring duration-heavy tech.')
+  }
+  if (hasDovishHeadline) {
+    score += 1
+    reasons.push('Some headline flow supports a softer rates path.')
   }
 
-  const newsSection = newsHeadlines?.length
-    ? `\nMACROECONOMIC HEADLINES:\n${newsHeadlines.slice(0, 5).map(h => `- ${h}`).join('\n')}`
-    : ''
+  if (cl?.changePct !== 'N/A' && Number(cl.changePct) > 0.8) {
+    score -= 1
+    reasons.push(`Crude is bid (+${cl.changePct}%), reinforcing inflation pressure.`)
+  }
+  if (gc?.changePct !== 'N/A' && Number(gc.changePct) > 0.6) {
+    score -= 1
+    reasons.push(`Gold strength (+${gc.changePct}%) signals defensive positioning.`)
+  }
+  if (nq?.changePct !== 'N/A' && Number(nq.changePct) > 0.8) {
+    score += 1
+    reasons.push(`NQ momentum is positive (+${nq.changePct}%), offsetting part of risk-off flow.`)
+  }
 
-  return `You are an elite ICT-trained futures trader. Analyze the following data for ${etDate} at ${etTime} ET.
+  const macroBias = score >= 0 ? 'BULLISH' : 'BEARISH'
+  return {
+    macroBias,
+    macroScore: score,
+    reasons: reasons.slice(0, 4),
+  }
+}
 
-LIVE MARKET DATA:
-${lines.join('\n')}${newsSection}
+function buildDeterministicFallback(ctx, macro) {
+  const nq = ctx.NQ ?? {}
+  const pdh = nq.prevHigh ?? 'N/A'
+  const pdl = nq.prevLow ?? 'N/A'
+  const asiaH = f2(nq?.sessions?.overnightH)
+  const asiaL = f2(nq?.sessions?.overnightL)
+  const londonH = f2(nq?.sessions?.londonH)
+  const londonL = f2(nq?.sessions?.londonL)
+  const direction = macro.macroBias === 'BULLISH' ? 'upside' : 'downside'
 
-ICT FRAMEWORK TO APPLY:
-- Identify if price is trading above or below the previous day high/low (PDH/PDL) — these are key liquidity levels
-- London killzone highs/lows are liquidity pools; price often sweeps them before reversing
-- Look for fair value gaps (FVG): if price gapped between sessions, that imbalance attracts price
-- Premium/discount: price above PP or PDH = premium (look for sells); below PP or PDL = discount (look for buys)
-- NY open (9:30am ET) often creates the actual trend direction by sweeping London liquidity first
-- Macro news (CPI, FOMC, jobs data) acts as a catalyst for liquidity sweeps
-
-Your response MUST follow this EXACT format (no extra text, no markdown):
-
-BULL_PCT: [0-100]
-BEAR_PCT: [0-100]
-BULL_CASE: [1-2 sentences — which liquidity level gets swept/broken, where price targets next, specific levels only]
-BEAR_CASE: [1-2 sentences — which level fails or gets swept, where price drops to, specific levels only]
-SUMMARY: [2-3 sentences: ICT bias (premium/discount), key liquidity above and below, macro catalyst if any, what the NY open setup looks like]
-WATCH: [3-5 exact levels/events, e.g. "NQ London high 19842 sweep, NQ PDL 19540 target, FOMC minutes 2pm, GC PDH 3120 resistance"]
-
-Rules:
-- DO NOT make up price levels — use only the numbers provided above
-- Do NOT use **, ##, or any markdown formatting
-- Reference PDH/PDL and London H/L as ICT liquidity levels explicitly
-- If macro news is present, factor it into the bias and WATCH list
-- Be direct and concise, like a Bloomberg terminal analyst`
+  return {
+    thesis: `NQ trading around key liquidity with ${macro.macroBias.toLowerCase()} macro tone; ${direction} favored unless opposing level reclaims.`,
+    primaryBias: macro.macroBias,
+    oneLiner: `${macro.macroBias === 'BULLISH' ? 'Bid tone building' : 'Pressure at highs'} — watch liquidity sweep then ${direction} continuation.`,
+    macroContext: macro.reasons.length
+      ? macro.reasons.slice(0, 3)
+      : ['Macro signal set is mixed; use structure confirmation at PDH/PDL.'],
+    structure: {
+      pdh,
+      pdl,
+      asiaRange: `H ${asiaH} / L ${asiaL}`,
+      londonRange: `H ${londonH} / L ${londonL}`,
+    },
+    liquidityIntent: `Liquidity is clustered near PDH ${pdh} and PDL ${pdl}; expect a sweep-and-confirm sequence before directional expansion.`,
+    setups: {
+      shortSetup: `If price rejects PDH ${pdh} after a sweep, target internal range then PDL ${pdl}.`,
+      longSetup: `Only long on clean reclaim and hold above PDH ${pdh}; target session highs extension.`,
+    },
+    invalidation: `Sustained acceptance above PDH ${pdh} invalidates bearish continuation; sustained trade below PDL ${pdl} invalidates bullish continuation.`,
+    watch: [
+      `NQ PDH ${pdh}`,
+      `NQ PDL ${pdl}`,
+      `Asia H/L ${asiaH}/${asiaL}`,
+      `London H/L ${londonH}/${londonL}`,
+    ],
+    macroEngine: macro,
+    provenance: {
+      mode: 'deterministic',
+      note: 'Generated only from fetched market-data + headline-derived macro signals; no free-form AI text generation.',
+    },
+  }
 }
 
 // ── handler ───────────────────────────────────────────────────────────────────
@@ -155,63 +208,46 @@ export async function GET(request) {
     return Response.json({ brief: briefCache.content, raw: briefCache.raw, generatedAt: briefCache.generatedAt, cached: true })
   }
 
-  if (!process.env.AI_GATEWAY_API_KEY) {
-    return Response.json({ brief: 'AI brief not configured.', error: 'API key missing' }, { status: 500 })
-  }
-
   try {
-    const etDate = new Date().toLocaleDateString('en-US', { timeZone: 'America/New_York', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-    const etTime = new Date().toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true })
-
     const base = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin
     const [ctx, newsRes] = await Promise.all([
       fetchMarketContext(base),
       fetch(`${base}/api/news`).then(r => r.json()).catch(() => ({ news: [] })),
     ])
     const newsHeadlines = (newsRes.news ?? []).map(n => n.headline)
-    const prompt = buildPrompt(ctx, etDate, etTime, newsHeadlines)
+    const macro = computeMacroBias(ctx, newsHeadlines)
+    const raw = buildDeterministicFallback(ctx, macro)
 
-    const anthropic = createAnthropic({
-      baseURL: 'https://ai-gateway.vercel.sh/v1',
-      apiKey: process.env.AI_GATEWAY_API_KEY,
-    })
-    const { text } = await generateText({
-      model: anthropic('claude-haiku-4-5-20251001'),
-      prompt,
-      maxTokens: 400,
-    })
-
-    // Parse the structured response
-    const parse = (key) => {
-      const match = text.match(new RegExp(`${key}:\\s*(.+)`))
-      return match?.[1]?.trim() ?? null
-    }
-
-    const raw = {
-      bullPct:  parseInt(parse('BULL_PCT')) || 50,
-      bearPct:  parseInt(parse('BEAR_PCT')) || 50,
-      bullCase: parse('BULL_CASE'),
-      bearCase: parse('BEAR_CASE'),
-      summary:  parse('SUMMARY'),
-      watch:    parse('WATCH'),
-    }
-
-    // Build clean display text
     const clean = [
-      raw.summary,
-      raw.bullCase ? `BULL: ${raw.bullCase}` : null,
-      raw.bearCase ? `BEAR: ${raw.bearCase}` : null,
-    ].filter(Boolean).join('\n').replace(/\*\*/g,'').replace(/##/g,'').trim()
+      raw.thesis,
+      raw.oneLiner ? `One-liner: ${raw.oneLiner}` : null,
+      raw.setups.shortSetup ? `Short: ${raw.setups.shortSetup}` : null,
+      raw.setups.longSetup ? `Long: ${raw.setups.longSetup}` : null,
+      raw.invalidation ? `Invalidation: ${raw.invalidation}` : null,
+    ].filter(Boolean).join('\n').trim()
 
     briefCache = { content: clean, raw, generatedAt: new Date().toISOString(), expiresAt: now + CACHE_DURATION_MS }
 
-    return Response.json({ brief: clean, raw, generatedAt: briefCache.generatedAt, cached: false })
+    return Response.json({ brief: clean, raw, generatedAt: briefCache.generatedAt, cached: false, grounded: true })
 
   } catch (error) {
     console.error('[MarketBrief] Error:', error)
     if (briefCache.content) {
       return Response.json({ brief: briefCache.content, raw: briefCache.raw, generatedAt: briefCache.generatedAt, cached: true, stale: true })
     }
-    return Response.json({ brief: 'Brief temporarily unavailable.', error: error.message }, { status: 500 })
+    try {
+      const base = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin
+      const [ctx, newsRes] = await Promise.all([
+        fetchMarketContext(base),
+        fetch(`${base}/api/news`).then(r => r.json()).catch(() => ({ news: [] })),
+      ])
+      const newsHeadlines = (newsRes.news ?? []).map(n => n.headline)
+      const macro = computeMacroBias(ctx, newsHeadlines)
+      const raw = buildDeterministicFallback(ctx, macro)
+      const brief = [raw.thesis, `One-liner: ${raw.oneLiner}`, `Short: ${raw.setups.shortSetup}`, `Long: ${raw.setups.longSetup}`, `Invalidation: ${raw.invalidation}`].join('\n')
+      return Response.json({ brief, raw, generatedAt: new Date().toISOString(), cached: false, fallback: true })
+    } catch {
+      return Response.json({ brief: 'Brief temporarily unavailable.', error: error.message }, { status: 500 })
+    }
   }
 }
