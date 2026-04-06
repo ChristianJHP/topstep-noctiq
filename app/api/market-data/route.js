@@ -24,54 +24,56 @@ function daysAgo(n) {
   return new Date(Date.now() - n * 86_400_000).toISOString().split('T')[0]
 }
 
-function buildDatabentoUrl(schema) {
+function buildDatabentoUrl(schema, symbol) {
   const start = schema === '1d' ? daysAgo(7) : daysAgo(4)
   const params = new URLSearchParams()
   params.set('dataset',   DATASET)
   params.set('schema',    `ohlcv-${schema}`)
   params.set('start',     start)
   params.set('stype_in',  'continuous')
-  params.set('stype_out', 'raw_symbol')
+  params.set('stype_out', 'instrument_id')
   params.set('encoding',  'json')
-  SYMBOLS.forEach(s => params.append('symbols', s))
+  params.set('symbols', symbol)
   return `https://hist.databento.com/v0/timeseries.get_range?${params.toString()}`
 }
 
 async function fetchDatabento(schema) {
-  const url = buildDatabentoUrl(schema)
-  console.log('[market-data] url:', url)
   console.log('[market-data] key set:', !!DATABENTO_KEY)
-
-  const res = await fetch(url, {
-    method: 'GET',
-    headers: { 'Authorization': `Basic ${btoa(`${DATABENTO_KEY}:`)}` },
-  })
-
-  console.log('[market-data] status:', res.status)
-  const text = await res.text()
-
-  if (!res.ok) throw new Error(`Databento ${res.status}: ${text.slice(0, 300)}`)
-
-  const lines    = text.trim().split('\n').filter(Boolean)
   const bySymbol = {}
 
-  for (const line of lines) {
-    try {
-      const r = JSON.parse(line)
-      if (r.open == null) continue
-      const sym = r.symbol ?? r.hd?.symbol ?? r.raw_symbol ?? r.s
-      if (!sym) continue
-      if (!bySymbol[sym]) bySymbol[sym] = []
-      bySymbol[sym].push({
-        symbol: sym,
-        time:   r.ts_event ? Math.floor(Number(r.ts_event) / 1_000_000_000) : null,
-        open:   Number(r.open)  * PRICE_SCALE,
-        high:   Number(r.high)  * PRICE_SCALE,
-        low:    Number(r.low)   * PRICE_SCALE,
-        close:  Number(r.close) * PRICE_SCALE,
-        volume: Number(r.volume),
-      })
-    } catch { /* skip malformed lines */ }
+  for (const symbol of SYMBOLS) {
+    const url = buildDatabentoUrl(schema, symbol)
+    console.log('[market-data] url:', url)
+
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Authorization': `Basic ${btoa(`${DATABENTO_KEY}:`)}` },
+    })
+
+    console.log('[market-data] status:', symbol, res.status)
+    const text = await res.text()
+
+    if (!res.ok) throw new Error(`Databento ${res.status} for ${symbol}: ${text.slice(0, 300)}`)
+
+    const lines = text.trim().split('\n').filter(Boolean)
+    bySymbol[symbol] = []
+
+    for (const line of lines) {
+      try {
+        const r = JSON.parse(line)
+        if (r.open == null) continue
+        const tsEventNs = r.ts_event ?? r.hd?.ts_event
+        bySymbol[symbol].push({
+          symbol,
+          time:   tsEventNs ? Math.floor(Number(tsEventNs) / 1_000_000_000) : null,
+          open:   Number(r.open)  * PRICE_SCALE,
+          high:   Number(r.high)  * PRICE_SCALE,
+          low:    Number(r.low)   * PRICE_SCALE,
+          close:  Number(r.close) * PRICE_SCALE,
+          volume: Number(r.volume),
+        })
+      } catch { /* skip malformed lines */ }
+    }
   }
 
   for (const sym of Object.keys(bySymbol)) {
@@ -97,12 +99,13 @@ export async function GET(req) {
 
   // Debug mode: hit Databento with hardcoded values, return raw response to browser
   if (isDebug) {
-    const url  = buildDatabentoUrl('1d')
+    const symbol = SYMBOLS[0]
+    const url  = buildDatabentoUrl('1d', symbol)
     const auth = `Basic ${btoa(`${DATABENTO_KEY}:`)}`
     try {
       const res  = await fetch(url, { method: 'GET', headers: { Authorization: auth } })
       const raw  = await res.text()
-      return Response.json({ requestUrl: url, status: res.status, ok: res.ok, raw: raw.slice(0, 2000), keyPrefix: DATABENTO_KEY.slice(0, 6) })
+      return Response.json({ requestUrl: url, symbol, status: res.status, ok: res.ok, raw: raw.slice(0, 2000), keyPrefix: DATABENTO_KEY.slice(0, 6) })
     } catch (err) {
       return Response.json({ requestUrl: url, routeError: err.message })
     }
