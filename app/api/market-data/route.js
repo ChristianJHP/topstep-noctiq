@@ -31,7 +31,7 @@ function buildDatabentoUrl(schema) {
   params.set('schema',    `ohlcv-${schema}`)
   params.set('start',     start)
   params.set('stype_in',  'continuous')
-  params.set('stype_out', 'continuous')
+  params.set('stype_out', 'raw_symbol')
   params.set('encoding',  'json')
   SYMBOLS.forEach(s => params.append('symbols', s))
   return `https://hist.databento.com/v0/timeseries.get_range?${params.toString()}`
