@@ -28,8 +28,9 @@ function daysAgo(n) {
 }
 
 async function fetchDatabento(schema) {
-  const start   = schema === '1d' ? daysAgo(7) : daysAgo(4)
-  const bodyStr = JSON.stringify({
+  const start = schema === '1d' ? daysAgo(7) : daysAgo(4)
+
+  const payload = {
     dataset:   DATASET,
     symbols:   SYMBOLS,
     schema:    `ohlcv-${schema}`,
@@ -37,14 +38,21 @@ async function fetchDatabento(schema) {
     stype_in:  'continuous',
     stype_out: 'continuous',
     encoding:  'json',
-  })
+  }
 
-  console.log('[market-data] Databento request payload:', bodyStr)
+  const bodyStr = JSON.stringify(payload)
+
+  console.log('[market-data] bodyStr type:', typeof bodyStr)
+  console.log('[market-data] bodyStr value:', bodyStr)
+  console.log('[market-data] bodyStr parsed:', JSON.parse(bodyStr))
+
+  const authHeader = `Basic ${btoa(`${DATABENTO_KEY}:`)}`
+  console.log('[market-data] auth prefix:', authHeader.slice(0, 12))
 
   const res = await fetch('https://hist.databento.com/v0/timeseries.get_range', {
     method: 'POST',
     headers: {
-      'Authorization': `Basic ${btoa(`${DATABENTO_KEY}:`)}`,
+      'Authorization': authHeader,
       'Content-Type':  'application/json',
     },
     body: bodyStr,
