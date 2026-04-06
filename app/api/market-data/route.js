@@ -26,6 +26,7 @@ function daysAgo(n) {
 
 function buildDatabentoUrl(schema, symbol) {
   const start = schema === '1d' ? daysAgo(30) : daysAgo(30)
+
   const params = new URLSearchParams()
   params.set('dataset',   DATASET)
   params.set('schema',    `ohlcv-${schema}`)
