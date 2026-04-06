@@ -5,7 +5,7 @@
  * ?refresh=true
  */
 
-import https from 'https'
+import https from 'node:https'
 
 const DATABENTO_KEY = process.env.DATABENTO_API_KEY
 const BASE_URL      = 'https://hist.databento.com/v0'
@@ -28,26 +28,25 @@ function daysAgo(n) {
   return new Date(Date.now() - n * 86_400_000).toISOString().split('T')[0]
 }
 
-function httpsPost(body) {
+function httpsPost(bodyStr) {
   return new Promise((resolve, reject) => {
-    const buf = Buffer.from(body, 'utf8')
     const encoded = Buffer.from(`${DATABENTO_KEY}:`).toString('base64')
     const req = https.request({
       hostname: 'hist.databento.com',
       path:     '/v0/timeseries.get_range',
       method:   'POST',
       headers: {
-        'Authorization':  `Basic ${encoded}`,
-        'Content-Type':   'application/json',
-        'Content-Length': buf.length,
+        'Authorization': `Basic ${encoded}`,
+        'Content-Type':  'application/json',
       },
     }, (res) => {
-      const chunks = []
-      res.on('data', c => chunks.push(c))
-      res.on('end', () => resolve({ status: res.statusCode, text: Buffer.concat(chunks).toString('utf8') }))
+      let text = ''
+      res.setEncoding('utf8')
+      res.on('data', chunk => { text += chunk })
+      res.on('end', () => resolve({ status: res.statusCode, text }))
     })
     req.on('error', reject)
-    req.write(buf)
+    req.write(bodyStr, 'utf8')
     req.end()
   })
 }
