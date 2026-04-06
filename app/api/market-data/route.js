@@ -30,32 +30,26 @@ function daysAgo(n) {
 async function fetchDatabento(schema) {
   const start = schema === '1d' ? daysAgo(7) : daysAgo(4)
 
-  const payload = {
+  // Build query params — GET avoids the POST-body-stripping issue on Vercel Edge
+  const params = new URLSearchParams({
     dataset:   DATASET,
-    symbols:   SYMBOLS,
     schema:    `ohlcv-${schema}`,
     start,
     stype_in:  'continuous',
     stype_out: 'continuous',
     encoding:  'json',
-  }
+  })
+  // symbols as repeated params (array-safe)
+  SYMBOLS.forEach(s => params.append('symbols', s))
 
-  const bodyStr = JSON.stringify(payload)
+  const url = `https://hist.databento.com/v0/timeseries.get_range?${params.toString()}`
+  console.log('[market-data] GET url:', url)
 
-  console.log('[market-data] bodyStr type:', typeof bodyStr)
-  console.log('[market-data] bodyStr value:', bodyStr)
-  console.log('[market-data] bodyStr parsed:', JSON.parse(bodyStr))
-
-  const authHeader = `Basic ${btoa(`${DATABENTO_KEY}:`)}`
-  console.log('[market-data] auth prefix:', authHeader.slice(0, 12))
-
-  const res = await fetch('https://hist.databento.com/v0/timeseries.get_range', {
-    method: 'POST',
+  const res = await fetch(url, {
+    method: 'GET',
     headers: {
-      'Authorization': authHeader,
-      'Content-Type':  'application/json',
+      'Authorization': `Basic ${btoa(`${DATABENTO_KEY}:`)}`,
     },
-    body: bodyStr,
   })
 
   console.log('[market-data] Databento response status:', res.status)
