@@ -343,6 +343,11 @@ export default function BriefingPage() {
     setDataError(null)
     const qs = refresh ? '?refresh=true' : ''
     try {
+      const safeJson = async (res) => {
+        const text = await res.text()
+        try { return JSON.parse(text) } catch { return { error: `Server error (${res.status})` } }
+      }
+
       const [d1dRes, d1hRes, newsRes, briefRes] = await Promise.all([
         fetch(`/api/market-data?schema=1d${refresh ? '&refresh=true' : ''}`),
         fetch(`/api/market-data?schema=1h${refresh ? '&refresh=true' : ''}`),
@@ -350,7 +355,7 @@ export default function BriefingPage() {
         fetch(`/api/market/brief${qs}`),
       ])
       const [d1d, d1h, newsJson, briefJson] = await Promise.all([
-        d1dRes.json(), d1hRes.json(), newsRes.json(), briefRes.json(),
+        safeJson(d1dRes), safeJson(d1hRes), safeJson(newsRes), safeJson(briefRes),
       ])
 
       if (d1d.error && !d1d.data) setDataError(d1d.error)
