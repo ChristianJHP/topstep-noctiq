@@ -1,756 +1,672 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
+import Script from 'next/script'
 
-// ── Hooks ───────────────────────────────────────────────────────────────────
-
-function useFadeIn(threshold = 0.15) {
-  const ref = useRef(null)
-  const [visible, setVisible] = useState(false)
+/* ── scramble hook ── */
+const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%'
+function useScramble(text, { speed = 28, delay = 120 } = {}) {
+  const [out, setOut] = useState(() =>
+    text.split('').map(() => GLYPHS[Math.floor(Math.random() * GLYPHS.length)]).join('')
+  )
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect() } },
-      { threshold }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [threshold])
-  return [ref, visible]
+    let iter = 0
+    let iv
+    const t = setTimeout(() => {
+      iv = setInterval(() => {
+        setOut(
+          text.split('').map((ch, i) =>
+            i < iter ? ch : GLYPHS[Math.floor(Math.random() * GLYPHS.length)]
+          ).join('')
+        )
+        iter += 0.45
+        if (iter > text.length) clearInterval(iv)
+      }, speed)
+    }, delay)
+    return () => { clearTimeout(t); clearInterval(iv) }
+  }, [text, speed, delay])
+  return out
 }
 
-function useMouseGlow() {
+/* ── spring fade-in ── */
+function FadeIn({ children, delay = 0, className = '' }) {
   const ref = useRef(null)
+  const [on, setOn] = useState(false)
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const handleMove = (e) => {
-      const rect = el.getBoundingClientRect()
-      el.style.setProperty('--mx', `${e.clientX - rect.left}px`)
-      el.style.setProperty('--my', `${e.clientY - rect.top}px`)
-    }
-    el.addEventListener('mousemove', handleMove)
-    return () => el.removeEventListener('mousemove', handleMove)
+    const ob = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setOn(true); ob.disconnect() }
+    }, { threshold: 0.05 })
+    ob.observe(el)
+    return () => ob.disconnect()
   }, [])
-  return ref
-}
-
-// ── Reusable components ─────────────────────────────────────────────────────
-
-function FadeIn({ children, className = '', delay = 0 }) {
-  const [ref, visible] = useFadeIn()
   return (
     <div
       ref={ref}
-      className={`transition-all duration-700 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'} ${className}`}
-      style={{ transitionDelay: `${delay}ms` }}
+      className={className}
+      style={{
+        opacity: on ? 1 : 0,
+        transform: on ? 'translateY(0px)' : 'translateY(22px)',
+        transition: `opacity 0.65s cubic-bezier(.16,1,.3,1) ${delay}ms, transform 0.65s cubic-bezier(.16,1,.3,1) ${delay}ms`,
+      }}
     >
       {children}
     </div>
   )
 }
 
-function AnimatedCounter({ end, suffix = '', duration = 2000 }) {
-  const [count, setCount] = useState(0)
+/* ── 3-D tilt card ── */
+function TiltCard({ children, className = '' }) {
   const ref = useRef(null)
-  const started = useRef(false)
+  const raf = useRef(null)
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !started.current) {
-          started.current = true
-          const startTime = performance.now()
-          const animate = (now) => {
-            const progress = Math.min((now - startTime) / duration, 1)
-            const eased = 1 - Math.pow(1 - progress, 3)
-            setCount(Math.floor(eased * end))
-            if (progress < 1) requestAnimationFrame(animate)
-          }
-          requestAnimationFrame(animate)
-        }
-      },
-      { threshold: 0.5 }
-    )
-    if (ref.current) observer.observe(ref.current)
-    return () => observer.disconnect()
-  }, [end, duration])
-
-  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>
-}
-
-// ── Terminal animation ──────────────────────────────────────────────────────
-
-function TerminalText() {
-  const lines = [
-    { text: '$ python backtest.py --strategy mean_reversion --instrument MNQ', color: 'text-emerald-400' },
-    { text: '> Loading 252 trading days of tick data...', color: 'text-neutral-500' },
-    { text: '> Running Monte Carlo simulation (10,000 paths)...', color: 'text-neutral-500' },
-    { text: '', color: '' }, // blank line for spacing
-    { text: '  ┌─────────────────────────────────────┐', color: 'text-neutral-600' },
-    { text: '  │  Sharpe Ratio    2.41               │', color: 'text-indigo-400' },
-    { text: '  │  Win Rate        67.3%              │', color: 'text-emerald-400' },
-    { text: '  │  Profit Factor   1.89               │', color: 'text-emerald-400' },
-    { text: '  │  Max Drawdown   -4.2%               │', color: 'text-amber-400' },
-    { text: '  │  Expectancy     +$12.40/trade       │', color: 'text-indigo-400' },
-    { text: '  └─────────────────────────────────────┘', color: 'text-neutral-600' },
-    { text: '', color: '' },
-    { text: '> Strategy passed validation. Deploying to live...', color: 'text-neutral-500' },
-    { text: '> ✓ Connected to TopStepX account', color: 'text-emerald-400' },
-    { text: '> ✓ Risk manager active (max 8 trades, $400 daily limit)', color: 'text-emerald-400' },
-    { text: '> ✓ Live execution enabled', color: 'text-emerald-400' },
-    { text: '$ _', color: 'text-emerald-400' },
-  ]
-  const [visibleLines, setVisibleLines] = useState([])
-  const [currentChar, setCurrentChar] = useState(0)
-  const [lineIndex, setLineIndex] = useState(0)
-  const started = useRef(false)
-  const ref = useRef(null)
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !started.current) {
-          started.current = true
-          setLineIndex(0)
-          setCurrentChar(0)
-        }
-      },
-      { threshold: 0.2 }
-    )
-    if (ref.current) observer.observe(ref.current)
-    return () => observer.disconnect()
+  const onMove = useCallback((e) => {
+    if (raf.current) cancelAnimationFrame(raf.current)
+    raf.current = requestAnimationFrame(() => {
+      const el = ref.current
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      const x = (e.clientX - r.left) / r.width - 0.5
+      const y = (e.clientY - r.top) / r.height - 0.5
+      el.style.transform = `perspective(700px) rotateX(${-y * 7}deg) rotateY(${x * 7}deg) scale(1.025)`
+    })
   }, [])
 
+  const onLeave = useCallback(() => {
+    if (raf.current) cancelAnimationFrame(raf.current)
+    const el = ref.current
+    if (el) el.style.transform = 'perspective(700px) rotateX(0deg) rotateY(0deg) scale(1)'
+  }, [])
+
+  return (
+    <div
+      ref={ref}
+      className={className}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      style={{ transition: 'transform 0.35s cubic-bezier(.16,1,.3,1)', willChange: 'transform' }}
+    >
+      {children}
+    </div>
+  )
+}
+
+/* ── drifting blob ── */
+function Blob({ style }) {
+  return (
+    <div
+      className="fixed -z-10 rounded-full blur-[120px] pointer-events-none"
+      style={style}
+    />
+  )
+}
+
+/* ── candlestick background ── */
+function CandlestickBackground() {
+  const canvasRef = useRef(null)
+
   useEffect(() => {
-    if (!started.current || lineIndex >= lines.length) return
-    const line = lines[lineIndex]
-    if (line.text === '') {
-      const timeout = setTimeout(() => {
-        setVisibleLines(prev => [...prev, line])
-        setLineIndex(i => i + 1)
-        setCurrentChar(0)
-      }, 100)
-      return () => clearTimeout(timeout)
-    }
-    if (currentChar < line.text.length) {
-      const speed = line.text.startsWith('$') ? 35 : line.text.startsWith('  │') || line.text.startsWith('  ┌') || line.text.startsWith('  └') ? 8 : 15
-      const timeout = setTimeout(() => setCurrentChar(c => c + 1), speed)
-      return () => clearTimeout(timeout)
-    } else {
-      const pause = line.text.startsWith('$') ? 400 : line.text.includes('✓') ? 250 : 150
-      const timeout = setTimeout(() => {
-        setVisibleLines(prev => [...prev, line])
-        setLineIndex(i => i + 1)
-        setCurrentChar(0)
-      }, pause)
-      return () => clearTimeout(timeout)
-    }
-  }, [lineIndex, currentChar])
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
 
-  const typingLine = lineIndex < lines.length ? lines[lineIndex] : null
+    let animId
+    let frameOffset = 0
+
+    const CW = 14
+    const GAP = 10
+    const STRIDE = CW + GAP
+    const SPEED = 0.3
+
+    const nextCandle = (prev) => {
+      const open = prev
+      const change = (Math.random() - 0.48) * 0.09
+      const close = Math.max(0.08, Math.min(0.92, open + change))
+      const wickUp = Math.random() * 0.04
+      const wickDown = Math.random() * 0.04
+      return {
+        open,
+        close,
+        high: Math.min(Math.max(open, close) + wickUp, 0.96),
+        low: Math.max(Math.min(open, close) - wickDown, 0.04),
+      }
+    }
+
+    const INIT_COUNT = 100
+    const candles = []
+    let price = 0.48
+    for (let i = 0; i < INIT_COUNT; i++) {
+      const c = nextCandle(price)
+      candles.push(c)
+      price = c.close
+    }
+
+    const resize = () => {
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+    }
+    resize()
+    window.addEventListener('resize', resize)
+
+    const draw = () => {
+      const W = canvas.width
+      const H = canvas.height
+      ctx.clearRect(0, 0, W, H)
+
+      frameOffset += SPEED
+      const fullShifts = Math.floor(frameOffset / STRIDE)
+      if (fullShifts > 0) {
+        frameOffset -= fullShifts * STRIDE
+        for (let i = 0; i < fullShifts; i++) {
+          const last = candles[candles.length - 1]
+          candles.push(nextCandle(last.close))
+          candles.shift()
+        }
+      }
+
+      const chartTop = H * 0.08
+      const chartH = H * 0.84
+      const toY = (v) => chartTop + (1 - v) * chartH
+
+      for (let i = 0; i < candles.length; i++) {
+        const c = candles[i]
+        const stepsFromRight = candles.length - 1 - i
+        const x = W - GAP - CW - stepsFromRight * STRIDE - frameOffset
+        if (x + CW < -STRIDE || x > W + STRIDE) continue
+
+        const isBullish = c.close >= c.open
+        const openY = toY(c.open)
+        const closeY = toY(c.close)
+        const highY = toY(c.high)
+        const lowY = toY(c.low)
+        const bodyTop = Math.min(openY, closeY)
+        const bodyH = Math.max(Math.abs(closeY - openY), 2)
+
+        // wick
+        ctx.strokeStyle = isBullish
+          ? 'rgba(96,165,250,0.28)'
+          : 'rgba(203,213,225,0.18)'
+        ctx.lineWidth = 1
+        ctx.beginPath()
+        ctx.moveTo(x + CW / 2, highY)
+        ctx.lineTo(x + CW / 2, lowY)
+        ctx.stroke()
+
+        // body fill
+        ctx.fillStyle = isBullish
+          ? 'rgba(59,130,246,0.22)'
+          : 'rgba(148,163,184,0.14)'
+        ctx.fillRect(x, bodyTop, CW, bodyH)
+
+        // body border
+        ctx.strokeStyle = isBullish
+          ? 'rgba(96,165,250,0.45)'
+          : 'rgba(203,213,225,0.28)'
+        ctx.lineWidth = 0.8
+        ctx.strokeRect(x, bodyTop, CW, bodyH)
+      }
+
+      animId = requestAnimationFrame(draw)
+    }
+
+    draw()
+
+    return () => {
+      cancelAnimationFrame(animId)
+      window.removeEventListener('resize', resize)
+    }
+  }, [])
 
   return (
-    <div ref={ref} className="font-mono text-[11px] sm:text-xs leading-relaxed min-h-[280px]">
-      {visibleLines.map((line, i) => (
-        <div key={i} className={line.color || 'h-4'}>{line.text}</div>
-      ))}
-      {typingLine && typingLine.text && (
-        <div className={typingLine.color}>
-          {typingLine.text.slice(0, currentChar)}
-          <span className="animate-pulse text-white/60">▋</span>
-        </div>
-      )}
-    </div>
+    <canvas
+      ref={canvasRef}
+      className="fixed inset-0 pointer-events-none"
+      style={{ zIndex: 0, opacity: 0.35 }}
+    />
   )
 }
 
-// ── Architecture diagram ────────────────────────────────────────────────────
+/* ─────────────── data ─────────────── */
+const SOCIALS = [
+  {
+    name: 'TikTok',
+    handle: '@jhp.trades',
+    url: 'https://www.tiktok.com/@jhp.trades',
+    accent: '#e2e8f0',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.72a8.19 8.19 0 004.76 1.52V6.79a4.83 4.83 0 01-1-.1z"/>
+      </svg>
+    ),
+  },
+  {
+    name: 'YouTube',
+    handle: '@JHPTrades',
+    url: 'https://www.youtube.com/@JHPTrades',
+    accent: '#f87171',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+        <path d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 00.5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 002.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 002.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81zM9.75 15.52V8.48L15.5 12l-5.75 3.52z"/>
+      </svg>
+    ),
+  },
+  {
+    name: 'Discord',
+    handle: 'Join server',
+    url: 'https://discord.gg/aCNadDMvmH',
+    accent: '#818cf8',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+        <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.056a19.904 19.904 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+      </svg>
+    ),
+  },
+  {
+    name: 'Instagram',
+    handle: '@christiannpark',
+    url: 'https://www.instagram.com/christiannpark',
+    accent: '#e879f9',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+      </svg>
+    ),
+  },
+]
 
-function ArchitectureDiagram() {
-  const [ref, visible] = useFadeIn(0.2)
-  const [activeNode, setActiveNode] = useState(null)
+const EMAIL = { accent: '#60a5fa' }
 
-  const nodes = [
-    { id: 'tv', label: 'TradingView', sublabel: 'Pine Script Signals', x: 0, y: 0, color: 'from-blue-500/20 to-blue-600/10', border: 'border-blue-500/30' },
-    { id: 'webhook', label: 'Webhook API', sublabel: 'Validation & Routing', x: 1, y: 0, color: 'from-indigo-500/20 to-indigo-600/10', border: 'border-indigo-500/30' },
-    { id: 'risk', label: 'Risk Manager', sublabel: 'Limits & Controls', x: 2, y: -1, color: 'from-amber-500/20 to-amber-600/10', border: 'border-amber-500/30' },
-    { id: 'exec', label: 'Order Engine', sublabel: 'Bracket Execution', x: 2, y: 1, color: 'from-emerald-500/20 to-emerald-600/10', border: 'border-emerald-500/30' },
-    { id: 'broker', label: 'TopStepX', sublabel: 'Live Account', x: 3, y: 0, color: 'from-purple-500/20 to-purple-600/10', border: 'border-purple-500/30' },
-    { id: 'dash', label: 'Dashboard', sublabel: 'Real-time Monitor', x: 3, y: 1.5, color: 'from-pink-500/20 to-pink-600/10', border: 'border-pink-500/30' },
-  ]
+const TOOLS = [
+  {
+    name: 'Eigenstate',
+    desc: 'Quant & ML-powered tool built for futures trading — surface edges you can actually act on',
+    url: 'https://eigenstate.app?ref=JHP',
+    tag: 'Quant / ML',
+    accent: '#a78bfa',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4 h-4">
+        <circle cx="12" cy="5" r="1.5"/><circle cx="5" cy="19" r="1.5"/><circle cx="19" cy="19" r="1.5"/>
+        <line x1="12" y1="6.5" x2="5" y2="17.5"/><line x1="12" y1="6.5" x2="19" y2="17.5"/>
+        <line x1="6.5" y1="19" x2="17.5" y2="19"/>
+        <circle cx="12" cy="13" r="1.2" fill="currentColor" stroke="none"/>
+      </svg>
+    ),
+  },
+  {
+    name: 'TradingView',
+    desc: 'My full chart setup — indicators, scripts, alerts, and execution all in one place',
+    url: 'https://www.tradingview.com/?aff_id=164318&aff_sub=jhp',
+    tag: 'Charting',
+    accent: '#34d399',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4 h-4">
+        <polyline points="2,18 8,11 13,15 22,5"/>
+        <line x1="8" y1="11" x2="8" y2="20"/><line x1="13" y1="15" x2="13" y2="20"/>
+        <line x1="2" y1="20" x2="22" y2="20"/>
+      </svg>
+    ),
+  },
+  {
+    name: 'TradeZella',
+    desc: 'Journal built for active traders — track every trade, find patterns, cut losing habits',
+    url: 'https://refer.tradezella.com/christian-park',
+    tag: 'Journal',
+    accent: '#38bdf8',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4 h-4">
+        <path d="M4 4h16v16H4z" rx="2"/><line x1="8" y1="9" x2="16" y2="9"/>
+        <line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/>
+      </svg>
+    ),
+  },
+]
+
+const FIRMS = [
+  {
+    name: 'Alpha Futures',
+    desc: 'The prop firm I\'m currently funded with — use my link if you\'re signing up anyway',
+    url: 'https://app.alpha-futures.com/signup/Christian018978/',
+    tag: 'Prop Firm',
+    accent: '#60a5fa',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4 h-4">
+        <rect x="3" y="10" width="18" height="11" rx="1"/>
+        <path d="M8 10V7a4 4 0 018 0v3"/>
+        <circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/>
+      </svg>
+    ),
+  },
+  {
+    name: 'Top One Futures',
+    desc: 'Competitive prop firm with fast scaling and solid payouts — code JHP for 50% off',
+    url: 'https://checkout.toponefutures.com/',
+    tag: 'Prop Firm',
+    accent: '#fbbf24',
+    badge: 'CODE: JHP · 50% OFF',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4 h-4">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+    ),
+  },
+]
+
+/* ─────────────── page ─────────────── */
+export default function Page() {
+  const name = useScramble('JHP Trades', { speed: 26, delay: 80 })
 
   return (
-    <div ref={ref} className="relative">
-      {/* Mobile: vertical flow */}
-      <div className="sm:hidden space-y-3">
-        {nodes.map((node, i) => (
-          <div key={node.id} className={`flex items-center gap-3 transition-all duration-500 ${visible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: `${i * 100}ms` }}>
-            <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${node.color} border ${node.border} shrink-0`} />
-            <div className={`flex-1 px-4 py-3 rounded-lg bg-gradient-to-r ${node.color} border ${node.border}`}>
-              <div className="text-xs font-semibold text-white">{node.label}</div>
-              <div className="text-[10px] text-neutral-500">{node.sublabel}</div>
-            </div>
-            {i < nodes.length - 1 && (
-              <svg className="w-4 h-4 text-neutral-600 shrink-0 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            )}
-          </div>
-        ))}
-      </div>
+    <div className="min-h-screen text-white overflow-x-hidden">
 
-      {/* Desktop: grid layout with arrows */}
-      <div className="hidden sm:block relative h-[280px]">
-        {nodes.map((node, i) => {
-          const left = `${node.x * 25 + 4}%`
-          const top = `${50 + node.y * 30}%`
-          return (
-            <div
-              key={node.id}
-              className={`absolute -translate-x-1/2 -translate-y-1/2 px-5 py-3 rounded-xl bg-gradient-to-br ${node.color} border ${node.border} cursor-default transition-all duration-500 hover:scale-105 ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`}
-              style={{ left, top, transitionDelay: `${i * 120}ms` }}
-              onMouseEnter={() => setActiveNode(node.id)}
-              onMouseLeave={() => setActiveNode(null)}
-            >
-              <div className="text-xs font-semibold text-white whitespace-nowrap">{node.label}</div>
-              <div className="text-[10px] text-neutral-400 whitespace-nowrap">{node.sublabel}</div>
-            </div>
-          )
-        })}
+      {/* candlestick chart background */}
+      <CandlestickBackground />
 
-        {/* Connection lines (simplified) */}
-        <svg className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-700 ${visible ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '600ms' }}>
-          <defs>
-            <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="rgba(99,102,241,0.3)" />
-              <stop offset="100%" stopColor="rgba(99,102,241,0.05)" />
-            </linearGradient>
-          </defs>
-          {/* TV -> Webhook */}
-          <line x1="16%" y1="50%" x2="25%" y2="50%" stroke="url(#lineGrad)" strokeWidth="1" strokeDasharray="4 4">
-            <animate attributeName="stroke-dashoffset" from="8" to="0" dur="1s" repeatCount="indefinite" />
-          </line>
-          {/* Webhook -> Risk */}
-          <line x1="37%" y1="48%" x2="50%" y2="25%" stroke="url(#lineGrad)" strokeWidth="1" strokeDasharray="4 4">
-            <animate attributeName="stroke-dashoffset" from="8" to="0" dur="1s" repeatCount="indefinite" />
-          </line>
-          {/* Webhook -> Exec */}
-          <line x1="37%" y1="52%" x2="50%" y2="78%" stroke="url(#lineGrad)" strokeWidth="1" strokeDasharray="4 4">
-            <animate attributeName="stroke-dashoffset" from="8" to="0" dur="1s" repeatCount="indefinite" />
-          </line>
-          {/* Risk -> Broker */}
-          <line x1="62%" y1="25%" x2="75%" y2="48%" stroke="url(#lineGrad)" strokeWidth="1" strokeDasharray="4 4">
-            <animate attributeName="stroke-dashoffset" from="8" to="0" dur="1s" repeatCount="indefinite" />
-          </line>
-          {/* Exec -> Broker */}
-          <line x1="62%" y1="78%" x2="75%" y2="52%" stroke="url(#lineGrad)" strokeWidth="1" strokeDasharray="4 4">
-            <animate attributeName="stroke-dashoffset" from="8" to="0" dur="1s" repeatCount="indefinite" />
-          </line>
-          {/* Broker -> Dashboard */}
-          <line x1="79%" y1="58%" x2="79%" y2="85%" stroke="url(#lineGrad)" strokeWidth="1" strokeDasharray="4 4">
-            <animate attributeName="stroke-dashoffset" from="8" to="0" dur="1s" repeatCount="indefinite" />
-          </line>
-        </svg>
-      </div>
-    </div>
-  )
-}
+      {/* page content sits above the canvas */}
+      <div className="relative z-10">
 
-// ── Background ──────────────────────────────────────────────────────────────
+      {/* CSS for shine sweep & grid */}
+      <style>{`
+        @keyframes drift1 {
+          0%,100% { transform: translate(0,0) scale(1); }
+          50%      { transform: translate(60px,-40px) scale(1.08); }
+        }
+        @keyframes drift2 {
+          0%,100% { transform: translate(0,0) scale(1); }
+          50%      { transform: translate(-50px,50px) scale(1.05); }
+        }
+        @keyframes drawline {
+          from { transform: scaleX(0); }
+          to   { transform: scaleX(1); }
+        }
+        .blob1 { animation: drift1 12s ease-in-out infinite; }
+        .blob2 { animation: drift2 16s ease-in-out infinite; }
 
-function GridBackground() {
-  return (
-    <div className="fixed inset-0 -z-10 overflow-hidden">
-      <div className="absolute inset-0 bg-[#0a0a0a]" />
+        .shine {
+          position: relative;
+          overflow: hidden;
+        }
+        .shine::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(105deg, transparent 40%, rgba(59,130,246,0.08) 50%, transparent 60%);
+          transform: translateX(-100%);
+          transition: transform 0s;
+        }
+        .shine:hover::after {
+          transform: translateX(100%);
+          transition: transform 0.55s ease;
+        }
+
+        .section-line {
+          display: block;
+          height: 1px;
+          background: #3b82f6;
+          transform-origin: left;
+          animation: drawline 0.6s cubic-bezier(.16,1,.3,1) both;
+        }
+        @keyframes badgepulse {
+          0%,100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.35); }
+          50%      { box-shadow: 0 0 0 5px rgba(251,191,36,0); }
+        }
+        .badge-pulse { animation: badgepulse 2s ease-in-out infinite; }
+      `}</style>
+
+      {/* background blobs */}
       <div
-        className="absolute inset-0 opacity-[0.03]"
+        className="blob1 fixed -z-10 rounded-full pointer-events-none"
         style={{
-          backgroundImage: `linear-gradient(rgba(99,102,241,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.3) 1px, transparent 1px)`,
-          backgroundSize: '60px 60px',
+          width: 560, height: 400,
+          top: '-80px', left: '50%', marginLeft: '-280px',
+          background: 'radial-gradient(ellipse, rgba(37,99,235,0.09) 0%, transparent 70%)',
+          filter: 'blur(80px)',
         }}
       />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full bg-indigo-500/[0.04] blur-[120px]" />
-      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-purple-500/[0.03] blur-[100px]" />
-    </div>
-  )
-}
+      <div
+        className="blob2 fixed -z-10 rounded-full pointer-events-none"
+        style={{
+          width: 400, height: 320,
+          bottom: '10%', right: '-80px',
+          background: 'radial-gradient(ellipse, rgba(59,130,246,0.06) 0%, transparent 70%)',
+          filter: 'blur(100px)',
+        }}
+      />
 
-// ── Main page ───────────────────────────────────────────────────────────────
+      {/* grid */}
+      <div
+        className="fixed inset-0 -z-10"
+        style={{
+          backgroundImage: `linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px)`,
+          backgroundSize: '52px 52px',
+        }}
+      />
 
-export default function LandingPage() {
-  const glowRef = useMouseGlow()
-  const [mobileMenu, setMobileMenu] = useState(false)
-
-  const scrollTo = useCallback((id) => {
-    setMobileMenu(false)
-    const el = document.getElementById(id)
-    if (el) el.scrollIntoView({ behavior: 'smooth' })
-  }, [])
-
-  return (
-    <div className="min-h-screen text-white relative scroll-smooth">
-      <GridBackground />
-
-      {/* ── Nav ── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <span className="text-lg font-bold tracking-tight">
-            <span className="text-white">noctiq</span>
-            <span className="text-indigo-500">.ai</span>
-          </span>
-
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-6">
-            <button onClick={() => scrollTo('about')} className="text-sm text-neutral-400 hover:text-white transition-colors">About</button>
-            <button onClick={() => scrollTo('expertise')} className="text-sm text-neutral-400 hover:text-white transition-colors">Expertise</button>
-            <button onClick={() => scrollTo('system')} className="text-sm text-neutral-400 hover:text-white transition-colors">System</button>
-            <button onClick={() => scrollTo('resources')} className="text-sm text-neutral-400 hover:text-white transition-colors">Resources</button>
-            <Link
-              href="/dashboard"
-              className="text-sm px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition-colors font-medium"
-            >
-              Dashboard
-            </Link>
-          </div>
-
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMobileMenu(m => !m)}
-            className="md:hidden p-2 -mr-2 text-neutral-400 hover:text-white"
+      {/* nav */}
+      <nav className="px-6 py-5 max-w-3xl mx-auto">
+        <div className="flex items-center justify-end">
+          <Link
+            href="/dashboard"
+            className="text-xs text-neutral-600 hover:text-neutral-400 transition-colors duration-200 border border-white/[0.06] px-3 py-1.5 rounded-lg"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {mobileMenu
-                ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              }
-            </svg>
-          </button>
+            live charts →
+          </Link>
         </div>
-
-        {/* Mobile menu dropdown */}
-        {mobileMenu && (
-          <div className="md:hidden border-t border-white/5 bg-[#0a0a0a]/95 backdrop-blur-xl px-6 py-4 space-y-3">
-            <button onClick={() => scrollTo('about')} className="block text-sm text-neutral-400 hover:text-white transition-colors w-full text-left">About</button>
-            <button onClick={() => scrollTo('expertise')} className="block text-sm text-neutral-400 hover:text-white transition-colors w-full text-left">Expertise</button>
-            <button onClick={() => scrollTo('system')} className="block text-sm text-neutral-400 hover:text-white transition-colors w-full text-left">System</button>
-            <button onClick={() => scrollTo('resources')} className="block text-sm text-neutral-400 hover:text-white transition-colors w-full text-left">Resources</button>
-            <Link href="/dashboard" className="block text-sm text-indigo-400 font-medium">Dashboard</Link>
-          </div>
-        )}
       </nav>
 
-      {/* ── Hero ── */}
-      <section className="pt-28 sm:pt-32 pb-16 sm:pb-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <FadeIn>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium mb-6">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Building automated trading systems
-              </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
-                Finding{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400">
-                  market
-                </span>
-                <br />
-                inefficiencies.
-              </h1>
-              <p className="text-base sm:text-lg text-neutral-400 max-w-md mb-8 leading-relaxed">
-                I&apos;m Christian. I build algo trading systems, research statistical edges in futures &amp; options, and share everything I learn along the way.
-              </p>
-              <div className="flex flex-wrap items-center gap-3">
-                <a
-                  href="https://www.tiktok.com/@jung.ho.p"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white text-black font-semibold text-sm hover:bg-neutral-200 transition-colors"
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.72a8.19 8.19 0 004.76 1.52V6.79a4.83 4.83 0 01-1-.1z"/>
-                  </svg>
-                  @jung.ho.p
-                </a>
-                <button
-                  onClick={() => scrollTo('resources')}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-white/10 text-sm text-neutral-300 hover:border-white/25 hover:text-white transition-all"
-                >
-                  Free resources
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-              </div>
-            </FadeIn>
+      <main className="max-w-3xl mx-auto px-6 pb-24">
 
-            {/* Terminal card */}
-            <FadeIn delay={200}>
-              <div
-                ref={glowRef}
-                className="relative rounded-2xl border border-white/[0.06] bg-[#111113] p-5 sm:p-6 overflow-hidden"
-              >
-                <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                  style={{ background: 'radial-gradient(400px circle at var(--mx) var(--my), rgba(99,102,241,0.06), transparent 60%)' }}
-                />
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-3 h-3 rounded-full bg-red-500/70" />
-                  <div className="w-3 h-3 rounded-full bg-amber-500/70" />
-                  <div className="w-3 h-3 rounded-full bg-emerald-500/70" />
-                  <span className="ml-3 text-[10px] text-neutral-600 font-mono">noctiq ~ strategy_runner</span>
-                </div>
-                <TerminalText />
-              </div>
-            </FadeIn>
+        {/* ── hero ── */}
+        <FadeIn className="mt-10 mb-10">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="relative flex h-1.5 w-1.5 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" />
+            </span>
+            <span className="text-xs text-neutral-600 font-mono">{name}</span>
           </div>
-        </div>
-      </section>
-
-      {/* ── Tech stack strip ── */}
-      <section className="border-y border-white/5 bg-white/[0.01] overflow-hidden">
-        <FadeIn>
-          <div className="max-w-6xl mx-auto px-6 py-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs text-neutral-500 font-mono">
-            {['Python', 'Pine Script', 'Next.js', 'TradingView', 'Monte Carlo', 'TopStepX API', 'Supabase', 'Vercel'].map((t) => (
-              <span key={t} className="flex items-center gap-1.5 hover:text-neutral-300 transition-colors">
-                <span className="w-1 h-1 rounded-full bg-indigo-500/50" />
-                {t}
+          {/* proof */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <span className="relative flex h-1.5 w-1.5 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-60" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
               </span>
+              <span className="text-xs text-neutral-500">Live daily sessions</span>
+            </div>
+            <span className="text-neutral-800">·</span>
+            <span className="text-xs text-neutral-500">1200+ traders in the community</span>
+          </div>
+        </FadeIn>
+
+        {/* ── mentorship featured ── */}
+        <FadeIn delay={100} className="mb-4">
+          <TiltCard>
+            <a
+              href="/apply"
+              className="shine group relative flex flex-col gap-3 px-6 py-5 rounded-2xl border bg-[#0a0e17] overflow-hidden transition-all duration-200"
+              style={{ borderColor: 'rgba(59,130,246,0.3)' }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'rgba(59,130,246,0.6)'
+                e.currentTarget.style.boxShadow = '0 0 36px rgba(59,130,246,0.12)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'rgba(59,130,246,0.3)'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+            >
+              <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.6), transparent)' }} />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0" style={{ background: 'rgba(59,130,246,0.12)', color: '#60a5fa' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                    </svg>
+                  </span>
+                  <div>
+                    <div className="text-sm font-bold text-white leading-none mb-1">Apply for 1 on 1 Trading Help</div>
+                    <div className="text-[11px] font-semibold" style={{ color: '#60a5fa' }}>Fix Your Execution. Get Funded.</div>
+                  </div>
+                </div>
+                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-lg shrink-0 transition-colors duration-200" style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa' }}>
+                  Apply →
+                </span>
+              </div>
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                1 on 1. fixing execution, building real consistency, and getting you to the point where you're pulling consistent payouts — not for everyone.
+              </p>
+            </a>
+          </TiltCard>
+        </FadeIn>
+
+        {/* ── discord featured ── */}
+        <FadeIn delay={200} className="mb-10">
+          <TiltCard>
+            <a
+              href="https://discord.gg/aCNadDMvmH"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shine group relative flex flex-col gap-3 px-6 py-5 rounded-2xl border bg-[#0a0e17] overflow-hidden transition-all duration-200"
+              style={{ borderColor: 'rgba(129,140,248,0.2)' }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'rgba(129,140,248,0.45)'
+                e.currentTarget.style.boxShadow = '0 0 32px rgba(129,140,248,0.1)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'rgba(129,140,248,0.2)'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+            >
+              <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(129,140,248,0.5), transparent)' }} />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0" style={{ background: 'rgba(129,140,248,0.12)', color: '#a5b4fc' }}>
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                      <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.056a19.904 19.904 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                    </svg>
+                  </span>
+                  <div>
+                    <div className="text-sm font-bold text-white leading-none mb-1">Free Discord Community</div>
+                    <div className="text-[11px] font-semibold" style={{ color: '#a5b4fc' }}>200+ members · launched this year</div>
+                  </div>
+                </div>
+                <svg className="w-4 h-4 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
+                </svg>
+              </div>
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                Live trading, quant research, and system building — a community focused on edge, not just entries.
+              </p>
+            </a>
+          </TiltCard>
+        </FadeIn>
+
+        {/* ── tools ── */}
+        <div id="tools">
+        <FadeIn delay={250} className="mb-10">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Tools</span>
+            <span className="section-line flex-1" />
+          </div>
+
+          {/* tools + prop firms — single stacked list */}
+          <div className="space-y-2">
+            {[...TOOLS, ...FIRMS].map((t, i) => (
+              <FadeIn key={t.name} delay={520 + i * 50}>
+                <TiltCard>
+                  <a
+                    href={t.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shine group relative flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.08] bg-[#0a0e17] overflow-hidden transition-all duration-200"
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = t.accent + '55'
+                      e.currentTarget.style.boxShadow = `0 0 24px ${t.accent}18`
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+                      e.currentTarget.style.boxShadow = 'none'
+                    }}
+                  >
+                    <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full opacity-70" style={{ background: t.accent }} />
+                    <span className="shrink-0 flex items-center justify-center w-8 h-8 rounded-xl" style={{ background: t.accent + '18', color: t.accent }}>
+                      {t.icon}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-sm font-semibold text-white">{t.name}</span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold tracking-wider uppercase" style={{ background: t.accent + '18', color: t.accent, border: `1px solid ${t.accent}40` }}>
+                          {t.tag}
+                        </span>
+                        {t.badge && (
+                          <span className="badge-pulse text-[9px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded-md" style={{ background: t.accent + '20', color: t.accent, border: `1px solid ${t.accent}50` }}>
+                            {t.badge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-neutral-500 leading-relaxed">{t.desc}</p>
+                    </div>
+                    <svg className="w-3 h-3 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
+                    </svg>
+                  </a>
+                </TiltCard>
+              </FadeIn>
             ))}
           </div>
         </FadeIn>
-      </section>
+        </div>{/* end #tools */}
 
-      {/* ── About ── */}
-      <section id="about" className="py-20 sm:py-24 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-5 gap-12 lg:gap-16">
-            <FadeIn className="lg:col-span-3">
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6">
-                Hey, I&apos;m <span className="text-indigo-400">Christian</span>.
-              </h2>
-              <div className="space-y-4 text-neutral-400 leading-relaxed">
-                <p>
-                  I trade futures and options with a quantitative, systematic approach &mdash; building
-                  automated strategies that exploit statistical edges in the market. Mean reversion on
-                  micro e-mini Nasdaq, volatility-based options plays, ATR-adjusted risk management.
-                </p>
-                <p>
-                  I share everything I learn on TikTok: backtesting frameworks, how I built my
-                  automated system from scratch, and the real math behind profitable strategies.
-                  My goal is to make quantitative trading accessible to anyone willing to learn.
-                </p>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={150} className="lg:col-span-2">
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.01] p-6 space-y-5">
-                <h3 className="text-sm font-semibold text-white tracking-wide uppercase">Quick stats</h3>
-                {[
-                  { label: 'Focus', value: 'MNQ / MES Futures' },
-                  { label: 'Approach', value: 'Systematic & Automated' },
-                  { label: 'Platform', value: 'TradingView + Custom API' },
-                  { label: 'Content', value: '@jung.ho.p on TikTok' },
-                ].map((item) => (
-                  <div key={item.label} className="flex justify-between items-center text-sm border-b border-white/[0.04] pb-3 last:border-0 last:pb-0">
-                    <span className="text-neutral-500">{item.label}</span>
-                    <span className="text-white font-medium">{item.value}</span>
-                  </div>
-                ))}
-              </div>
-            </FadeIn>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Expertise ── */}
-      <section id="expertise" className="py-20 sm:py-24 px-6 border-t border-white/5">
-        <div className="max-w-6xl mx-auto">
-          <FadeIn>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">What I work on</h2>
-            <p className="text-neutral-500 max-w-lg mb-12">
-              Building at the intersection of software engineering, statistics, and financial markets.
-            </p>
-          </FadeIn>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              {
-                icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />,
-                title: 'Algorithmic Trading',
-                desc: 'End-to-end automated strategies: Pine Script signals, webhook routing, bracket order execution with stop loss and take profit, all via API.',
-              },
-              {
-                icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />,
-                title: 'Statistical Analysis',
-                desc: 'Monte Carlo simulations, walk-forward backtesting, Sharpe ratio optimization. Data-driven edge quantification, not gut feelings.',
-              },
-              {
-                icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />,
-                title: 'Futures & Options',
-                desc: 'MNQ, MES, and micro futures. Options for hedging and directional plays. Greeks, vol surfaces, and term structure analysis.',
-              },
-              {
-                icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />,
-                title: 'Full-Stack Engineering',
-                desc: 'Next.js + React dashboards, REST APIs, webhook pipelines, Supabase for persistence, Vercel for deployment. Production-grade infra.',
-              },
-              {
-                icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />,
-                title: 'Risk Management',
-                desc: 'Daily loss limits, per-trade cooldowns, max trade caps, drawdown protection, concurrent trade mutexes. Capital preservation first.',
-              },
-              {
-                icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />,
-                title: 'Prop Firm Trading',
-                desc: 'Strategies built for funded accounts. Understanding evaluation rules, trailing drawdowns, and building systems that pass and sustain accounts.',
-              },
-            ].map((item, i) => (
-              <FadeIn key={i} delay={i * 80}>
-                <div className="group h-full p-6 rounded-xl border border-white/[0.06] bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/[0.12] transition-all duration-300">
-                  <div className="w-10 h-10 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-4 group-hover:bg-indigo-500/20 group-hover:border-indigo-500/30 transition-colors">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">{item.icon}</svg>
-                  </div>
-                  <h3 className="text-white font-semibold mb-2">{item.title}</h3>
-                  <p className="text-sm text-neutral-500 leading-relaxed">{item.desc}</p>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Noctiq System ── */}
-      <section id="system" className="py-20 sm:py-24 px-6 border-t border-white/5">
-        <div className="max-w-6xl mx-auto">
-          <FadeIn>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium mb-6">
-              The system
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">noctiq</h2>
-            <p className="text-neutral-400 max-w-2xl mb-12 leading-relaxed">
-              My end-to-end automated trading infrastructure. Signals from TradingView flow through
-              a webhook API, get validated by a risk manager, and execute bracket orders on prop firm
-              accounts &mdash; all monitored in real-time.
-            </p>
-          </FadeIn>
-
-          <FadeIn delay={100}>
-            <ArchitectureDiagram />
-          </FadeIn>
-
-          <FadeIn delay={200}>
-            <div className="mt-12 grid sm:grid-cols-3 gap-4">
-              {[
-                { num: '8', label: 'Max trades/day', detail: 'Hard-coded risk limit' },
-                { num: '$400', label: 'Daily loss cap', detail: 'Auto-stops trading' },
-                { num: '60s', label: 'Trade cooldown', detail: 'Prevents overtrading' },
-              ].map((item) => (
-                <div key={item.label} className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.01] text-center">
-                  <div className="text-2xl font-bold text-white mb-1">{item.num}</div>
-                  <div className="text-sm text-neutral-400 font-medium">{item.label}</div>
-                  <div className="text-xs text-neutral-600 mt-1">{item.detail}</div>
-                </div>
-              ))}
-            </div>
-          </FadeIn>
-
-          <FadeIn delay={300}>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition-colors font-semibold text-sm text-white"
-              >
-                View live dashboard
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ── Resources (actually helpful) ── */}
-      <section id="resources" className="py-20 sm:py-24 px-6 border-t border-white/5">
-        <div className="max-w-6xl mx-auto">
-          <FadeIn>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Free resources</h2>
-            <p className="text-neutral-500 max-w-lg mb-12">
-              Concepts and tools I wish someone had explained to me when I started. No fluff, just the actual stuff that matters.
-            </p>
-          </FadeIn>
-
-          {/* Concepts grid */}
-          <div className="grid sm:grid-cols-2 gap-4 mb-8">
-            {[
-              {
-                title: 'ATR-Based Position Sizing',
-                desc: 'Stop using fixed stop losses. ATR (Average True Range) adjusts your stops to current volatility, so you\'re not getting stopped out on noise or leaving money on the table in quiet markets.',
-                tag: 'Risk',
-                tagColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
-              },
-              {
-                title: 'Monte Carlo Backtesting',
-                desc: 'A single backtest tells you almost nothing. Run 10,000 randomized simulations of your trade sequence to understand the real distribution of outcomes and worst-case drawdowns.',
-                tag: 'Statistics',
-                tagColor: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-              },
-              {
-                title: 'Walk-Forward Optimization',
-                desc: 'In-sample optimization + out-of-sample validation, rolled forward through time. The only way to know if your strategy parameters are robust or curve-fitted.',
-                tag: 'Backtesting',
-                tagColor: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
-              },
-              {
-                title: 'Prop Firm Evaluation Math',
-                desc: 'The trailing drawdown on most evaluations means you need a strategy with specific characteristics: low variance, consistent edge, and disciplined risk per trade. Here\'s how to calculate what you need.',
-                tag: 'Prop Firms',
-                tagColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-              },
-              {
-                title: 'Bracket Orders Explained',
-                desc: 'Entry + stop loss + take profit, submitted as one atomic order. This is how you automate risk management at the order level instead of relying on manual exits.',
-                tag: 'Execution',
-                tagColor: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
-              },
-              {
-                title: 'Expectancy & Profit Factor',
-                desc: 'Win rate means nothing without knowing your average win vs. average loss. Expectancy = (Win% × Avg Win) - (Loss% × Avg Loss). If it\'s positive and your sample size is large enough, you have an edge.',
-                tag: 'Fundamentals',
-                tagColor: 'text-pink-400 bg-pink-500/10 border-pink-500/20',
-              },
-            ].map((item, i) => (
-              <FadeIn key={i} delay={i * 60}>
-                <div className="group h-full p-6 rounded-xl border border-white/[0.06] bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/[0.12] transition-all duration-300">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${item.tagColor}`}>
-                      {item.tag}
-                    </span>
-                  </div>
-                  <h3 className="text-white font-semibold mb-2">{item.title}</h3>
-                  <p className="text-sm text-neutral-500 leading-relaxed">{item.desc}</p>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
-
-          {/* Video content */}
-          <FadeIn>
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.01] p-6 sm:p-8">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <div>
-                  <h3 className="text-white font-semibold text-lg mb-1">Video walkthroughs</h3>
-                  <p className="text-sm text-neutral-500">Deep dives on TikTok covering these topics and more</p>
-                </div>
-                <a
-                  href="https://www.tiktok.com/@jung.ho.p"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black font-semibold text-sm hover:bg-neutral-200 transition-colors shrink-0"
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.72a8.19 8.19 0 004.76 1.52V6.79a4.83 4.83 0 01-1-.1z"/>
-                  </svg>
-                  Follow @jung.ho.p
-                </a>
-              </div>
-              <div className="grid sm:grid-cols-3 gap-3">
-                {[
-                  { title: 'Algo Trading Tutorial', views: '9.2K', desc: 'Building an automated system from scratch' },
-                  { title: 'How I Became an Algo Trader', views: '6.1K', desc: 'The full journey and steps to get started' },
-                  { title: 'ATR-Based Stops', views: '165', desc: 'Why dynamic stops beat fixed stops' },
-                ].map((vid) => (
-                  <a
-                    key={vid.title}
-                    href="https://www.tiktok.com/@jung.ho.p"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group p-4 rounded-lg border border-white/[0.04] hover:border-white/[0.1] hover:bg-white/[0.02] transition-all"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <svg className="w-4 h-4 text-neutral-600 group-hover:text-indigo-400 transition-colors" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                      </svg>
-                      <span className="text-[10px] text-neutral-600 font-mono">{vid.views} views</span>
-                    </div>
-                    <div className="text-sm font-medium text-white group-hover:text-indigo-400 transition-colors">{vid.title}</div>
-                    <div className="text-xs text-neutral-600 mt-1">{vid.desc}</div>
-                  </a>
-                ))}
-              </div>
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ── CTA ── */}
-      <section className="py-20 sm:py-24 px-6 border-t border-white/5">
-        <div className="max-w-6xl mx-auto">
-          <FadeIn>
-            <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-indigo-500/[0.06] via-purple-500/[0.03] to-transparent p-10 sm:p-14 text-center">
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4">
-                Want to learn more?
-              </h2>
-              <p className="text-neutral-400 max-w-md mx-auto mb-8">
-                I post new content regularly on TikTok covering algo trading, backtesting, prop firms, and the math behind it all.
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-4">
-                <a
-                  href="https://www.tiktok.com/@jung.ho.p"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white text-black font-semibold text-sm hover:bg-neutral-200 transition-colors"
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.72a8.19 8.19 0 004.76 1.52V6.79a4.83 4.83 0 01-1-.1z"/>
-                  </svg>
-                  Follow on TikTok
-                </a>
-                <Link
-                  href="/dashboard"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-white/10 text-sm text-neutral-300 hover:border-white/25 hover:text-white transition-all font-medium"
-                >
-                  See the live system
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              </div>
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ── Footer ── */}
-      <footer className="border-t border-white/5 py-10 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        {/* ── socials ── */}
+        <FadeIn delay={400} className="mb-10">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold">
-              <span className="text-white">noctiq</span>
-              <span className="text-indigo-500">.ai</span>
-            </span>
-            <span className="text-neutral-600 text-sm">/ Christian</span>
+            {SOCIALS.map(s => (
+              <a
+                key={s.name}
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={s.name}
+                className="flex items-center justify-center w-9 h-9 rounded-xl border border-white/[0.08] bg-[#0a0e17] transition-all duration-200 hover:border-white/20"
+                style={{ color: s.accent }}
+              >
+                {s.icon}
+              </a>
+            ))}
           </div>
-          <div className="flex items-center gap-6">
-            <a
-              href="https://www.tiktok.com/@jung.ho.p"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-neutral-500 hover:text-white transition-colors"
-              aria-label="TikTok"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.72a8.19 8.19 0 004.76 1.52V6.79a4.83 4.83 0 01-1-.1z"/>
-              </svg>
+        </FadeIn>
+
+      </main>
+
+      <footer className="border-t border-white/[0.04] py-6 px-6">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <span className="text-xs text-neutral-800 font-mono">noctiq.ai</span>
+          <div className="flex items-center gap-4">
+            <a href="mailto:christian.park2002@gmail.com" className="text-xs text-neutral-700 hover:text-neutral-400 transition-colors duration-200">
+              christian.park2002@gmail.com
             </a>
-            <Link href="/dashboard" className="text-sm text-neutral-500 hover:text-white transition-colors">
-              Dashboard
+            <Link href="/dashboard" className="text-xs text-neutral-700 hover:text-white transition-colors duration-200">
+              live charts →
             </Link>
           </div>
         </div>
       </footer>
+      </div>{/* end relative z-10 content wrapper */}
+
+      <Script
+        src="https://storage.ko-fi.com/cdn/scripts/overlay-widget.js"
+        strategy="afterInteractive"
+        onLoad={() => {
+          window.kofiWidgetOverlay.draw('jhp_trades', {
+            'type': 'floating-chat',
+            'floating-chat.donateButton.text': 'Support me',
+            'floating-chat.donateButton.background-color': '#323842',
+            'floating-chat.donateButton.text-color': '#fff',
+          })
+        }}
+      />
     </div>
   )
 }
