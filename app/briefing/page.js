@@ -53,8 +53,14 @@ function computePivots(bar) {
   return { pivot: p, r1: 2*p - l, r2: p + (h-l), s1: 2*p - h, s2: p - (h-l) }
 }
 
-function getBias(close, levels) {
-  if (!levels || !close) return { label: 'AWAITING', color: C.dim }
+function getBias(close, levels, open = null) {
+  if (!close) return { label: 'AWAITING', color: C.dim }
+  if (!levels) {
+    if (open == null) return { label: 'AWAITING', color: C.dim }
+    return Number(close) >= Number(open)
+      ? { label: 'BULLISH', color: C.green }
+      : { label: 'BEARISH', color: C.red }
+  }
   const c = Number(close)
   if (c > levels.r1)    return { label: 'STRONG BULL', color: C.green  }
   if (c > levels.pivot) return { label: 'BULLISH',     color: C.green  }
@@ -238,7 +244,7 @@ function InstrumentCard({ label, full, daily, candles1h }) {
   const open      = todayBar ? Number(todayBar.open)  : null
   const change    = close != null && open != null ? close - open : null
   const changePct = change != null && open ? ((change / open) * 100).toFixed(2) : null
-  const bias      = getBias(close, levels)
+  const bias      = getBias(close, levels, open)
   const isUp      = change != null ? change >= 0 : null
 
   return (
@@ -380,6 +386,12 @@ export default function BriefingPage() {
   }
 
   useEffect(() => { load() }, [])
+
+  // Auto-refresh every hour so briefing stays current with hourly cache windows.
+  useEffect(() => {
+    const iv = setInterval(() => { load(true) }, 60 * 60 * 1000)
+    return () => clearInterval(iv)
+  }, [])
 
   const handleRefresh = async () => {
     setRefreshing(true)

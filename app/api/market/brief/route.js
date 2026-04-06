@@ -214,6 +214,45 @@ Return ONLY valid JSON (no markdown fences) in this exact shape:
 Do not include any extra keys.`
 }
 
+function buildDeterministicFallback(ctx, macro) {
+  const nq = ctx.NQ ?? {}
+  const pdh = nq.prevHigh ?? 'N/A'
+  const pdl = nq.prevLow ?? 'N/A'
+  const asiaH = f2(nq?.sessions?.overnightH)
+  const asiaL = f2(nq?.sessions?.overnightL)
+  const londonH = f2(nq?.sessions?.londonH)
+  const londonL = f2(nq?.sessions?.londonL)
+  const direction = macro.macroBias === 'BULLISH' ? 'upside' : 'downside'
+
+  return {
+    thesis: `NQ trading around key liquidity with ${macro.macroBias.toLowerCase()} macro tone; ${direction} favored unless opposing level reclaims.`,
+    primaryBias: macro.macroBias,
+    oneLiner: `${macro.macroBias === 'BULLISH' ? 'Bid tone building' : 'Pressure at highs'} — watch liquidity sweep then ${direction} continuation.`,
+    macroContext: macro.reasons.length
+      ? macro.reasons.slice(0, 3)
+      : ['Macro signal set is mixed; use structure confirmation at PDH/PDL.'],
+    structure: {
+      pdh,
+      pdl,
+      asiaRange: `H ${asiaH} / L ${asiaL}`,
+      londonRange: `H ${londonH} / L ${londonL}`,
+    },
+    liquidityIntent: `Liquidity is clustered near PDH ${pdh} and PDL ${pdl}; expect a sweep-and-confirm sequence before directional expansion.`,
+    setups: {
+      shortSetup: `If price rejects PDH ${pdh} after a sweep, target internal range then PDL ${pdl}.`,
+      longSetup: `Only long on clean reclaim and hold above PDH ${pdh}; target session highs extension.`,
+    },
+    invalidation: `Sustained acceptance above PDH ${pdh} invalidates bearish continuation; sustained trade below PDL ${pdl} invalidates bullish continuation.`,
+    watch: [
+      `NQ PDH ${pdh}`,
+      `NQ PDL ${pdl}`,
+      `Asia H/L ${asiaH}/${asiaL}`,
+      `London H/L ${londonH}/${londonL}`,
+    ],
+    macroEngine: macro,
+  }
+}
+
 // ── handler ───────────────────────────────────────────────────────────────────
 
 export async function GET(request) {
@@ -223,10 +262,6 @@ export async function GET(request) {
 
   if (!forceRefresh && briefCache.content && briefCache.expiresAt && now < briefCache.expiresAt) {
     return Response.json({ brief: briefCache.content, raw: briefCache.raw, generatedAt: briefCache.generatedAt, cached: true })
-  }
-
-  if (!process.env.AI_GATEWAY_API_KEY) {
-    return Response.json({ brief: 'AI brief not configured.', error: 'API key missing' }, { status: 500 })
   }
 
   try {
@@ -241,51 +276,55 @@ export async function GET(request) {
     const newsHeadlines = (newsRes.news ?? []).map(n => n.headline)
     const macro = computeMacroBias(ctx, newsHeadlines)
     const prompt = buildPrompt(ctx, etDate, etTime, newsHeadlines, macro)
+    const fallback = buildDeterministicFallback(ctx, macro)
+    let raw = fallback
 
-    const anthropic = createAnthropic({
-      baseURL: 'https://ai-gateway.vercel.sh/v1',
-      apiKey: process.env.AI_GATEWAY_API_KEY,
-    })
-    const { text } = await generateText({
-      model: anthropic('claude-haiku-4-5-20251001'),
-      prompt,
-      maxTokens: 600,
-    })
+    if (process.env.AI_GATEWAY_API_KEY) {
+      const anthropic = createAnthropic({
+        baseURL: 'https://ai-gateway.vercel.sh/v1',
+        apiKey: process.env.AI_GATEWAY_API_KEY,
+      })
+      const { text } = await generateText({
+        model: anthropic('claude-haiku-4-5-20251001'),
+        prompt,
+        maxTokens: 600,
+      })
 
-    const parseJson = (value) => {
-      const cleaned = value.trim().replace(/^```json\s*/i, '').replace(/```$/i, '').trim()
-      try {
-        return JSON.parse(cleaned)
-      } catch {
-        const start = cleaned.indexOf('{')
-        const end = cleaned.lastIndexOf('}')
-        if (start >= 0 && end > start) {
-          return JSON.parse(cleaned.slice(start, end + 1))
+      const parseJson = (value) => {
+        const cleaned = value.trim().replace(/^```json\s*/i, '').replace(/```$/i, '').trim()
+        try {
+          return JSON.parse(cleaned)
+        } catch {
+          const start = cleaned.indexOf('{')
+          const end = cleaned.lastIndexOf('}')
+          if (start >= 0 && end > start) {
+            return JSON.parse(cleaned.slice(start, end + 1))
+          }
+          throw new Error('AI response was not valid JSON')
         }
-        throw new Error('AI response was not valid JSON')
       }
-    }
-    const parsed = parseJson(text)
+      const parsed = parseJson(text)
 
-    const raw = {
-      thesis: parsed.thesis ?? '',
-      primaryBias: parsed.primaryBias === 'BULLISH' ? 'BULLISH' : 'BEARISH',
-      oneLiner: parsed.oneLiner ?? '',
-      macroContext: Array.isArray(parsed.macroContext) ? parsed.macroContext.slice(0, 4) : [],
-      structure: {
-        pdh: parsed?.structure?.pdh ?? ctx.NQ?.prevHigh ?? 'N/A',
-        pdl: parsed?.structure?.pdl ?? ctx.NQ?.prevLow ?? 'N/A',
-        asiaRange: parsed?.structure?.asiaRange ?? `H ${f2(ctx.NQ?.sessions?.overnightH)} / L ${f2(ctx.NQ?.sessions?.overnightL)}`,
-        londonRange: parsed?.structure?.londonRange ?? `H ${f2(ctx.NQ?.sessions?.londonH)} / L ${f2(ctx.NQ?.sessions?.londonL)}`,
-      },
-      liquidityIntent: parsed.liquidityIntent ?? '',
-      setups: {
-        shortSetup: parsed?.setups?.shortSetup ?? '',
-        longSetup: parsed?.setups?.longSetup ?? '',
-      },
-      invalidation: parsed.invalidation ?? '',
-      watch: Array.isArray(parsed.watch) ? parsed.watch.slice(0, 5) : [],
-      macroEngine: macro,
+      raw = {
+        thesis: parsed.thesis ?? fallback.thesis,
+        primaryBias: parsed.primaryBias === 'BULLISH' ? 'BULLISH' : 'BEARISH',
+        oneLiner: parsed.oneLiner ?? fallback.oneLiner,
+        macroContext: Array.isArray(parsed.macroContext) ? parsed.macroContext.slice(0, 4) : fallback.macroContext,
+        structure: {
+          pdh: parsed?.structure?.pdh ?? ctx.NQ?.prevHigh ?? 'N/A',
+          pdl: parsed?.structure?.pdl ?? ctx.NQ?.prevLow ?? 'N/A',
+          asiaRange: parsed?.structure?.asiaRange ?? fallback.structure.asiaRange,
+          londonRange: parsed?.structure?.londonRange ?? fallback.structure.londonRange,
+        },
+        liquidityIntent: parsed.liquidityIntent ?? fallback.liquidityIntent,
+        setups: {
+          shortSetup: parsed?.setups?.shortSetup ?? fallback.setups.shortSetup,
+          longSetup: parsed?.setups?.longSetup ?? fallback.setups.longSetup,
+        },
+        invalidation: parsed.invalidation ?? fallback.invalidation,
+        watch: Array.isArray(parsed.watch) ? parsed.watch.slice(0, 5) : fallback.watch,
+        macroEngine: macro,
+      }
     }
 
     const clean = [
@@ -305,6 +344,19 @@ export async function GET(request) {
     if (briefCache.content) {
       return Response.json({ brief: briefCache.content, raw: briefCache.raw, generatedAt: briefCache.generatedAt, cached: true, stale: true })
     }
-    return Response.json({ brief: 'Brief temporarily unavailable.', error: error.message }, { status: 500 })
+    try {
+      const base = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin
+      const [ctx, newsRes] = await Promise.all([
+        fetchMarketContext(base),
+        fetch(`${base}/api/news`).then(r => r.json()).catch(() => ({ news: [] })),
+      ])
+      const newsHeadlines = (newsRes.news ?? []).map(n => n.headline)
+      const macro = computeMacroBias(ctx, newsHeadlines)
+      const raw = buildDeterministicFallback(ctx, macro)
+      const brief = [raw.thesis, `One-liner: ${raw.oneLiner}`, `Short: ${raw.setups.shortSetup}`, `Long: ${raw.setups.longSetup}`, `Invalidation: ${raw.invalidation}`].join('\n')
+      return Response.json({ brief, raw, generatedAt: new Date().toISOString(), cached: false, fallback: true })
+    } catch {
+      return Response.json({ brief: 'Brief temporarily unavailable.', error: error.message }, { status: 500 })
+    }
   }
 }
