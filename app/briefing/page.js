@@ -54,13 +54,15 @@ function computePivots(bar) {
 }
 
 function getBias(close, levels) {
-  if (!levels || !close) return { label: 'NEUTRAL', color: C.yellow }
+  if (!levels || !close) return { label: 'AWAITING', color: C.dim }
   const c = Number(close)
   if (c > levels.r1)    return { label: 'STRONG BULL', color: C.green  }
   if (c > levels.pivot) return { label: 'BULLISH',     color: C.green  }
   if (c < levels.s1)    return { label: 'STRONG BEAR', color: C.red    }
   if (c < levels.pivot) return { label: 'BEARISH',     color: C.red    }
-  return                       { label: 'NEUTRAL',     color: C.yellow }
+  return c >= levels.pivot
+    ? { label: 'BULLISH', color: C.green }
+    : { label: 'BEARISH', color: C.red }
 }
 
 function getSession() {
@@ -162,8 +164,11 @@ function Chart({ candles, levels, sessionLvls, height = 200 }) {
       })
 
       const series = chart.addSeries(CandlestickSeries, {
-        upColor: C.green, downColor: C.red,
-        borderVisible: false, wickUpColor: C.green, wickDownColor: C.red,
+        upColor: '#5aa2ff',
+        downColor: '#8b93a6',
+        borderVisible: false,
+        wickUpColor: '#5aa2ff',
+        wickDownColor: '#8b93a6',
       })
 
       const sorted = [...candles]
@@ -206,6 +211,7 @@ function Chart({ candles, levels, sessionLvls, height = 200 }) {
       }
 
       chart.timeScale().fitContent()
+      chart.timeScale().scrollToRealTime()
 
       const ro = new ResizeObserver(() => {
         if (el && chart) chart.applyOptions({ width: el.clientWidth })
@@ -264,11 +270,11 @@ function InstrumentCard({ label, full, daily, candles1h }) {
       </div>
 
       {/* chart */}
-      <div style={{ background: C.card, minHeight: 220 }}>
+      <div style={{ background: C.card, minHeight: 170 }}>
         {candles1h?.length > 0
-          ? <Chart candles={candles1h} levels={levels} sessionLvls={sessLvls} height={220} />
+          ? <Chart candles={candles1h} levels={levels} sessionLvls={sessLvls} height={170} />
           : (
-            <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6 }}>
+            <div style={{ height: 170, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6 }}>
               <div style={{ width: 24, height: 24, border: `2px solid ${C.border}`, borderTop: `2px solid ${C.dim}`, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
               <span style={{ fontSize: 10, color: C.dim, fontFamily: 'ui-monospace,monospace' }}>LOADING CHART</span>
             </div>
@@ -559,6 +565,12 @@ export default function BriefingPage() {
               <div style={{ padding: '8px 10px', background: '#141100', border: `1px solid ${C.yellow}33`, marginBottom: 6 }}>
                 <div style={{ fontSize: 9, color: C.yellow, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>INVALIDATION</div>
                 <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, margin: 0 }}>{briefRaw.invalidation}</p>
+              </div>
+            )}
+            {brief && (
+              <div style={{ padding: '8px 10px', background: '#101010', border: `1px solid ${C.border}`, marginBottom: 6 }}>
+                <div style={{ fontSize: 9, color: C.muted, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>SUMMARY</div>
+                <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-line' }}>{brief}</p>
               </div>
             )}
             {!brief && (
