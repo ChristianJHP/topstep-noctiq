@@ -1,7 +1,6 @@
 /**
  * GET /api/market/brief
- * AI Market Brief with full multi-instrument context, session levels,
- * bullish/bearish probability and scenario analysis.
+ * AI Market Brief with macro + ICT structure and actionable setups.
  * Cached 1 hour.
  */
 
@@ -51,6 +50,11 @@ function sessionLevels(bars1h) {
   }
 }
 
+function f2(v) {
+  const n = Number(v)
+  return Number.isFinite(n) ? n.toFixed(2) : 'N/A'
+}
+
 async function fetchMarketContext(base) {
   const fetchJson = async (url) => {
     const res = await fetch(url)
@@ -86,19 +90,74 @@ async function fetchMarketContext(base) {
     const changePct = change && prevClose ? ((change/prevClose)*100).toFixed(2) : null
 
     context[inst.label] = {
-      price:    curPrice?.toFixed(2)    ?? 'N/A',
-      change:   change?.toFixed(2)      ?? 'N/A',
-      changePct: changePct              ?? 'N/A',
-      prevHigh: prevBar?.high?.toFixed ? Number(prevBar.high).toFixed(2) : 'N/A',
-      prevLow:  prevBar?.low?.toFixed  ? Number(prevBar.low).toFixed(2)  : 'N/A',
-      pivots:   pp,
-      sessions: sess,
+      price:      curPrice?.toFixed(2)  ?? 'N/A',
+      change:     change?.toFixed(2)    ?? 'N/A',
+      changePct:  changePct             ?? 'N/A',
+      prevHigh:   prevBar ? f2(prevBar.high) : 'N/A',
+      prevLow:    prevBar ? f2(prevBar.low)  : 'N/A',
+      pivots:     pp,
+      sessions:   sess,
+      rawPrice:   curPrice,
+      rawPrevHigh: prevBar ? Number(prevBar.high) : null,
+      rawPrevLow:  prevBar ? Number(prevBar.low) : null,
     }
   }
   return context
 }
 
-function buildPrompt(ctx, etDate, etTime, newsHeadlines) {
+function computeMacroBias(ctx, newsHeadlines) {
+  const text = (newsHeadlines ?? []).join(' | ').toLowerCase()
+  const nq = ctx.NQ
+  const cl = ctx.CL
+  const gc = ctx.GC
+
+  let score = 0
+  const reasons = []
+
+  const hasRiskOffHeadline = /(iran|middle east|war|missile|attack|geopolit|sanction|strait|opec cut|supply disruption)/.test(text)
+  const hasInflationHeadline = /(inflation|cpi|ppi|wage|hot print|sticky inflation)/.test(text)
+  const hasHawkishHeadline = /(higher for longer|hawkish|rate hike|yields rise|treasury yield)/.test(text)
+  const hasDovishHeadline = /(rate cut|cooling inflation|disinflation|dovish|yields fall)/.test(text)
+
+  if (hasRiskOffHeadline) {
+    score -= 2
+    reasons.push('Geopolitical risk headline flow is elevated (risk-off).')
+  }
+  if (hasInflationHeadline) {
+    score -= 1
+    reasons.push('Inflation-sensitive headlines increase higher-for-longer risk.')
+  }
+  if (hasHawkishHeadline) {
+    score -= 1
+    reasons.push('Rates/yield tone is hawkish, pressuring duration-heavy tech.')
+  }
+  if (hasDovishHeadline) {
+    score += 1
+    reasons.push('Some headline flow supports a softer rates path.')
+  }
+
+  if (cl?.changePct !== 'N/A' && Number(cl.changePct) > 0.8) {
+    score -= 1
+    reasons.push(`Crude is bid (+${cl.changePct}%), reinforcing inflation pressure.`)
+  }
+  if (gc?.changePct !== 'N/A' && Number(gc.changePct) > 0.6) {
+    score -= 1
+    reasons.push(`Gold strength (+${gc.changePct}%) signals defensive positioning.`)
+  }
+  if (nq?.changePct !== 'N/A' && Number(nq.changePct) > 0.8) {
+    score += 1
+    reasons.push(`NQ momentum is positive (+${nq.changePct}%), offsetting part of risk-off flow.`)
+  }
+
+  const macroBias = score >= 0 ? 'BULLISH' : 'BEARISH'
+  return {
+    macroBias,
+    macroScore: score,
+    reasons: reasons.slice(0, 4),
+  }
+}
+
+function buildPrompt(ctx, etDate, etTime, newsHeadlines, macro) {
   const lines = []
   for (const [sym, d] of Object.entries(ctx)) {
     if (d.price === 'N/A') continue
@@ -111,37 +170,48 @@ function buildPrompt(ctx, etDate, etTime, newsHeadlines) {
   }
 
   const newsSection = newsHeadlines?.length
-    ? `\nMACROECONOMIC HEADLINES:\n${newsHeadlines.slice(0, 5).map(h => `- ${h}`).join('\n')}`
+    ? `\nMACRO HEADLINES:\n${newsHeadlines.slice(0, 6).map(h => `- ${h}`).join('\n')}`
     : ''
 
-  return `You are an elite ICT-trained futures trader. Analyze the following data for ${etDate} at ${etTime} ET.
+  return `You are a decisive macro + ICT futures analyst. Analyze data for ${etDate} at ${etTime} ET.
 
 LIVE MARKET DATA:
-${lines.join('\n')}${newsSection}
+${lines.join('\n')}
 
-ICT FRAMEWORK TO APPLY:
-- Identify if price is trading above or below the previous day high/low (PDH/PDL) — these are key liquidity levels
-- London killzone highs/lows are liquidity pools; price often sweeps them before reversing
-- Look for fair value gaps (FVG): if price gapped between sessions, that imbalance attracts price
-- Premium/discount: price above PP or PDH = premium (look for sells); below PP or PDL = discount (look for buys)
-- NY open (9:30am ET) often creates the actual trend direction by sweeping London liquidity first
-- Macro news (CPI, FOMC, jobs data) acts as a catalyst for liquidity sweeps
+PRECOMPUTED MACRO ENGINE:
+- Bias: ${macro.macroBias}
+- Score: ${macro.macroScore}
+- Drivers:
+${macro.reasons.map(r => `- ${r}`).join('\n') || '- No dominant macro driver detected'}${newsSection}
 
-Your response MUST follow this EXACT format (no extra text, no markdown):
+RULES:
+- Do not output NEUTRAL as the main bias. Choose BULLISH or BEARISH.
+- Use only levels provided in the market data.
+- Focus on ICT structure: PDH/PDL, London H/L, Overnight H/L, liquidity sweeps, acceptance/rejection.
+- Keep output short, tactical, and conditional.
 
-BULL_PCT: [0-100]
-BEAR_PCT: [0-100]
-BULL_CASE: [1-2 sentences — which liquidity level gets swept/broken, where price targets next, specific levels only]
-BEAR_CASE: [1-2 sentences — which level fails or gets swept, where price drops to, specific levels only]
-SUMMARY: [2-3 sentences: ICT bias (premium/discount), key liquidity above and below, macro catalyst if any, what the NY open setup looks like]
-WATCH: [3-5 exact levels/events, e.g. "NQ London high 19842 sweep, NQ PDL 19540 target, FOMC minutes 2pm, GC PDH 3120 resistance"]
+Return ONLY valid JSON (no markdown fences) in this exact shape:
+{
+  "thesis": "one-line thesis",
+  "primaryBias": "BULLISH or BEARISH",
+  "oneLiner": "single fast-trader line",
+  "macroContext": ["bullet 1", "bullet 2", "bullet 3"],
+  "structure": {
+    "pdh": "number string",
+    "pdl": "number string",
+    "asiaRange": "H ... / L ...",
+    "londonRange": "H ... / L ..."
+  },
+  "liquidityIntent": "1-2 sentences on liquidity and likely intent",
+  "setups": {
+    "shortSetup": "if/then short setup with targets",
+    "longSetup": "if/then long setup with reclaim conditions"
+  },
+  "invalidation": "clear invalidation condition that flips bias",
+  "watch": ["item 1", "item 2", "item 3", "item 4"]
+}
 
-Rules:
-- DO NOT make up price levels — use only the numbers provided above
-- Do NOT use **, ##, or any markdown formatting
-- Reference PDH/PDL and London H/L as ICT liquidity levels explicitly
-- If macro news is present, factor it into the bias and WATCH list
-- Be direct and concise, like a Bloomberg terminal analyst`
+Do not include any extra keys.`
 }
 
 // ── handler ───────────────────────────────────────────────────────────────────
@@ -169,7 +239,8 @@ export async function GET(request) {
       fetch(`${base}/api/news`).then(r => r.json()).catch(() => ({ news: [] })),
     ])
     const newsHeadlines = (newsRes.news ?? []).map(n => n.headline)
-    const prompt = buildPrompt(ctx, etDate, etTime, newsHeadlines)
+    const macro = computeMacroBias(ctx, newsHeadlines)
+    const prompt = buildPrompt(ctx, etDate, etTime, newsHeadlines, macro)
 
     const anthropic = createAnthropic({
       baseURL: 'https://ai-gateway.vercel.sh/v1',
@@ -178,30 +249,52 @@ export async function GET(request) {
     const { text } = await generateText({
       model: anthropic('claude-haiku-4-5-20251001'),
       prompt,
-      maxTokens: 400,
+      maxTokens: 600,
     })
 
-    // Parse the structured response
-    const parse = (key) => {
-      const match = text.match(new RegExp(`${key}:\\s*(.+)`))
-      return match?.[1]?.trim() ?? null
+    const parseJson = (value) => {
+      const cleaned = value.trim().replace(/^```json\s*/i, '').replace(/```$/i, '').trim()
+      try {
+        return JSON.parse(cleaned)
+      } catch {
+        const start = cleaned.indexOf('{')
+        const end = cleaned.lastIndexOf('}')
+        if (start >= 0 && end > start) {
+          return JSON.parse(cleaned.slice(start, end + 1))
+        }
+        throw new Error('AI response was not valid JSON')
+      }
     }
+    const parsed = parseJson(text)
 
     const raw = {
-      bullPct:  parseInt(parse('BULL_PCT')) || 50,
-      bearPct:  parseInt(parse('BEAR_PCT')) || 50,
-      bullCase: parse('BULL_CASE'),
-      bearCase: parse('BEAR_CASE'),
-      summary:  parse('SUMMARY'),
-      watch:    parse('WATCH'),
+      thesis: parsed.thesis ?? '',
+      primaryBias: parsed.primaryBias === 'BULLISH' ? 'BULLISH' : 'BEARISH',
+      oneLiner: parsed.oneLiner ?? '',
+      macroContext: Array.isArray(parsed.macroContext) ? parsed.macroContext.slice(0, 4) : [],
+      structure: {
+        pdh: parsed?.structure?.pdh ?? ctx.NQ?.prevHigh ?? 'N/A',
+        pdl: parsed?.structure?.pdl ?? ctx.NQ?.prevLow ?? 'N/A',
+        asiaRange: parsed?.structure?.asiaRange ?? `H ${f2(ctx.NQ?.sessions?.overnightH)} / L ${f2(ctx.NQ?.sessions?.overnightL)}`,
+        londonRange: parsed?.structure?.londonRange ?? `H ${f2(ctx.NQ?.sessions?.londonH)} / L ${f2(ctx.NQ?.sessions?.londonL)}`,
+      },
+      liquidityIntent: parsed.liquidityIntent ?? '',
+      setups: {
+        shortSetup: parsed?.setups?.shortSetup ?? '',
+        longSetup: parsed?.setups?.longSetup ?? '',
+      },
+      invalidation: parsed.invalidation ?? '',
+      watch: Array.isArray(parsed.watch) ? parsed.watch.slice(0, 5) : [],
+      macroEngine: macro,
     }
 
-    // Build clean display text
     const clean = [
-      raw.summary,
-      raw.bullCase ? `BULL: ${raw.bullCase}` : null,
-      raw.bearCase ? `BEAR: ${raw.bearCase}` : null,
-    ].filter(Boolean).join('\n').replace(/\*\*/g,'').replace(/##/g,'').trim()
+      raw.thesis,
+      raw.oneLiner ? `One-liner: ${raw.oneLiner}` : null,
+      raw.setups.shortSetup ? `Short: ${raw.setups.shortSetup}` : null,
+      raw.setups.longSetup ? `Long: ${raw.setups.longSetup}` : null,
+      raw.invalidation ? `Invalidation: ${raw.invalidation}` : null,
+    ].filter(Boolean).join('\n').trim()
 
     briefCache = { content: clean, raw, generatedAt: new Date().toISOString(), expiresAt: now + CACHE_DURATION_MS }
 

@@ -480,28 +480,13 @@ export default function BriefingPage() {
         {/* RIGHT: brief + news */}
         <div style={{ width: 360, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
 
-          {/* probability bar */}
-          {briefRaw && (
-            <div style={{ borderBottom: `1px solid ${C.border}`, padding: '14px 18px' }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: C.dim, fontFamily: 'ui-monospace,monospace', marginBottom: 10 }}>
-                TODAY'S BIAS PROBABILITY
+          {/* daily thesis */}
+          {briefRaw?.thesis && (
+            <div style={{ borderBottom: `1px solid ${C.border}`, padding: '14px 18px', background: '#0b0b0b' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: C.dim, fontFamily: 'ui-monospace,monospace', marginBottom: 8 }}>
+                DAILY THESIS
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 10, color: C.green, fontFamily: 'ui-monospace,monospace', width: 32 }}>
-                  {briefRaw.bullPct}%
-                </span>
-                <div style={{ flex: 1, height: 8, background: '#1a1a1a', borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
-                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${briefRaw.bullPct}%`, background: `linear-gradient(90deg, ${C.green}, #00c853)`, borderRadius: 4 }} />
-                  <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: `${briefRaw.bearPct}%`, background: `linear-gradient(90deg, #c62828, ${C.red})`, borderRadius: 4 }} />
-                </div>
-                <span style={{ fontSize: 10, color: C.red, fontFamily: 'ui-monospace,monospace', width: 32, textAlign: 'right' }}>
-                  {briefRaw.bearPct}%
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 9, color: C.green, fontFamily: 'ui-monospace,monospace' }}>BULL</span>
-                <span style={{ fontSize: 9, color: C.red,   fontFamily: 'ui-monospace,monospace' }}>BEAR</span>
-              </div>
+              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: '#ddd' }}>{briefRaw.thesis}</p>
             </div>
           )}
 
@@ -517,21 +502,63 @@ export default function BriefingPage() {
                 </span>
               )}
             </div>
-            {briefRaw?.summary && (
-              <p style={{ fontSize: 12, color: '#bbb', lineHeight: 1.75, margin: '0 0 10px' }}>
-                {briefRaw.summary}
-              </p>
-            )}
-            {briefRaw?.bullCase && (
-              <div style={{ padding: '8px 10px', background: '#001a0d', border: `1px solid ${C.green}22`, marginBottom: 6 }}>
-                <div style={{ fontSize: 9, color: C.green, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>BULL CASE</div>
-                <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, margin: 0 }}>{briefRaw.bullCase}</p>
+            {briefRaw?.primaryBias && (
+              <div style={{ marginBottom: 10 }}>
+                <span style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  fontFamily: 'ui-monospace,monospace',
+                  color: briefRaw.primaryBias === 'BULLISH' ? C.green : C.red,
+                  border: `1px solid ${briefRaw.primaryBias === 'BULLISH' ? C.green : C.red}`,
+                  padding: '2px 8px',
+                  letterSpacing: '0.08em',
+                }}>
+                  PRIMARY BIAS: {briefRaw.primaryBias}
+                </span>
               </div>
             )}
-            {briefRaw?.bearCase && (
+            {briefRaw?.macroContext?.length > 0 && (
+              <div style={{ padding: '8px 10px', background: '#121314', border: `1px solid ${C.border}`, marginBottom: 6 }}>
+                <div style={{ fontSize: 9, color: C.blue, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>MACRO CONTEXT</div>
+                <ul style={{ margin: 0, paddingLeft: 16 }}>
+                  {briefRaw.macroContext.map((x, i) => (
+                    <li key={i} style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, marginBottom: 3 }}>{x}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {briefRaw?.structure && (
+              <div style={{ padding: '8px 10px', background: '#111111', border: `1px solid ${C.border}`, marginBottom: 6 }}>
+                <div style={{ fontSize: 9, color: C.orange, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>STRUCTURE</div>
+                <div style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6 }}>
+                  <div>PDH: {briefRaw.structure.pdh} | PDL: {briefRaw.structure.pdl}</div>
+                  <div>Asia: {briefRaw.structure.asiaRange}</div>
+                  <div>London: {briefRaw.structure.londonRange}</div>
+                </div>
+              </div>
+            )}
+            {briefRaw?.liquidityIntent && (
+              <div style={{ padding: '8px 10px', background: '#111111', border: `1px solid ${C.border}`, marginBottom: 6 }}>
+                <div style={{ fontSize: 9, color: C.yellow, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>LIQUIDITY + INTENT</div>
+                <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, margin: 0 }}>{briefRaw.liquidityIntent}</p>
+              </div>
+            )}
+            {briefRaw?.setups?.shortSetup && (
               <div style={{ padding: '8px 10px', background: '#1a0008', border: `1px solid ${C.red}22`, marginBottom: 6 }}>
-                <div style={{ fontSize: 9, color: C.red, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>BEAR CASE</div>
-                <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, margin: 0 }}>{briefRaw.bearCase}</p>
+                <div style={{ fontSize: 9, color: C.red, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>SHORT SETUP</div>
+                <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, margin: 0 }}>{briefRaw.setups.shortSetup}</p>
+              </div>
+            )}
+            {briefRaw?.setups?.longSetup && (
+              <div style={{ padding: '8px 10px', background: '#001a0d', border: `1px solid ${C.green}22`, marginBottom: 6 }}>
+                <div style={{ fontSize: 9, color: C.green, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>LONG SETUP</div>
+                <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, margin: 0 }}>{briefRaw.setups.longSetup}</p>
+              </div>
+            )}
+            {briefRaw?.invalidation && (
+              <div style={{ padding: '8px 10px', background: '#141100', border: `1px solid ${C.yellow}33`, marginBottom: 6 }}>
+                <div style={{ fontSize: 9, color: C.yellow, fontFamily: 'ui-monospace,monospace', fontWeight: 700, marginBottom: 4 }}>INVALIDATION</div>
+                <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6, margin: 0 }}>{briefRaw.invalidation}</p>
               </div>
             )}
             {!brief && (
@@ -540,13 +567,13 @@ export default function BriefingPage() {
           </div>
 
           {/* what to watch */}
-          {briefRaw?.watch && (
+          {briefRaw?.watch?.length > 0 && (
             <div style={{ borderBottom: `1px solid ${C.border}`, padding: '12px 18px' }}>
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: C.dim, fontFamily: 'ui-monospace,monospace', marginBottom: 10 }}>
                 WATCH TODAY
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {briefRaw.watch.split(',').map(w => w.trim()).filter(Boolean).map((w, i) => (
+                {briefRaw.watch.map((w, i) => (
                   <span key={i} style={{ fontSize: 10, fontFamily: 'ui-monospace,monospace', color: C.muted, background: '#1a1a1a', padding: '3px 8px', border: `1px solid ${C.border}` }}>
                     {w}
                   </span>
