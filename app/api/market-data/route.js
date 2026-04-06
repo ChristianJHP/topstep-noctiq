@@ -1,11 +1,9 @@
 /**
  * GET /api/market-data
- * Returns OHLCV bars for NQ.c.0, CL.c.0, GC.c.0 via Databento.
- * ?schema=1h (default) | 1d
- * ?refresh=true
+ * ?schema=1h (default) | 1d | debug
  *
- * Runs on Edge runtime so fetch uses Cloudflare's native Web Fetch API
- * (not the Node.js / Next.js patched version that strips POST bodies).
+ * Pass ?schema=debug to get the raw Databento response + request URL
+ * directly in the browser for diagnosis.
  */
 
 export const runtime = 'edge'
@@ -16,7 +14,6 @@ const SYMBOLS       = ['NQ.c.0', 'CL.c.0', 'GC.c.0']
 const DATASET       = 'GLBX.MDP3'
 const PRICE_SCALE   = 1e-9
 
-// Module-level cache — persists across warm edge invocations within a region
 const cache = {
   '1h': { data: null, fetchedAt: 0 },
   '1d': { data: null, fetchedAt: 0 },
@@ -27,38 +24,33 @@ function daysAgo(n) {
   return new Date(Date.now() - n * 86_400_000).toISOString().split('T')[0]
 }
 
-async function fetchDatabento(schema) {
+function buildDatabentoUrl(schema) {
   const start = schema === '1d' ? daysAgo(7) : daysAgo(4)
-
-  // Build query params — GET avoids the POST-body-stripping issue on Vercel Edge
-  const params = new URLSearchParams({
-    dataset:   DATASET,
-    schema:    `ohlcv-${schema}`,
-    start,
-    stype_in:  'continuous',
-    stype_out: 'continuous',
-    encoding:  'json',
-  })
-  // symbols as repeated params (array-safe)
+  const params = new URLSearchParams()
+  params.set('dataset',   DATASET)
+  params.set('schema',    `ohlcv-${schema}`)
+  params.set('start',     start)
+  params.set('stype_in',  'continuous')
+  params.set('stype_out', 'continuous')
+  params.set('encoding',  'json')
   SYMBOLS.forEach(s => params.append('symbols', s))
+  return `https://hist.databento.com/v0/timeseries.get_range?${params.toString()}`
+}
 
-  const url = `https://hist.databento.com/v0/timeseries.get_range?${params.toString()}`
-  console.log('[market-data] GET url:', url)
+async function fetchDatabento(schema) {
+  const url = buildDatabentoUrl(schema)
+  console.log('[market-data] url:', url)
+  console.log('[market-data] key set:', !!DATABENTO_KEY)
 
   const res = await fetch(url, {
     method: 'GET',
-    headers: {
-      'Authorization': `Basic ${btoa(`${DATABENTO_KEY}:`)}`,
-    },
+    headers: { 'Authorization': `Basic ${btoa(`${DATABENTO_KEY}:`)}` },
   })
 
-  console.log('[market-data] Databento response status:', res.status)
-
+  console.log('[market-data] status:', res.status)
   const text = await res.text()
 
-  if (!res.ok) {
-    throw new Error(`Databento ${res.status}: ${text.slice(0, 300)}`)
-  }
+  if (!res.ok) throw new Error(`Databento ${res.status}: ${text.slice(0, 300)}`)
 
   const lines    = text.trim().split('\n').filter(Boolean)
   const bySymbol = {}
@@ -87,7 +79,7 @@ async function fetchDatabento(schema) {
   }
 
   const totalBars = Object.values(bySymbol).flat().length
-  console.log(`[market-data] Databento ${schema}: ${totalBars} bars for [${Object.keys(bySymbol).join(', ')}]`)
+  console.log(`[market-data] ${schema}: ${totalBars} bars`)
   if (!totalBars) throw new Error('Databento returned 0 records')
 
   return bySymbol
@@ -97,12 +89,27 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url)
   const schema       = searchParams.get('schema') === '1d' ? '1d' : '1h'
   const forceRefresh = searchParams.get('refresh') === 'true'
-  const now          = Date.now()
-  const cached       = cache[schema]
+  const isDebug      = searchParams.get('schema') === 'debug'
 
   if (!DATABENTO_KEY) {
     return Response.json({ error: 'DATABENTO_API_KEY not configured' }, { status: 500 })
   }
+
+  // Debug mode: hit Databento with hardcoded values, return raw response to browser
+  if (isDebug) {
+    const url  = buildDatabentoUrl('1d')
+    const auth = `Basic ${btoa(`${DATABENTO_KEY}:`)}`
+    try {
+      const res  = await fetch(url, { method: 'GET', headers: { Authorization: auth } })
+      const raw  = await res.text()
+      return Response.json({ requestUrl: url, status: res.status, ok: res.ok, raw: raw.slice(0, 2000), keyPrefix: DATABENTO_KEY.slice(0, 6) })
+    } catch (err) {
+      return Response.json({ requestUrl: url, routeError: err.message })
+    }
+  }
+
+  const now    = Date.now()
+  const cached = cache[schema]
 
   if (!forceRefresh && cached.data && now - cached.fetchedAt < TTL[schema]) {
     return Response.json({ data: cached.data, schema, fetchedAt: new Date(cached.fetchedAt).toISOString(), cached: true })
@@ -113,7 +120,7 @@ export async function GET(req) {
     cache[schema] = { data, fetchedAt: now }
     return Response.json({ data, schema, fetchedAt: new Date(now).toISOString(), cached: false })
   } catch (err) {
-    console.error('[market-data] fetch failed:', err.message)
+    console.error('[market-data] failed:', err.message)
     if (cached.data) {
       return Response.json({ data: cached.data, schema, fetchedAt: new Date(cached.fetchedAt).toISOString(), cached: true, stale: true, error: err.message })
     }
