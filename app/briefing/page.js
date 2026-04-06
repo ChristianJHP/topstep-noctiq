@@ -514,11 +514,16 @@ export default function BriefingPage() {
               <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: C.dim, fontFamily: 'ui-monospace,monospace' }}>
                 AI ANALYSIS
               </span>
-              {briefMeta?.generatedAt && (
-                <span style={{ fontSize: 9, color: '#333', fontFamily: 'ui-monospace,monospace' }}>
-                  {fmtAge(briefMeta.generatedAt)}
-                </span>
-              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {briefRaw?.provenance?.mode === 'deterministic' && (
+                  <span style={{ fontSize: 9, color: C.blue, fontFamily: 'ui-monospace,monospace' }}>GROUNDED</span>
+                )}
+                {briefMeta?.generatedAt && (
+                  <span style={{ fontSize: 9, color: '#333', fontFamily: 'ui-monospace,monospace' }}>
+                    {fmtAge(briefMeta.generatedAt)}
+                  </span>
+                )}
+              </div>
             </div>
             {briefRaw?.primaryBias && (
               <div style={{ marginBottom: 10 }}>

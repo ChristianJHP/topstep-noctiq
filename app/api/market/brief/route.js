@@ -4,9 +4,6 @@
  * Cached 1 hour.
  */
 
-import { generateText } from 'ai'
-import { createAnthropic } from '@ai-sdk/anthropic'
-
 let briefCache = { content: null, generatedAt: null, expiresAt: null, raw: null }
 const CACHE_DURATION_MS = 60 * 60 * 1000
 
@@ -157,63 +154,6 @@ function computeMacroBias(ctx, newsHeadlines) {
   }
 }
 
-function buildPrompt(ctx, etDate, etTime, newsHeadlines, macro) {
-  const lines = []
-  for (const [sym, d] of Object.entries(ctx)) {
-    if (d.price === 'N/A') continue
-    const pp = d.pivots
-    lines.push(`${sym}: ${d.price} (${d.changePct >= 0 ? '+' : ''}${d.changePct}%)`)
-    if (pp) lines.push(`  Classic Pivots — PP:${pp.pivot} R1:${pp.r1} R2:${pp.r2} S1:${pp.s1} S2:${pp.s2}`)
-    if (d.sessions.londonH) lines.push(`  London session (ICT killzone 2-5am ET) — H:${d.sessions.londonH.toFixed(2)} L:${d.sessions.londonL.toFixed(2)}`)
-    if (d.sessions.overnightH) lines.push(`  Overnight/Asia range — H:${d.sessions.overnightH.toFixed(2)} L:${d.sessions.overnightL.toFixed(2)}`)
-    lines.push(`  Prev day PDH:${d.prevHigh} PDL:${d.prevLow}`)
-  }
-
-  const newsSection = newsHeadlines?.length
-    ? `\nMACRO HEADLINES:\n${newsHeadlines.slice(0, 6).map(h => `- ${h}`).join('\n')}`
-    : ''
-
-  return `You are a decisive macro + ICT futures analyst. Analyze data for ${etDate} at ${etTime} ET.
-
-LIVE MARKET DATA:
-${lines.join('\n')}
-
-PRECOMPUTED MACRO ENGINE:
-- Bias: ${macro.macroBias}
-- Score: ${macro.macroScore}
-- Drivers:
-${macro.reasons.map(r => `- ${r}`).join('\n') || '- No dominant macro driver detected'}${newsSection}
-
-RULES:
-- Do not output NEUTRAL as the main bias. Choose BULLISH or BEARISH.
-- Use only levels provided in the market data.
-- Focus on ICT structure: PDH/PDL, London H/L, Overnight H/L, liquidity sweeps, acceptance/rejection.
-- Keep output short, tactical, and conditional.
-
-Return ONLY valid JSON (no markdown fences) in this exact shape:
-{
-  "thesis": "one-line thesis",
-  "primaryBias": "BULLISH or BEARISH",
-  "oneLiner": "single fast-trader line",
-  "macroContext": ["bullet 1", "bullet 2", "bullet 3"],
-  "structure": {
-    "pdh": "number string",
-    "pdl": "number string",
-    "asiaRange": "H ... / L ...",
-    "londonRange": "H ... / L ..."
-  },
-  "liquidityIntent": "1-2 sentences on liquidity and likely intent",
-  "setups": {
-    "shortSetup": "if/then short setup with targets",
-    "longSetup": "if/then long setup with reclaim conditions"
-  },
-  "invalidation": "clear invalidation condition that flips bias",
-  "watch": ["item 1", "item 2", "item 3", "item 4"]
-}
-
-Do not include any extra keys.`
-}
-
 function buildDeterministicFallback(ctx, macro) {
   const nq = ctx.NQ ?? {}
   const pdh = nq.prevHigh ?? 'N/A'
@@ -250,6 +190,10 @@ function buildDeterministicFallback(ctx, macro) {
       `London H/L ${londonH}/${londonL}`,
     ],
     macroEngine: macro,
+    provenance: {
+      mode: 'deterministic',
+      note: 'Generated only from fetched market-data + headline-derived macro signals; no free-form AI text generation.',
+    },
   }
 }
 
@@ -265,9 +209,6 @@ export async function GET(request) {
   }
 
   try {
-    const etDate = new Date().toLocaleDateString('en-US', { timeZone: 'America/New_York', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-    const etTime = new Date().toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true })
-
     const base = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin
     const [ctx, newsRes] = await Promise.all([
       fetchMarketContext(base),
@@ -275,57 +216,7 @@ export async function GET(request) {
     ])
     const newsHeadlines = (newsRes.news ?? []).map(n => n.headline)
     const macro = computeMacroBias(ctx, newsHeadlines)
-    const prompt = buildPrompt(ctx, etDate, etTime, newsHeadlines, macro)
-    const fallback = buildDeterministicFallback(ctx, macro)
-    let raw = fallback
-
-    if (process.env.AI_GATEWAY_API_KEY) {
-      const anthropic = createAnthropic({
-        baseURL: 'https://ai-gateway.vercel.sh/v1',
-        apiKey: process.env.AI_GATEWAY_API_KEY,
-      })
-      const { text } = await generateText({
-        model: anthropic('claude-haiku-4-5-20251001'),
-        prompt,
-        maxTokens: 600,
-      })
-
-      const parseJson = (value) => {
-        const cleaned = value.trim().replace(/^```json\s*/i, '').replace(/```$/i, '').trim()
-        try {
-          return JSON.parse(cleaned)
-        } catch {
-          const start = cleaned.indexOf('{')
-          const end = cleaned.lastIndexOf('}')
-          if (start >= 0 && end > start) {
-            return JSON.parse(cleaned.slice(start, end + 1))
-          }
-          throw new Error('AI response was not valid JSON')
-        }
-      }
-      const parsed = parseJson(text)
-
-      raw = {
-        thesis: parsed.thesis ?? fallback.thesis,
-        primaryBias: parsed.primaryBias === 'BULLISH' ? 'BULLISH' : 'BEARISH',
-        oneLiner: parsed.oneLiner ?? fallback.oneLiner,
-        macroContext: Array.isArray(parsed.macroContext) ? parsed.macroContext.slice(0, 4) : fallback.macroContext,
-        structure: {
-          pdh: parsed?.structure?.pdh ?? ctx.NQ?.prevHigh ?? 'N/A',
-          pdl: parsed?.structure?.pdl ?? ctx.NQ?.prevLow ?? 'N/A',
-          asiaRange: parsed?.structure?.asiaRange ?? fallback.structure.asiaRange,
-          londonRange: parsed?.structure?.londonRange ?? fallback.structure.londonRange,
-        },
-        liquidityIntent: parsed.liquidityIntent ?? fallback.liquidityIntent,
-        setups: {
-          shortSetup: parsed?.setups?.shortSetup ?? fallback.setups.shortSetup,
-          longSetup: parsed?.setups?.longSetup ?? fallback.setups.longSetup,
-        },
-        invalidation: parsed.invalidation ?? fallback.invalidation,
-        watch: Array.isArray(parsed.watch) ? parsed.watch.slice(0, 5) : fallback.watch,
-        macroEngine: macro,
-      }
-    }
+    const raw = buildDeterministicFallback(ctx, macro)
 
     const clean = [
       raw.thesis,
@@ -337,7 +228,7 @@ export async function GET(request) {
 
     briefCache = { content: clean, raw, generatedAt: new Date().toISOString(), expiresAt: now + CACHE_DURATION_MS }
 
-    return Response.json({ brief: clean, raw, generatedAt: briefCache.generatedAt, cached: false })
+    return Response.json({ brief: clean, raw, generatedAt: briefCache.generatedAt, cached: false, grounded: true })
 
   } catch (error) {
     console.error('[MarketBrief] Error:', error)
