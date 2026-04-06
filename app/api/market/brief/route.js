@@ -6,7 +6,7 @@
  */
 
 import { generateText } from 'ai'
-import { createAnthropic } from '@ai-sdk/anthropic'
+import { createOpenAI } from '@ai-sdk/openai'
 
 let briefCache = { content: null, generatedAt: null, expiresAt: null, raw: null }
 const CACHE_DURATION_MS = 60 * 60 * 1000
@@ -156,9 +156,12 @@ export async function GET(request) {
     const ctx    = await fetchMarketContext(base)
     const prompt = buildPrompt(ctx, etDate, etTime)
 
-    const anthropic = createAnthropic({ apiKey: process.env.AI_GATEWAY_API_KEY })
+    const gateway = createOpenAI({
+      baseURL: 'https://ai-gateway.vercel.sh/v1',
+      apiKey: process.env.AI_GATEWAY_API_KEY,
+    })
     const { text } = await generateText({
-      model: anthropic('claude-haiku-4-5-20251001'),
+      model: gateway('openai/gpt-4o-mini'),
       prompt,
       maxTokens: 400,
     })
