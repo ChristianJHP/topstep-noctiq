@@ -5,10 +5,12 @@
  * ?refresh=true
  */
 
-import https from 'node:https'
+import { request as undiciRequest } from 'undici'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 const DATABENTO_KEY = process.env.DATABENTO_API_KEY
-const BASE_URL      = 'https://hist.databento.com/v0'
 const SYMBOLS       = ['NQ.c.0', 'CL.c.0', 'GC.c.0']
 const DATASET       = 'GLBX.MDP3'
 const PRICE_SCALE   = 1e-9
@@ -19,60 +21,47 @@ const cache = {
 }
 const TTL = { '1h': 5 * 60 * 1000, '1d': 60 * 60 * 1000 }
 
-function authHeader() {
-  const encoded = Buffer.from(`${DATABENTO_KEY}:`).toString('base64')
-  return { Authorization: `Basic ${encoded}` }
-}
-
 function daysAgo(n) {
   return new Date(Date.now() - n * 86_400_000).toISOString().split('T')[0]
 }
 
-function httpsPost(bodyStr) {
-  return new Promise((resolve, reject) => {
-    const encoded = Buffer.from(`${DATABENTO_KEY}:`).toString('base64')
-    const req = https.request({
-      hostname: 'hist.databento.com',
-      path:     '/v0/timeseries.get_range',
-      method:   'POST',
-      headers: {
-        'Authorization': `Basic ${encoded}`,
-        'Content-Type':  'application/json',
-      },
-    }, (res) => {
-      let text = ''
-      res.setEncoding('utf8')
-      res.on('data', chunk => { text += chunk })
-      res.on('end', () => resolve({ status: res.statusCode, text }))
-    })
-    req.on('error', reject)
-    req.write(bodyStr, 'utf8')
-    req.end()
-  })
-}
-
 async function fetchDatabento(schema) {
-  const start = schema === '1d' ? daysAgo(7) : daysAgo(4)
-
-  const payload = JSON.stringify({
-    dataset:  DATASET,
-    symbols:  SYMBOLS,
-    schema:   `ohlcv-${schema}`,
+  const start   = schema === '1d' ? daysAgo(7) : daysAgo(4)
+  const bodyStr = JSON.stringify({
+    dataset:   DATASET,
+    symbols:   SYMBOLS,
+    schema:    `ohlcv-${schema}`,
     start,
-    stype_in: 'continuous',
+    stype_in:  'continuous',
     stype_out: 'continuous',
-    encoding: 'json',
+    encoding:  'json',
   })
 
-  console.log('[market-data] Databento request payload:', payload)
+  console.log('[market-data] Databento request payload:', bodyStr)
 
-  const { status, text } = await httpsPost(payload)
+  const encoded = Buffer.from(`${DATABENTO_KEY}:`).toString('base64')
 
-  if (status !== 200) {
-    throw new Error(`Databento ${status}: ${text.slice(0, 300)}`)
+  const { statusCode, body } = await undiciRequest(
+    'https://hist.databento.com/v0/timeseries.get_range',
+    {
+      method: 'POST',
+      headers: {
+        'authorization':  `Basic ${encoded}`,
+        'content-type':   'application/json',
+        'content-length': String(Buffer.byteLength(bodyStr, 'utf8')),
+      },
+      body: bodyStr,
+    }
+  )
+
+  const text = await body.text()
+  console.log('[market-data] Databento response status:', statusCode)
+
+  if (statusCode !== 200) {
+    throw new Error(`Databento ${statusCode}: ${text.slice(0, 300)}`)
   }
 
-  const lines = text.trim().split('\n').filter(Boolean)
+  const lines    = text.trim().split('\n').filter(Boolean)
   const bySymbol = {}
 
   for (const line of lines) {
