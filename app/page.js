@@ -701,26 +701,41 @@ export default function Page() {
             <TiltCard>
               <a
                 href="/apply"
-                className="shine group relative flex flex-col gap-3 px-6 py-6 rounded-2xl border bg-[#0a0e17] overflow-hidden transition-all duration-200"
-                style={{ borderColor: 'rgba(59,130,246,0.15)' }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(59,130,246,0.4)'; e.currentTarget.style.boxShadow = '0 0 32px rgba(59,130,246,0.07)' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(59,130,246,0.15)'; e.currentTarget.style.boxShadow = 'none' }}
+                className="shine group relative flex flex-col gap-4 px-6 py-6 rounded-2xl border bg-[#0a0e17] overflow-hidden transition-all duration-200"
+                style={{ borderColor: 'rgba(59,130,246,0.2)' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(59,130,246,0.45)'; e.currentTarget.style.boxShadow = '0 0 32px rgba(59,130,246,0.08)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(59,130,246,0.2)'; e.currentTarget.style.boxShadow = 'none' }}
               >
-                <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.3), transparent)' }} />
+                <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.35), transparent)' }} />
+
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-md shrink-0" style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa' }}>03</span>
                     <div>
-                      <div className="text-sm font-black text-white leading-none mb-1">1 on 1</div>
-                      <div className="text-[11px] font-semibold" style={{ color: '#60a5fa' }}>Not for beginners · Application only</div>
+                      <div className="text-sm font-black text-white leading-none mb-1">1 on 1 Mentorship</div>
+                      <div className="text-[11px] font-semibold" style={{ color: '#60a5fa' }}>Personalized · $300/month</div>
                     </div>
                   </div>
-                  <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0" style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa' }}>
-                    Apply →
+                  <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0" style={{ background: 'rgba(59,130,246,0.12)', color: '#60a5fa' }}>
+                    See if it's a fit →
                   </span>
                 </div>
+
                 <p className="text-xs text-neutral-400 leading-relaxed">
-                  Only if you're already actively trading futures and trying to get funded. We identify exactly what's breaking your consistency and fix it directly. Spots are limited and I turn people down.
+                  Personalized feedback on your trades. We go through your execution, fix what's breaking consistency, and build a system that actually works for you — step by step.
+                </p>
+
+                <div className="space-y-1.5">
+                  {['Actively trading futures', 'Want to get funded', 'Tired of guessing'].map(x => (
+                    <div key={x} className="flex items-center gap-2 text-[11px] text-neutral-500">
+                      <span style={{ color: '#60a5fa' }}>✓</span> {x}
+                    </div>
+                  ))}
+                </div>
+
+                <p className="text-[11px] text-neutral-600 leading-relaxed border-t pt-3" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                  Not everyone needs this — most people should{' '}
+                  <span className="text-neutral-400 font-medium">start as a member first</span>.
                 </p>
               </a>
             </TiltCard>
