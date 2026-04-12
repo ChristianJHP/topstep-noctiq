@@ -452,37 +452,52 @@ export default function Page() {
             <span className="text-xs text-neutral-600 font-mono">{name}</span>
           </div>
 
-          <h1 className="text-4xl font-black text-white mb-4 leading-[1.1] tracking-tight">
+          {/* run by */}
+          <div className="flex items-center gap-2 mb-5">
+            <span className="flex items-center justify-center w-6 h-6 rounded-full text-[9px] font-black text-white shrink-0" style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)' }}>JHP</span>
+            <span className="text-xs text-neutral-500">run by <a href="https://www.tiktok.com/@jhp.trades" target="_blank" rel="noopener noreferrer" className="text-neutral-300 hover:text-white transition-colors">@jhp.trades</a> · futures trader</span>
+          </div>
+
+          <h1 className="text-4xl font-black text-white mb-3 leading-[1.1] tracking-tight">
             Fix your execution.<br />
-            <span style={{ color: '#60a5fa' }}>Get funded.</span>
+            <span style={{ color: '#60a5fa' }}>Pass funded accounts.</span>
           </h1>
 
-          <p className="text-sm text-neutral-400 mb-8 max-w-xs leading-relaxed">
-            No signals. Real trades, journaling, and direct feedback.
+          <p className="text-xs font-semibold mb-5 tracking-wide" style={{ color: '#60a5fa99' }}>
+            For futures traders trying to get funded — NQ, ES, MES
           </p>
 
-          <a
-            href="https://discord.gg/aCNadDMvmH"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-bold text-sm text-white transition-all duration-200"
-            style={{ background: 'linear-gradient(135deg, #4f46e5, #3b82f6)', boxShadow: '0 0 32px rgba(79,70,229,0.4)' }}
-            onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 52px rgba(79,70,229,0.6)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-            onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 32px rgba(79,70,229,0.4)'; e.currentTarget.style.transform = 'none' }}
-          >
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 shrink-0">
-              <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.056a19.904 19.904 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
-            </svg>
-            Join Free Discord
-          </a>
+          <p className="text-sm text-neutral-400 mb-7 max-w-xs leading-relaxed">
+            No signals. Real trades, journaling, and direct feedback from someone actively trading funded accounts.
+          </p>
 
-          <div className="flex items-center gap-4 mt-5 flex-wrap">
+          <div className="flex flex-col gap-3">
+            <a
+              href="https://discord.gg/aCNadDMvmH"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-bold text-sm text-white transition-all duration-200 self-start"
+              style={{ background: 'linear-gradient(135deg, #4f46e5, #3b82f6)', boxShadow: '0 0 32px rgba(79,70,229,0.4)' }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 52px rgba(79,70,229,0.6)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 32px rgba(79,70,229,0.4)'; e.currentTarget.style.transform = 'none' }}
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 shrink-0">
+                <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.056a19.904 19.904 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+              </svg>
+              Join Free Discord
+            </a>
+            <span className="text-[11px] text-neutral-600">
+              Join → watch live trades → decide if you want more
+            </span>
+          </div>
+
+          <div className="flex items-center gap-4 mt-6 flex-wrap">
             <div className="flex items-center gap-1.5">
               <span className="relative flex h-1.5 w-1.5 shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-60" />
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
               </span>
-              <span className="text-xs text-neutral-500">Live daily sessions</span>
+              <span className="text-xs text-neutral-500">Live sessions this week</span>
             </div>
             <span className="text-neutral-800">·</span>
             <span className="text-xs text-neutral-500">1,300+ traders following</span>
@@ -541,16 +556,24 @@ export default function Page() {
                     <span className="text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-md shrink-0" style={{ background: 'rgba(99,102,241,0.18)', color: '#818cf8' }}>01</span>
                     <div>
                       <div className="text-sm font-black text-white leading-none mb-1">Join the Discord</div>
-                      <div className="text-[11px] font-semibold" style={{ color: '#818cf8' }}>Free · No commitment</div>
+                      <div className="text-[11px] font-semibold" style={{ color: '#818cf8' }}>Free · Live sessions this week</div>
                     </div>
                   </div>
                   <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0" style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc' }}>
                     Join Free →
                   </span>
                 </div>
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  Watch live sessions. See real trades. Get a feel for how we approach the market before committing to anything.
+                <p className="text-xs text-neutral-400 leading-relaxed mb-3">
+                  Start here. No commitment, no pitch. Just watch how we trade.
                 </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[['👁', 'Watch', 'live trades in real time'], ['📖', 'Learn', 'how execution actually works'], ['🤔', 'Decide', 'if you want to go deeper']].map(([icon, label, desc]) => (
+                    <div key={label} className="flex flex-col gap-0.5 px-2.5 py-2 rounded-lg" style={{ background: 'rgba(99,102,241,0.08)' }}>
+                      <span className="text-xs">{icon} <span className="font-bold text-white">{label}</span></span>
+                      <span className="text-[10px] text-neutral-500 leading-tight">{desc}</span>
+                    </div>
+                  ))}
+                </div>
               </a>
             </TiltCard>
 
@@ -584,14 +607,22 @@ export default function Page() {
                     Join →
                   </span>
                 </div>
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  You're not losing because of strategy. You're losing because of execution. This is where we fix that.
+                <p className="text-xs text-neutral-400 leading-relaxed mb-3">
+                  You're not losing because of strategy. You're losing because of execution. This is where we fix <em>your</em> specific problem.
                 </p>
-                <div className="grid grid-cols-2 gap-1.5 mt-0.5">
-                  {['Journaling feedback', 'Weekly breakdowns', 'System building', 'Direct feedback'].map(f => (
-                    <div key={f} className="flex items-center gap-1.5">
-                      <span className="w-1 h-1 rounded-full shrink-0" style={{ background: '#34d399' }} />
-                      <span className="text-[11px] text-neutral-500">{f}</span>
+                <div className="space-y-1.5">
+                  {[
+                    ['Feedback on YOUR trades', 'not generic advice'],
+                    ['System built around YOU', 'your instrument, your schedule'],
+                    ['Actual accountability', 'someone checking your journal'],
+                    ['Weekly live breakdowns', 'real mistakes, real fixes'],
+                  ].map(([main, sub]) => (
+                    <div key={main} className="flex items-start gap-2">
+                      <span className="w-1 h-1 rounded-full shrink-0 mt-1.5" style={{ background: '#34d399' }} />
+                      <span className="text-[11px] leading-tight">
+                        <span className="text-neutral-300 font-semibold">{main}</span>
+                        <span className="text-neutral-600"> — {sub}</span>
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -619,7 +650,7 @@ export default function Page() {
                     <span className="text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-md shrink-0" style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa' }}>03</span>
                     <div>
                       <div className="text-sm font-black text-white leading-none mb-1">1 on 1</div>
-                      <div className="text-[11px] font-semibold" style={{ color: '#60a5fa' }}>Limited · Application only</div>
+                      <div className="text-[11px] font-semibold" style={{ color: '#60a5fa' }}>Not for beginners · Application only</div>
                     </div>
                   </div>
                   <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0" style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa' }}>
@@ -627,11 +658,37 @@ export default function Page() {
                   </span>
                 </div>
                 <p className="text-xs text-neutral-400 leading-relaxed">
-                  Only for traders actively trying to get funded. If you're serious about fixing execution and pulling consistent payouts, apply.
+                  Only if you're already actively trading futures and trying to get funded. We identify exactly what's breaking your consistency and fix it directly. Spots are limited and I turn people down.
                 </p>
               </a>
             </TiltCard>
 
+          </div>
+        </FadeIn>
+
+        {/* ── objection killer ── */}
+        <FadeIn delay={200} className="mb-12">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="px-5 py-5 rounded-2xl border border-white/[0.06] bg-[#0a0e17]">
+              <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: '#f87171' }}>This is NOT</div>
+              <div className="space-y-2">
+                {['Signals or alerts', 'Copy trading', 'Gambling tips', 'Hype or predictions'].map(x => (
+                  <div key={x} className="flex items-center gap-2 text-[11px] text-neutral-500">
+                    <span style={{ color: '#f87171' }}>✕</span> {x}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="px-5 py-5 rounded-2xl border border-white/[0.06] bg-[#0a0e17]" style={{ borderColor: 'rgba(52,211,153,0.15)' }}>
+              <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: '#34d399' }}>This IS</div>
+              <div className="space-y-2">
+                {['Execution discipline', 'Trade journaling', 'Real consistency', 'Funded account results'].map(x => (
+                  <div key={x} className="flex items-center gap-2 text-[11px] text-neutral-400">
+                    <span style={{ color: '#34d399' }}>✓</span> {x}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </FadeIn>
 
