@@ -497,20 +497,22 @@ export default function Page() {
           </p>
 
           <h1 className="text-4xl font-black text-white mb-3 leading-[1.1] tracking-tight">
-            Pass funded accounts.<br />
-            <span style={{ color: '#60a5fa' }}>Fix your execution.</span>
+            Get funded.<br />
+            <span style={{ color: '#60a5fa' }}>Stay funded.</span>
           </h1>
 
           {/* qualifier — filter line */}
           <p className="text-sm font-semibold mb-5" style={{ color: '#93c5fd' }}>
-            For futures traders trying to get funded —{' '}
+            For futures traders trying to pass evals and stay consistent —{' '}
             <strong className="text-white">NQ</strong>,{' '}
             <strong className="text-white">ES</strong>,{' '}
             <strong className="text-white">MES</strong>
           </p>
 
           <p className="text-sm text-neutral-400 mb-6 max-w-xs leading-relaxed">
-            No signals. Just real trades, journaling, and execution feedback.
+            We trade live.<br />
+            We break down every trade.<br />
+            You get direct feedback on your execution.
           </p>
 
 <div className="flex flex-col gap-2.5">
