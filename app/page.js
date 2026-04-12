@@ -338,19 +338,97 @@ const FIRMS = [
 ]
 
 const PROOF_IMAGES = [
-  { src: '/apex.png',      label: 'Apex payout' },
-  { src: '/alpha.png',     label: 'Alpha Futures payout' },
+  { src: '/apex.png',       label: 'Apex payout' },
+  { src: '/alpha.png',      label: 'Alpha Futures payout' },
   { src: '/tradezella.png', label: 'TradeZella stats' },
 ]
 
+function ProofCarousel({ images }) {
+  const [active, setActive] = useState(0)
+
+  useEffect(() => {
+    const t = setInterval(() => setActive(i => (i + 1) % images.length), 5000)
+    return () => clearInterval(t)
+  }, [images.length])
+
+  const n = images.length
+
+  return (
+    <div>
+      <div style={{ position: 'relative', height: 320, perspective: '1000px' }}>
+        {images.map(({ src, label }, i) => {
+          let offset = ((i - active) % n + n) % n
+          if (offset > Math.floor(n / 2)) offset -= n
+
+          const isActive = offset === 0
+          const isLeft  = offset === -1
+          const isRight = offset === 1
+
+          let transform, opacity, zIndex, cursor
+          if (isActive) {
+            transform = 'translateX(0) rotateY(0deg) scale(1)'
+            opacity = 1; zIndex = 10; cursor = 'default'
+          } else if (isLeft) {
+            transform = 'translateX(-68%) rotateY(42deg) scale(0.8)'
+            opacity = 0.45; zIndex = 5; cursor = 'pointer'
+          } else if (isRight) {
+            transform = 'translateX(68%) rotateY(-42deg) scale(0.8)'
+            opacity = 0.45; zIndex = 5; cursor = 'pointer'
+          } else {
+            transform = 'scale(0.6)'; opacity = 0; zIndex = 1; cursor = 'default'
+          }
+
+          return (
+            <div
+              key={src}
+              onClick={() => !isActive && setActive(i)}
+              style={{
+                position: 'absolute', top: 0, left: '7.5%',
+                width: '85%', height: '100%',
+                transform, opacity, zIndex, cursor,
+                transition: 'all 0.55s cubic-bezier(.16,1,.3,1)',
+                borderRadius: 14, overflow: 'hidden',
+                border: '1px solid rgba(255,255,255,0.1)',
+                background: '#0d1117',
+                boxShadow: isActive
+                  ? '0 16px 48px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.07)'
+                  : 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: 12,
+              }}
+            >
+              <img
+                src={src}
+                alt={label}
+                style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto', display: 'block', borderRadius: 6 }}
+              />
+            </div>
+          )
+        })}
+      </div>
+
+      {/* pill indicators */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 6, paddingTop: 16 }}>
+        {images.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setActive(i)}
+            style={{
+              width: active === i ? 20 : 6, height: 6, borderRadius: 3,
+              background: active === i ? '#60a5fa' : 'rgba(255,255,255,0.2)',
+              border: 'none', padding: 0, cursor: 'pointer',
+              transition: 'all 0.3s ease',
+            }}
+            aria-label={`View ${images[i].label}`}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 /* ─────────────── page ─────────────── */
 export default function Page() {
-  const [activeImg, setActiveImg] = useState(0)
-  useEffect(() => {
-    const t = setInterval(() => setActiveImg(i => (i + 1) % PROOF_IMAGES.length), 5000)
-    return () => clearInterval(t)
-  }, [])
-
   return (
     <div className="min-h-screen text-white overflow-x-hidden">
 
@@ -511,12 +589,12 @@ export default function Page() {
               </p>
 
               <h1 className="text-4xl font-black text-white mb-4 leading-[1.1] tracking-tight">
-                Get funded.<br />
-                <span style={{ color: '#60a5fa' }}>Stay funded.</span>
+                Consistent.<br />
+                <span style={{ color: '#60a5fa' }}>Funded. Copied.</span>
               </h1>
 
               <p className="text-sm text-neutral-400 mb-7 leading-relaxed">
-                We trade live and show you exactly how to stop blowing accounts.
+                Trading multiple funded accounts live. Results below are the last 2 weeks — no cherry-picking, no signals. Just execution you can follow.
               </p>
 
               <a
@@ -532,33 +610,8 @@ export default function Page() {
               </a>
             </div>
 
-            {/* right — rotating proof image */}
-            <div
-              className="relative rounded-2xl overflow-hidden border border-white/[0.08]"
-              style={{ minHeight: 260, background: '#0d1117', boxShadow: '0 0 60px rgba(59,130,246,0.06)' }}
-            >
-              {PROOF_IMAGES.map(({ src, label }, i) => (
-                <img
-                  key={src}
-                  src={src}
-                  alt={label}
-                  className="absolute inset-0 w-full h-full object-contain"
-                  style={{ opacity: activeImg === i ? 1 : 0, transition: 'opacity 0.8s ease' }}
-                />
-              ))}
-              {/* dot indicators */}
-              <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
-                {PROOF_IMAGES.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActiveImg(i)}
-                    className="w-1.5 h-1.5 rounded-full transition-all duration-300"
-                    style={{ background: activeImg === i ? '#60a5fa' : 'rgba(255,255,255,0.2)' }}
-                    aria-label={`View image ${i + 1}`}
-                  />
-                ))}
-              </div>
-            </div>
+            {/* right — 3D proof carousel */}
+            <ProofCarousel images={PROOF_IMAGES} />
 
           </div>
         </FadeIn>
