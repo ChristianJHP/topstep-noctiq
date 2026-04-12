@@ -337,8 +337,19 @@ const FIRMS = [
   },
 ]
 
+const PROOF_IMAGES = [
+  { src: '/apex.png',      label: 'Apex payout' },
+  { src: '/alpha.png',     label: 'Alpha Futures payout' },
+  { src: '/tradezella.png', label: 'TradeZella stats' },
+]
+
 /* ─────────────── page ─────────────── */
 export default function Page() {
+  const [activeImg, setActiveImg] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setActiveImg(i => (i + 1) % PROOF_IMAGES.length), 5000)
+    return () => clearInterval(t)
+  }, [])
 
   return (
     <div className="min-h-screen text-white overflow-x-hidden">
@@ -491,62 +502,64 @@ export default function Page() {
 
         {/* ── hero ── */}
         <FadeIn className="mt-10 mb-10">
-          {/* run by */}
-          <p className="text-xs text-neutral-500 mb-5">
-            Run by <a href="https://www.tiktok.com/@jhp.trades" target="_blank" rel="noopener noreferrer" className="text-neutral-300 hover:text-white transition-colors font-semibold">JHP</a> — trading funded accounts live
-          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 items-center">
 
-          <h1 className="text-4xl font-black text-white mb-3 leading-[1.1] tracking-tight">
-            Get funded.<br />
-            <span style={{ color: '#60a5fa' }}>Stay funded.</span>
-          </h1>
+            {/* left */}
+            <div>
+              <p className="text-xs text-neutral-500 mb-5">
+                Run by <a href="https://www.tiktok.com/@jhp.trades" target="_blank" rel="noopener noreferrer" className="text-neutral-300 hover:text-white transition-colors font-semibold">JHP</a> — trading funded accounts live
+              </p>
 
-          {/* qualifier — filter line */}
-          <p className="text-sm font-semibold mb-5" style={{ color: '#93c5fd' }}>
-            For futures traders trying to pass evals and stay consistent —{' '}
-            <strong className="text-white">NQ</strong>,{' '}
-            <strong className="text-white">ES</strong>,{' '}
-            <strong className="text-white">MES</strong>
-          </p>
+              <h1 className="text-4xl font-black text-white mb-4 leading-[1.1] tracking-tight">
+                Get funded.<br />
+                <span style={{ color: '#60a5fa' }}>Stay funded.</span>
+              </h1>
 
-          <p className="text-sm text-neutral-400 mb-6 max-w-xs leading-relaxed">
-            We trade live.<br />
-            We break down every trade.<br />
-            You get direct feedback on your execution.
-          </p>
+              <p className="text-sm text-neutral-400 mb-7 leading-relaxed">
+                We trade live and show you exactly how to stop blowing accounts.
+              </p>
 
-<div className="flex flex-col gap-2.5">
-            <a
-              href="https://discord.gg/aCNadDMvmH"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-bold text-sm text-white transition-all duration-200 self-start"
-              style={{ background: 'linear-gradient(135deg, #4f46e5, #3b82f6)', boxShadow: '0 0 32px rgba(79,70,229,0.4)' }}
-              onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 52px rgba(79,70,229,0.6)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-              onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 32px rgba(79,70,229,0.4)'; e.currentTarget.style.transform = 'none' }}
-            >
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 shrink-0">
-                <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.056a19.904 19.904 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
-              </svg>
-              Join Free Discord
-            </a>
-            <span className="text-[11px] text-neutral-600">
-              Join → watch trades live → decide if you want in
-            </span>
-          </div>
-
-          <div className="flex items-center gap-5 mt-6 flex-wrap">
-            <div className="flex items-center gap-1.5">
-              <span className="relative flex h-1.5 w-1.5 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
-              </span>
-              <span className="text-xs font-medium text-neutral-300">Live this week</span>
+              <a
+                href="https://discord.gg/aCNadDMvmH"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl font-bold text-sm text-white transition-all duration-200"
+                style={{ background: 'linear-gradient(135deg, #4f46e5, #3b82f6)', boxShadow: '0 0 32px rgba(79,70,229,0.4)' }}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 52px rgba(79,70,229,0.6)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 32px rgba(79,70,229,0.4)'; e.currentTarget.style.transform = 'none' }}
+              >
+                Watch Live Trades
+              </a>
             </div>
-            <span className="text-neutral-700">·</span>
-            <span className="text-xs text-neutral-500">1,300+ following</span>
-            <span className="text-neutral-700">·</span>
-            <span className="text-xs text-neutral-500">Free to join</span>
+
+            {/* right — rotating proof image */}
+            <div
+              className="relative rounded-2xl overflow-hidden border border-white/[0.08]"
+              style={{ minHeight: 260, background: '#0d1117', boxShadow: '0 0 60px rgba(59,130,246,0.06)' }}
+            >
+              {PROOF_IMAGES.map(({ src, label }, i) => (
+                <img
+                  key={src}
+                  src={src}
+                  alt={label}
+                  className="absolute inset-0 w-full h-full object-contain"
+                  style={{ opacity: activeImg === i ? 1 : 0, transition: 'opacity 0.8s ease' }}
+                />
+              ))}
+              {/* dot indicators */}
+              <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+                {PROOF_IMAGES.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImg(i)}
+                    className="w-1.5 h-1.5 rounded-full transition-all duration-300"
+                    style={{ background: activeImg === i ? '#60a5fa' : 'rgba(255,255,255,0.2)' }}
+                    aria-label={`View image ${i + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+
           </div>
         </FadeIn>
 
