@@ -429,8 +429,56 @@ export default function Page() {
       />
 
       {/* nav */}
-      <nav className="px-6 py-5 max-w-3xl mx-auto">
-        <div className="flex items-center justify-end">
+      <nav className="px-6 py-4 max-w-3xl mx-auto">
+        <div className="flex items-center justify-between">
+
+          {/* JHP logo — code-built, no PNG */}
+          <Link href="/" aria-label="JHP Trades">
+            <svg viewBox="0 0 148 52" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-9 w-auto">
+
+              {/* ── trend line (diagonal, low-left → high-right) ── */}
+              <line x1="8" y1="42" x2="140" y2="8" stroke="white" strokeWidth="1.2" strokeOpacity="0.25" strokeLinecap="round"/>
+
+              {/* ── left cluster — white/gray bearish candles ── */}
+              {/* candle A */}
+              <line x1="8"  y1="34" x2="8"  y2="27" stroke="#cbd5e1" strokeWidth="1" strokeOpacity="0.7"/>
+              <rect x="5"   y="27" width="6" height="10" rx="0.5" fill="#94a3b8" fillOpacity="0.55"/>
+              <line x1="8"  y1="37" x2="8"  y2="40" stroke="#cbd5e1" strokeWidth="1" strokeOpacity="0.7"/>
+              {/* candle B */}
+              <line x1="17" y1="31" x2="17" y2="24" stroke="#cbd5e1" strokeWidth="1" strokeOpacity="0.6"/>
+              <rect x="14"  y="25" width="6" height="8"  rx="0.5" fill="#64748b" fillOpacity="0.6"/>
+              <line x1="17" y1="33" x2="17" y2="36" stroke="#cbd5e1" strokeWidth="1" strokeOpacity="0.6"/>
+              {/* candle C — slightly blue */}
+              <line x1="26" y1="28" x2="26" y2="20" stroke="#93c5fd" strokeWidth="1" strokeOpacity="0.55"/>
+              <rect x="23"  y="20" width="6" height="10" rx="0.5" fill="#3b82f6" fillOpacity="0.45"/>
+              <line x1="26" y1="30" x2="26" y2="34" stroke="#93c5fd" strokeWidth="1" strokeOpacity="0.55"/>
+
+              {/* ── JHP text ── */}
+              <text
+                x="34" y="46"
+                fontFamily="Arial Black, Impact, sans-serif"
+                fontWeight="900"
+                fontSize="36"
+                fill="white"
+                letterSpacing="-1"
+              >JHP</text>
+
+              {/* ── right cluster — blue bullish candles ── */}
+              {/* candle D */}
+              <line x1="118" y1="26" x2="118" y2="18" stroke="#60a5fa" strokeWidth="1" strokeOpacity="0.7"/>
+              <rect x="115"  y="19" width="6" height="11" rx="0.5" fill="#3b82f6" fillOpacity="0.7"/>
+              <line x1="118" y1="30" x2="118" y2="33" stroke="#60a5fa" strokeWidth="1" strokeOpacity="0.7"/>
+              {/* candle E */}
+              <line x1="128" y1="20" x2="128" y2="12" stroke="#60a5fa" strokeWidth="1" strokeOpacity="0.85"/>
+              <rect x="125"  y="13" width="6" height="12" rx="0.5" fill="#3b82f6" fillOpacity="0.85"/>
+              <line x1="128" y1="25" x2="128" y2="28" stroke="#60a5fa" strokeWidth="1" strokeOpacity="0.85"/>
+              {/* candle F — tallest, brightest */}
+              <line x1="138" y1="14" x2="138" y2="7"  stroke="#93c5fd" strokeWidth="1"/>
+              <rect x="135"  y="8"  width="6" height="14" rx="0.5" fill="#60a5fa"/>
+              <line x1="138" y1="22" x2="138" y2="26" stroke="#93c5fd" strokeWidth="1"/>
+            </svg>
+          </Link>
+
           <Link
             href="/dashboard"
             className="text-xs text-neutral-600 hover:text-neutral-400 transition-colors duration-200 border border-white/[0.06] px-3 py-1.5 rounded-lg"
@@ -454,7 +502,6 @@ export default function Page() {
 
           {/* run by */}
           <div className="flex items-center gap-2 mb-5">
-            <span className="flex items-center justify-center w-6 h-6 rounded-full text-[9px] font-black text-white shrink-0" style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)' }}>JHP</span>
             <span className="text-xs text-neutral-500">run by <a href="https://www.tiktok.com/@jhp.trades" target="_blank" rel="noopener noreferrer" className="text-neutral-300 hover:text-white transition-colors">@jhp.trades</a> · futures trader</span>
           </div>
 
