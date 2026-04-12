@@ -355,60 +355,59 @@ function ProofCarousel({ images }) {
 
   return (
     <div>
-      <div style={{ position: 'relative', height: 320, perspective: '1000px' }}>
-        {images.map(({ src, label }, i) => {
-          let offset = ((i - active) % n + n) % n
-          if (offset > Math.floor(n / 2)) offset -= n
+      {/* overflow:hidden clips side cards to this column — no more bleeding left */}
+      <div style={{ overflow: 'hidden', borderRadius: 12 }}>
+        <div style={{ position: 'relative', height: 300, perspective: '1000px' }}>
+          {images.map(({ src, label }, i) => {
+            let offset = ((i - active) % n + n) % n
+            if (offset > Math.floor(n / 2)) offset -= n
 
-          const isActive = offset === 0
-          const isLeft  = offset === -1
-          const isRight = offset === 1
+            const isActive = offset === 0
+            const isLeft  = offset === -1
+            const isRight = offset === 1
 
-          let transform, opacity, zIndex, cursor
-          if (isActive) {
-            transform = 'translateX(0) rotateY(0deg) scale(1)'
-            opacity = 1; zIndex = 10; cursor = 'default'
-          } else if (isLeft) {
-            transform = 'translateX(-68%) rotateY(42deg) scale(0.8)'
-            opacity = 0.45; zIndex = 5; cursor = 'pointer'
-          } else if (isRight) {
-            transform = 'translateX(68%) rotateY(-42deg) scale(0.8)'
-            opacity = 0.45; zIndex = 5; cursor = 'pointer'
-          } else {
-            transform = 'scale(0.6)'; opacity = 0; zIndex = 1; cursor = 'default'
-          }
+            let transform, opacity, zIndex, cursor
+            if (isActive) {
+              transform = 'translateX(0) rotateY(0deg) scale(1)'
+              opacity = 1; zIndex = 10; cursor = 'default'
+            } else if (isLeft) {
+              transform = 'translateX(-72%) rotateY(45deg) scale(0.78)'
+              opacity = 0.35; zIndex = 5; cursor = 'pointer'
+            } else if (isRight) {
+              transform = 'translateX(72%) rotateY(-45deg) scale(0.78)'
+              opacity = 0.35; zIndex = 5; cursor = 'pointer'
+            } else {
+              transform = 'scale(0.6)'; opacity = 0; zIndex = 1; cursor = 'default'
+            }
 
-          return (
-            <div
-              key={src}
-              onClick={() => !isActive && setActive(i)}
-              style={{
-                position: 'absolute', top: 0, left: '7.5%',
-                width: '85%', height: '100%',
-                transform, opacity, zIndex, cursor,
-                transition: 'all 0.55s cubic-bezier(.16,1,.3,1)',
-                borderRadius: 14, overflow: 'hidden',
-                border: '1px solid rgba(255,255,255,0.1)',
-                background: '#0d1117',
-                boxShadow: isActive
-                  ? '0 16px 48px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.07)'
-                  : 'none',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                padding: 12,
-              }}
-            >
-              <img
-                src={src}
-                alt={label}
-                style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto', display: 'block', borderRadius: 6 }}
-              />
-            </div>
-          )
-        })}
+            return (
+              <div
+                key={src}
+                onClick={() => !isActive && setActive(i)}
+                style={{
+                  position: 'absolute', top: 0, left: '7.5%',
+                  width: '85%', height: '100%',
+                  transform, opacity, zIndex, cursor,
+                  transition: 'all 0.55s cubic-bezier(.16,1,.3,1)',
+                  borderRadius: 10, overflow: 'hidden',
+                  background: 'transparent',
+                  boxShadow: isActive ? '0 20px 60px rgba(0,0,0,0.45)' : 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <img
+                  src={src}
+                  alt={label}
+                  style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto', display: 'block', borderRadius: 8 }}
+                />
+              </div>
+            )
+          })}
+        </div>
       </div>
 
       {/* pill indicators */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 6, paddingTop: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 6, paddingTop: 14 }}>
         {images.map((_, i) => (
           <button
             key={i}
@@ -585,16 +584,17 @@ export default function Page() {
             {/* left */}
             <div>
               <p className="text-xs text-neutral-500 mb-5">
-                Run by <a href="https://www.tiktok.com/@jhp.trades" target="_blank" rel="noopener noreferrer" className="text-neutral-300 hover:text-white transition-colors font-semibold">JHP</a> — trading funded accounts live
+                <a href="https://www.tiktok.com/@jhp.trades" target="_blank" rel="noopener noreferrer" className="text-neutral-300 hover:text-white transition-colors font-semibold">JHP</a>
+                {' '}· 5 years trading · $30k+ from options & stocks · now scaling in futures
               </p>
 
               <h1 className="text-4xl font-black text-white mb-4 leading-[1.1] tracking-tight">
-                Consistent.<br />
-                <span style={{ color: '#60a5fa' }}>Funded. Copied.</span>
+                Get funded.<br />
+                <span style={{ color: '#60a5fa' }}>Stay funded.</span>
               </h1>
 
               <p className="text-sm text-neutral-400 mb-7 leading-relaxed">
-                Trading multiple funded accounts live. Results below are the last 2 weeks — no cherry-picking, no signals. Just execution you can follow.
+                Trading multiple funded futures accounts live. The results on the right are the last 2 weeks — no cherry-picking, no signals.
               </p>
 
               <a
