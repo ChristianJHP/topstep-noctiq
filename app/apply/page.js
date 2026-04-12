@@ -95,7 +95,7 @@ export default function MentorshipPage() {
             onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 40px rgba(79,70,229,0.55)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 24px rgba(79,70,229,0.35)'; e.currentTarget.style.transform = 'none' }}
           >
-            Confirm spot — $300/month →
+            Confirm spot  →
           </a>
         </div>
 
