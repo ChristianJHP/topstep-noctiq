@@ -81,10 +81,10 @@ export default function MentorshipPage() {
         <div className="mt-6 px-5 py-5 rounded-2xl border border-white/[0.08] bg-[#111315]">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-md" style={{ background: 'rgba(59,130,246,0.12)', color: '#60a5fa' }}>Step 2</span>
-            <span className="text-xs text-neutral-400 font-medium">Complete payment to secure your spot</span>
+            <span className="text-xs text-neutral-400 font-medium">Confirm your spot</span>
           </div>
           <p className="text-xs text-neutral-500 mb-4 leading-relaxed">
-            After submitting the form above, pay via Whop to lock in your spot. Limited availability — spots fill fast.
+            Once you've submitted the form, pay below to lock in your spot.
           </p>
           <a
             href="https://whop.com/jhp-trades/jhp-1-on-1-coaching/"
@@ -95,7 +95,7 @@ export default function MentorshipPage() {
             onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 40px rgba(79,70,229,0.55)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 24px rgba(79,70,229,0.35)'; e.currentTarget.style.transform = 'none' }}
           >
-            Pay on Whop — $300/month →
+            Confirm spot — $300/month →
           </a>
         </div>
 
