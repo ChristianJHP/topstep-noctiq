@@ -338,9 +338,9 @@ const FIRMS = [
 ]
 
 const PROOF_IMAGES = [
+  { src: '/tradezella.png', label: 'TradeZella stats' },
   { src: '/apex.png',       label: 'Apex payout' },
   { src: '/alpha.png',      label: 'Alpha Futures payout' },
-  { src: '/tradezella.png', label: 'TradeZella stats' },
 ]
 
 function ProofCarousel({ images }) {
