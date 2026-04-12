@@ -594,7 +594,7 @@ export default function Page() {
               </h1>
 
               <p className="text-sm text-neutral-400 mb-7 leading-relaxed">
-                Trading multiple funded futures accounts live. The results on the right are the last 2 weeks — no cherry-picking, no signals.
+                Trading multiple funded futures accounts live. The results on the right are the last 2 weeks.
               </p>
             </div>
 
@@ -788,7 +788,7 @@ export default function Page() {
 
                 <p className="text-[11px] text-neutral-600 leading-relaxed border-t pt-3" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                   Journal your trades. Apply feedback. Show effort. If you're looking for signals or shortcuts, this isn't for you.
-                  <span className="block mt-1 text-neutral-700">Limited spots — I keep this small so I can go deep with each person.</span>
+                  <span className="block mt-1 text-neutral-700">Limited spots.</span>
                 </p>
               </a>
             </TiltCard>
