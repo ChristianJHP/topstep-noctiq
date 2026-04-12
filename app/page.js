@@ -491,8 +491,8 @@ export default function Page() {
       <main className="max-w-3xl mx-auto px-6 pb-24">
 
         {/* ── hero ── */}
-        <FadeIn className="mt-14 mb-10">
-          <div className="flex items-center gap-2 mb-5">
+        <FadeIn className="mt-10 mb-10">
+          <div className="flex items-center gap-2 mb-4">
             <span className="relative flex h-1.5 w-1.5 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60" />
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" />
@@ -501,24 +501,39 @@ export default function Page() {
           </div>
 
           {/* run by */}
-          <div className="flex items-center gap-2 mb-5">
-            <span className="text-xs text-neutral-500">run by <a href="https://www.tiktok.com/@jhp.trades" target="_blank" rel="noopener noreferrer" className="text-neutral-300 hover:text-white transition-colors">@jhp.trades</a> · futures trader</span>
-          </div>
+          <p className="text-xs text-neutral-500 mb-5">
+            Run by <a href="https://www.tiktok.com/@jhp.trades" target="_blank" rel="noopener noreferrer" className="text-neutral-300 hover:text-white transition-colors font-semibold">JHP</a> — trading funded accounts live
+          </p>
 
           <h1 className="text-4xl font-black text-white mb-3 leading-[1.1] tracking-tight">
-            Fix your execution.<br />
-            <span style={{ color: '#60a5fa' }}>Pass funded accounts.</span>
+            Pass funded accounts.<br />
+            <span style={{ color: '#60a5fa' }}>Fix your execution.</span>
           </h1>
 
-          <p className="text-xs font-semibold mb-5 tracking-wide" style={{ color: '#60a5fa99' }}>
-            For futures traders trying to get funded — NQ, ES, MES
+          {/* qualifier — filter line */}
+          <p className="text-sm font-semibold mb-5" style={{ color: '#93c5fd' }}>
+            For futures traders trying to get funded —{' '}
+            <strong className="text-white">NQ</strong>,{' '}
+            <strong className="text-white">ES</strong>,{' '}
+            <strong className="text-white">MES</strong>
           </p>
 
-          <p className="text-sm text-neutral-400 mb-7 max-w-xs leading-relaxed">
-            No signals. Real trades, journaling, and direct feedback from someone actively trading funded accounts.
+          <p className="text-sm text-neutral-400 mb-6 max-w-xs leading-relaxed">
+            No signals. Just real trades, journaling, and execution feedback.
           </p>
 
-          <div className="flex flex-col gap-3">
+          {/* proof card */}
+          <div className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl mb-6 border" style={{ background: 'rgba(52,211,153,0.06)', borderColor: 'rgba(52,211,153,0.2)' }}>
+            <span className="relative flex h-1.5 w-1.5 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+            </span>
+            <span className="text-xs text-neutral-400">Funded at <span className="text-white font-semibold">Alpha Futures</span></span>
+            <span className="text-neutral-700">·</span>
+            <span className="text-xs font-semibold" style={{ color: '#34d399' }}>Active account</span>
+          </div>
+
+          <div className="flex flex-col gap-2.5">
             <a
               href="https://discord.gg/aCNadDMvmH"
               target="_blank"
@@ -534,44 +549,44 @@ export default function Page() {
               Join Free Discord
             </a>
             <span className="text-[11px] text-neutral-600">
-              Join → watch live trades → decide if you want more
+              Join → watch trades live → decide if you want in
             </span>
           </div>
 
-          <div className="flex items-center gap-4 mt-6 flex-wrap">
+          <div className="flex items-center gap-5 mt-6 flex-wrap">
             <div className="flex items-center gap-1.5">
               <span className="relative flex h-1.5 w-1.5 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-60" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
               </span>
-              <span className="text-xs text-neutral-500">Live sessions this week</span>
+              <span className="text-xs font-medium text-neutral-300">Live this week</span>
             </div>
-            <span className="text-neutral-800">·</span>
-            <span className="text-xs text-neutral-500">1,300+ traders following</span>
-            <span className="text-neutral-800">·</span>
+            <span className="text-neutral-700">·</span>
+            <span className="text-xs text-neutral-500">1,300+ following</span>
+            <span className="text-neutral-700">·</span>
             <span className="text-xs text-neutral-500">Free to join</span>
           </div>
         </FadeIn>
 
         {/* ── proof ── */}
         <FadeIn delay={80} className="mb-10">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-4 rounded-2xl border border-white/[0.06] bg-[#0a0e17]">
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-2 px-5 py-4 rounded-2xl border border-white/[0.06] bg-[#0a0e17]">
             <div className="flex items-center gap-2">
               <span className="text-base font-black text-white">1,300+</span>
               <span className="text-xs text-neutral-500">traders following</span>
             </div>
-            <span className="text-neutral-800">·</span>
+            <span className="text-neutral-700">·</span>
             <div className="flex items-center gap-2">
               <span className="text-base font-black" style={{ color: '#818cf8' }}>200+</span>
-              <span className="text-xs text-neutral-500">active members</span>
+              <span className="text-xs font-semibold text-neutral-400">active members</span>
             </div>
-            <span className="text-neutral-800">·</span>
+            <span className="text-neutral-700">·</span>
             <div className="flex items-center gap-1.5">
               <span className="relative flex h-1.5 w-1.5 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-60" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
               </span>
-              <span className="text-base font-black text-white">Live</span>
+              <span className="text-base font-black" style={{ color: '#f87171' }}>Live</span>
               <span className="text-xs text-neutral-500">daily sessions</span>
             </div>
           </div>
