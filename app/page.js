@@ -339,7 +339,6 @@ const FIRMS = [
 
 /* ─────────────── page ─────────────── */
 export default function Page() {
-  const name = useScramble('JHP Trades', { speed: 26, delay: 80 })
 
   return (
     <div className="min-h-screen text-white overflow-x-hidden">
@@ -434,7 +433,7 @@ export default function Page() {
 
           {/* JHP logo — code-built, no PNG */}
           <Link href="/" aria-label="JHP Trades">
-            <svg viewBox="0 0 148 52" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-9 w-auto">
+            <svg viewBox="0 0 148 52" width="148" height="52" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-9 w-auto block shrink-0">
 
               {/* ── trend line (diagonal, low-left → high-right) ── */}
               <line x1="8" y1="42" x2="140" y2="8" stroke="white" strokeWidth="1.2" strokeOpacity="0.25" strokeLinecap="round"/>
@@ -492,14 +491,6 @@ export default function Page() {
 
         {/* ── hero ── */}
         <FadeIn className="mt-10 mb-10">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="relative flex h-1.5 w-1.5 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60" />
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" />
-            </span>
-            <span className="text-xs text-neutral-600 font-mono">{name}</span>
-          </div>
-
           {/* run by */}
           <p className="text-xs text-neutral-500 mb-5">
             Run by <a href="https://www.tiktok.com/@jhp.trades" target="_blank" rel="noopener noreferrer" className="text-neutral-300 hover:text-white transition-colors font-semibold">JHP</a> — trading funded accounts live
@@ -675,7 +666,7 @@ export default function Page() {
                 <div className="space-y-1.5">
                   {[
                     ['Feedback on YOUR trades', 'not generic advice'],
-                    ['System built around YOU', 'your instrument, your schedule'],
+                    ['Execution-first framework', 'the system behind every trade I take'],
                     ['Actual accountability', 'someone checking your journal'],
                     ['Weekly live breakdowns', 'real mistakes, real fixes'],
                   ].map(([main, sub]) => (
