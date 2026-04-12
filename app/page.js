@@ -596,18 +596,6 @@ export default function Page() {
               <p className="text-sm text-neutral-400 mb-7 leading-relaxed">
                 Trading multiple funded futures accounts live. The results on the right are the last 2 weeks — no cherry-picking, no signals.
               </p>
-
-              <a
-                href="https://discord.gg/aCNadDMvmH"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl font-bold text-sm text-white transition-all duration-200"
-                style={{ background: 'linear-gradient(135deg, #4f46e5, #3b82f6)', boxShadow: '0 0 32px rgba(79,70,229,0.4)' }}
-                onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 52px rgba(79,70,229,0.6)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-                onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 32px rgba(79,70,229,0.4)'; e.currentTarget.style.transform = 'none' }}
-              >
-                Watch Live Trades
-              </a>
             </div>
 
             {/* right — 3D proof carousel */}
