@@ -629,7 +629,7 @@ export default function Page() {
                   Start here. No commitment, no pitch. Just watch how we trade.
                 </p>
                 <div className="grid grid-cols-3 gap-2">
-                  {[['👁', 'Watch', 'live trades in real time'], ['📖', 'Learn', 'how execution actually works'], ['🤔', 'Decide', 'if you want to go deeper']].map(([icon, label, desc]) => (
+                  {[['👁', 'Watch', 'trades live, in real time'], ['📈', 'See', 'how execution actually works'], ['✓', 'Decide', 'if you want in']].map(([icon, label, desc]) => (
                     <div key={label} className="flex flex-col gap-0.5 px-2.5 py-2 rounded-lg" style={{ background: 'rgba(99,102,241,0.08)' }}>
                       <span className="text-xs">{icon} <span className="font-bold text-white">{label}</span></span>
                       <span className="text-[10px] text-neutral-500 leading-tight">{desc}</span>
@@ -651,26 +651,26 @@ export default function Page() {
                 href="https://whop.com/jhp-trades/jhp-trading-community"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="shine group relative flex flex-col gap-3 px-6 py-6 rounded-2xl border bg-[#0a0e17] overflow-hidden transition-all duration-200"
-                style={{ borderColor: 'rgba(52,211,153,0.2)' }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(52,211,153,0.5)'; e.currentTarget.style.boxShadow = '0 0 36px rgba(52,211,153,0.08)' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(52,211,153,0.2)'; e.currentTarget.style.boxShadow = 'none' }}
+                className="shine group relative flex flex-col gap-3 px-6 py-6 rounded-2xl border overflow-hidden transition-all duration-200"
+                style={{ background: 'linear-gradient(135deg, #0a120e 0%, #0a0e17 100%)', borderColor: 'rgba(52,211,153,0.35)', boxShadow: '0 0 28px rgba(52,211,153,0.06)' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(52,211,153,0.65)'; e.currentTarget.style.boxShadow = '0 0 44px rgba(52,211,153,0.12)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(52,211,153,0.35)'; e.currentTarget.style.boxShadow = '0 0 28px rgba(52,211,153,0.06)' }}
               >
-                <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(52,211,153,0.4), transparent)' }} />
+                <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(52,211,153,0.6), transparent)' }} />
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-md shrink-0" style={{ background: 'rgba(52,211,153,0.12)', color: '#34d399' }}>02</span>
+                    <span className="text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-md shrink-0" style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399' }}>02</span>
                     <div>
                       <div className="text-sm font-black text-white leading-none mb-1">Execution Lab</div>
-                      <div className="text-[11px] font-semibold" style={{ color: '#34d399' }}>$99 / month</div>
+                      <div className="text-[11px] font-semibold" style={{ color: '#34d399' }}>$99 / month · Cancel anytime</div>
                     </div>
                   </div>
-                  <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0" style={{ background: 'rgba(52,211,153,0.12)', color: '#34d399' }}>
+                  <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0" style={{ background: 'rgba(52,211,153,0.18)', color: '#34d399' }}>
                     Join →
                   </span>
                 </div>
-                <p className="text-xs text-neutral-400 leading-relaxed mb-3">
-                  You're not losing because of strategy. You're losing because of execution. This is where we fix <em>your</em> specific problem.
+                <p className="text-xs text-neutral-300 leading-relaxed">
+                  Most traders don't need a new strategy. They need to fix execution. This is where you build consistency and actually pass funded accounts.
                 </p>
                 <div className="space-y-1.5">
                   {[
@@ -688,6 +688,7 @@ export default function Page() {
                     </div>
                   ))}
                 </div>
+                <p className="text-[11px] font-semibold pt-1" style={{ color: '#34d39966' }}>This is where most people stay.</p>
               </a>
             </TiltCard>
 
@@ -721,8 +722,12 @@ export default function Page() {
                   </span>
                 </div>
 
+                <p className="text-[11px] font-semibold text-neutral-500 -mt-1">
+                  Not a course. Not signals. Direct work on your trades.
+                </p>
+
                 <p className="text-xs text-neutral-400 leading-relaxed">
-                  Personalized feedback on your trades. We go through your execution, fix what's breaking consistency, and build a system that actually works for you — step by step.
+                  We break down your trades, fix execution issues, and build a system around you — your instrument, your schedule, your specific problems.
                 </p>
 
                 <div className="space-y-1.5">
@@ -734,8 +739,8 @@ export default function Page() {
                 </div>
 
                 <p className="text-[11px] text-neutral-600 leading-relaxed border-t pt-3" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-                  Not everyone needs this — most people should{' '}
-                  <span className="text-neutral-400 font-medium">start as a member first</span>.
+                  Limited spots — I keep this small so I can actually go deep with each person.
+                  <span className="block mt-1 text-neutral-700">Most people should start in the <span className="text-neutral-500 font-medium">$99 membership</span> first.</span>
                 </p>
               </a>
             </TiltCard>
