@@ -1,11 +1,8 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'noctiq.ai | Christian - Algo Trading & Market Research',
-  description: 'Finding market inefficiencies. Algorithmic trading, futures & options, statistical analysis, and automated trading systems.',
-  icons: {
-    icon: '/favicon.ico',
-  },
+  title: 'JHP Trades',
+  description: 'Fix your execution. Get funded. Real trades, journaling, and direct feedback — no signals.',
 }
 
 export default function RootLayout({ children }) {

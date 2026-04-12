@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
-import Script from 'next/script'
 
 /* ── scramble hook ── */
 const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%'
@@ -486,7 +485,7 @@ export default function Page() {
               <span className="text-xs text-neutral-500">Live daily sessions</span>
             </div>
             <span className="text-neutral-800">·</span>
-            <span className="text-xs text-neutral-500">1,200+ traders</span>
+            <span className="text-xs text-neutral-500">1,300+ traders</span>
             <span className="text-neutral-800">·</span>
             <span className="text-xs text-neutral-500">Free to join</span>
           </div>
@@ -496,7 +495,7 @@ export default function Page() {
         <FadeIn delay={80} className="mb-10">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-4 rounded-2xl border border-white/[0.06] bg-[#0a0e17]">
             <div className="flex items-center gap-2">
-              <span className="text-base font-black text-white">1,200+</span>
+              <span className="text-base font-black text-white">1,300+</span>
               <span className="text-xs text-neutral-500">traders</span>
             </div>
             <span className="text-neutral-800">·</span>
@@ -728,18 +727,6 @@ export default function Page() {
       </footer>
       </div>{/* end relative z-10 content wrapper */}
 
-      <Script
-        src="https://storage.ko-fi.com/cdn/scripts/overlay-widget.js"
-        strategy="afterInteractive"
-        onLoad={() => {
-          window.kofiWidgetOverlay.draw('jhp_trades', {
-            'type': 'floating-chat',
-            'floating-chat.donateButton.text': 'Support me',
-            'floating-chat.donateButton.background-color': '#323842',
-            'floating-chat.donateButton.text-color': '#fff',
-          })
-        }}
-      />
     </div>
   )
 }
