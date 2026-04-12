@@ -513,18 +513,7 @@ export default function Page() {
             No signals. Just real trades, journaling, and execution feedback.
           </p>
 
-          {/* proof card */}
-          <div className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl mb-6 border" style={{ background: 'rgba(52,211,153,0.06)', borderColor: 'rgba(52,211,153,0.2)' }}>
-            <span className="relative flex h-1.5 w-1.5 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-            </span>
-            <span className="text-xs text-neutral-400">Funded at <span className="text-white font-semibold">Alpha Futures</span></span>
-            <span className="text-neutral-700">·</span>
-            <span className="text-xs font-semibold" style={{ color: '#34d399' }}>Active account</span>
-          </div>
-
-          <div className="flex flex-col gap-2.5">
+<div className="flex flex-col gap-2.5">
             <a
               href="https://discord.gg/aCNadDMvmH"
               target="_blank"
