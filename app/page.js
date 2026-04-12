@@ -280,21 +280,6 @@ const EMAIL = { accent: '#60a5fa' }
 
 const TOOLS = [
   {
-    name: 'Eigenstate',
-    desc: 'Quant & ML-powered tool built for futures trading — surface edges you can actually act on',
-    url: 'https://eigenstate.app?ref=JHP',
-    tag: 'Quant / ML',
-    accent: '#a78bfa',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4 h-4">
-        <circle cx="12" cy="5" r="1.5"/><circle cx="5" cy="19" r="1.5"/><circle cx="19" cy="19" r="1.5"/>
-        <line x1="12" y1="6.5" x2="5" y2="17.5"/><line x1="12" y1="6.5" x2="19" y2="17.5"/>
-        <line x1="6.5" y1="19" x2="17.5" y2="19"/>
-        <circle cx="12" cy="13" r="1.2" fill="currentColor" stroke="none"/>
-      </svg>
-    ),
-  },
-  {
     name: 'TradingView',
     desc: 'My full chart setup — indicators, scripts, alerts, and execution all in one place',
     url: 'https://www.tradingview.com/?aff_id=164318&aff_sub=jhp',
@@ -459,16 +444,40 @@ export default function Page() {
       <main className="max-w-3xl mx-auto px-6 pb-24">
 
         {/* ── hero ── */}
-        <FadeIn className="mt-10 mb-10">
-          <div className="flex items-center gap-2 mb-4">
+        <FadeIn className="mt-14 mb-10">
+          <div className="flex items-center gap-2 mb-5">
             <span className="relative flex h-1.5 w-1.5 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60" />
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" />
             </span>
             <span className="text-xs text-neutral-600 font-mono">{name}</span>
           </div>
-          {/* proof */}
-          <div className="flex items-center gap-4">
+
+          <h1 className="text-4xl font-black text-white mb-4 leading-[1.1] tracking-tight">
+            Fix your execution.<br />
+            <span style={{ color: '#60a5fa' }}>Get funded.</span>
+          </h1>
+
+          <p className="text-sm text-neutral-400 mb-8 max-w-xs leading-relaxed">
+            No signals. Real trades, journaling, and direct feedback.
+          </p>
+
+          <a
+            href="https://discord.gg/aCNadDMvmH"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-bold text-sm text-white transition-all duration-200"
+            style={{ background: 'linear-gradient(135deg, #4f46e5, #3b82f6)', boxShadow: '0 0 32px rgba(79,70,229,0.4)' }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 52px rgba(79,70,229,0.6)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 32px rgba(79,70,229,0.4)'; e.currentTarget.style.transform = 'none' }}
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 shrink-0">
+              <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.056a19.904 19.904 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+            </svg>
+            Join Free Discord
+          </a>
+
+          <div className="flex items-center gap-4 mt-5 flex-wrap">
             <div className="flex items-center gap-1.5">
               <span className="relative flex h-1.5 w-1.5 shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-60" />
@@ -477,132 +486,154 @@ export default function Page() {
               <span className="text-xs text-neutral-500">Live daily sessions</span>
             </div>
             <span className="text-neutral-800">·</span>
-            <span className="text-xs text-neutral-500">1200+ traders in the community</span>
+            <span className="text-xs text-neutral-500">1,200+ traders</span>
+            <span className="text-neutral-800">·</span>
+            <span className="text-xs text-neutral-500">Free to join</span>
           </div>
         </FadeIn>
 
-        {/* ── mentorship featured ── */}
-        <FadeIn delay={100} className="mb-4">
-          <TiltCard>
-            <a
-              href="/apply"
-              className="shine group relative flex flex-col gap-3 px-6 py-5 rounded-2xl border bg-[#0a0e17] overflow-hidden transition-all duration-200"
-              style={{ borderColor: 'rgba(59,130,246,0.3)' }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'rgba(59,130,246,0.6)'
-                e.currentTarget.style.boxShadow = '0 0 36px rgba(59,130,246,0.12)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'rgba(59,130,246,0.3)'
-                e.currentTarget.style.boxShadow = 'none'
-              }}
-            >
-              <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.6), transparent)' }} />
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0" style={{ background: 'rgba(59,130,246,0.12)', color: '#60a5fa' }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                    </svg>
-                  </span>
-                  <div>
-                    <div className="text-sm font-bold text-white leading-none mb-1">Apply for 1 on 1 Trading Help</div>
-                    <div className="text-[11px] font-semibold" style={{ color: '#60a5fa' }}>Fix Your Execution. Get Funded.</div>
-                  </div>
-                </div>
-                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-lg shrink-0 transition-colors duration-200" style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa' }}>
-                  Apply →
-                </span>
-              </div>
-              <p className="text-xs text-neutral-400 leading-relaxed">
-                1 on 1. fixing execution, building real consistency, and getting you to the point where you're pulling consistent payouts — not for everyone.
-              </p>
-            </a>
-          </TiltCard>
+        {/* ── proof ── */}
+        <FadeIn delay={80} className="mb-10">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-4 rounded-2xl border border-white/[0.06] bg-[#0a0e17]">
+            <div className="flex items-center gap-2">
+              <span className="text-base font-black text-white">1,200+</span>
+              <span className="text-xs text-neutral-500">traders</span>
+            </div>
+            <span className="text-neutral-800">·</span>
+            <div className="flex items-center gap-2">
+              <span className="text-base font-black" style={{ color: '#818cf8' }}>200+</span>
+              <span className="text-xs text-neutral-500">Discord members</span>
+            </div>
+            <span className="text-neutral-800">·</span>
+            <div className="flex items-center gap-1.5">
+              <span className="relative flex h-1.5 w-1.5 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-60" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
+              </span>
+              <span className="text-base font-black text-white">Live</span>
+              <span className="text-xs text-neutral-500">daily sessions</span>
+            </div>
+          </div>
         </FadeIn>
 
-        {/* ── community membership featured ── */}
-        <FadeIn delay={150} className="mb-4">
-          <TiltCard>
-            <a
-              href="https://whop.com/jhp-trades/jhp-trading-community"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="shine group relative flex flex-col gap-3 px-6 py-5 rounded-2xl border bg-[#0a0e17] overflow-hidden transition-all duration-200"
-              style={{ borderColor: 'rgba(52,211,153,0.25)' }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'rgba(52,211,153,0.55)'
-                e.currentTarget.style.boxShadow = '0 0 36px rgba(52,211,153,0.1)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'rgba(52,211,153,0.25)'
-                e.currentTarget.style.boxShadow = 'none'
-              }}
-            >
-              <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(52,211,153,0.55), transparent)' }} />
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0" style={{ background: 'rgba(52,211,153,0.12)', color: '#34d399' }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-                    </svg>
-                  </span>
-                  <div>
-                    <div className="text-sm font-bold text-white leading-none mb-1">JHP Trading Community</div>
-                    <div className="text-[11px] font-semibold" style={{ color: '#34d399' }}>Stop chasing signals. Build a real edge.</div>
-                  </div>
-                </div>
-                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-lg shrink-0 transition-colors duration-200" style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399' }}>
-                  Join →
-                </span>
-              </div>
-              <p className="text-xs text-neutral-400 leading-relaxed">
-                Private community with trade breakdowns, live weekly sessions, journaling support, and direct feedback — for traders building a system that lasts.
-              </p>
-            </a>
-          </TiltCard>
-        </FadeIn>
+        {/* ── path ── */}
+        <FadeIn delay={160} className="mb-12">
+          <div className="flex items-center gap-3 mb-5">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Start here</span>
+            <span className="section-line flex-1" />
+          </div>
 
-        {/* ── discord featured ── */}
-        <FadeIn delay={200} className="mb-10">
-          <TiltCard>
-            <a
-              href="https://discord.gg/aCNadDMvmH"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="shine group relative flex flex-col gap-3 px-6 py-5 rounded-2xl border bg-[#0a0e17] overflow-hidden transition-all duration-200"
-              style={{ borderColor: 'rgba(129,140,248,0.2)' }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'rgba(129,140,248,0.45)'
-                e.currentTarget.style.boxShadow = '0 0 32px rgba(129,140,248,0.1)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'rgba(129,140,248,0.2)'
-                e.currentTarget.style.boxShadow = 'none'
-              }}
-            >
-              <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(129,140,248,0.5), transparent)' }} />
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0" style={{ background: 'rgba(129,140,248,0.12)', color: '#a5b4fc' }}>
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                      <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.056a19.904 19.904 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
-                    </svg>
-                  </span>
-                  <div>
-                    <div className="text-sm font-bold text-white leading-none mb-1">Free Discord Community</div>
-                    <div className="text-[11px] font-semibold" style={{ color: '#a5b4fc' }}>200+ members · launched this year</div>
+          <div className="space-y-2">
+
+            {/* step 01 — Discord (dominant, highlighted) */}
+            <TiltCard>
+              <a
+                href="https://discord.gg/aCNadDMvmH"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shine group relative flex flex-col gap-3 px-6 py-6 rounded-2xl border overflow-hidden transition-all duration-200"
+                style={{ background: 'linear-gradient(135deg, #0d1528 0%, #0a0e17 100%)', borderColor: 'rgba(99,102,241,0.45)', boxShadow: '0 0 24px rgba(99,102,241,0.08)' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,0.75)'; e.currentTarget.style.boxShadow = '0 0 44px rgba(99,102,241,0.16)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,0.45)'; e.currentTarget.style.boxShadow = '0 0 24px rgba(99,102,241,0.08)' }}
+              >
+                <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.7), transparent)' }} />
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-md shrink-0" style={{ background: 'rgba(99,102,241,0.18)', color: '#818cf8' }}>01</span>
+                    <div>
+                      <div className="text-sm font-black text-white leading-none mb-1">Join the Discord</div>
+                      <div className="text-[11px] font-semibold" style={{ color: '#818cf8' }}>Free · No commitment</div>
+                    </div>
                   </div>
+                  <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0" style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc' }}>
+                    Join Free →
+                  </span>
                 </div>
-                <svg className="w-4 h-4 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
-                </svg>
-              </div>
-              <p className="text-xs text-neutral-400 leading-relaxed">
-                Live trading, quant research, and system building — a community focused on edge, not just entries.
-              </p>
-            </a>
-          </TiltCard>
+                <p className="text-xs text-neutral-400 leading-relaxed">
+                  Watch live sessions. See real trades. Get a feel for how we approach the market before committing to anything.
+                </p>
+              </a>
+            </TiltCard>
+
+            <div className="flex justify-center py-0.5">
+              <svg className="w-4 h-4 text-neutral-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+
+            {/* step 02 — Execution Lab */}
+            <TiltCard>
+              <a
+                href="https://whop.com/jhp-trades/jhp-trading-community"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shine group relative flex flex-col gap-3 px-6 py-6 rounded-2xl border bg-[#0a0e17] overflow-hidden transition-all duration-200"
+                style={{ borderColor: 'rgba(52,211,153,0.2)' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(52,211,153,0.5)'; e.currentTarget.style.boxShadow = '0 0 36px rgba(52,211,153,0.08)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(52,211,153,0.2)'; e.currentTarget.style.boxShadow = 'none' }}
+              >
+                <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(52,211,153,0.4), transparent)' }} />
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-md shrink-0" style={{ background: 'rgba(52,211,153,0.12)', color: '#34d399' }}>02</span>
+                    <div>
+                      <div className="text-sm font-black text-white leading-none mb-1">Execution Lab</div>
+                      <div className="text-[11px] font-semibold" style={{ color: '#34d399' }}>$99 / month</div>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0" style={{ background: 'rgba(52,211,153,0.12)', color: '#34d399' }}>
+                    Join →
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-400 leading-relaxed">
+                  You're not losing because of strategy. You're losing because of execution. This is where we fix that.
+                </p>
+                <div className="grid grid-cols-2 gap-1.5 mt-0.5">
+                  {['Journaling feedback', 'Weekly breakdowns', 'System building', 'Direct feedback'].map(f => (
+                    <div key={f} className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full shrink-0" style={{ background: '#34d399' }} />
+                      <span className="text-[11px] text-neutral-500">{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </a>
+            </TiltCard>
+
+            <div className="flex justify-center py-0.5">
+              <svg className="w-4 h-4 text-neutral-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+
+            {/* step 03 — 1 on 1 */}
+            <TiltCard>
+              <a
+                href="/apply"
+                className="shine group relative flex flex-col gap-3 px-6 py-6 rounded-2xl border bg-[#0a0e17] overflow-hidden transition-all duration-200"
+                style={{ borderColor: 'rgba(59,130,246,0.15)' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(59,130,246,0.4)'; e.currentTarget.style.boxShadow = '0 0 32px rgba(59,130,246,0.07)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(59,130,246,0.15)'; e.currentTarget.style.boxShadow = 'none' }}
+              >
+                <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.3), transparent)' }} />
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-md shrink-0" style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa' }}>03</span>
+                    <div>
+                      <div className="text-sm font-black text-white leading-none mb-1">1 on 1</div>
+                      <div className="text-[11px] font-semibold" style={{ color: '#60a5fa' }}>Limited · Application only</div>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0" style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa' }}>
+                    Apply →
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-400 leading-relaxed">
+                  Only for traders actively trying to get funded. If you're serious about fixing execution and pulling consistent payouts, apply.
+                </p>
+              </a>
+            </TiltCard>
+
+          </div>
         </FadeIn>
 
         {/* ── tools ── */}
