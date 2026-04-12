@@ -706,14 +706,15 @@ export default function Page() {
                   </span>
                 </div>
                 <p className="text-xs text-neutral-300 leading-relaxed">
-                  Most traders don't need a new strategy. They need to fix execution. This is where you build consistency and actually pass funded accounts.
+                  Stop chasing signals. Start building a sustainable trading edge. Built for traders who understand that consistency beats tips and discipline beats luck.
                 </p>
                 <div className="space-y-1.5">
                   {[
-                    ['Feedback on YOUR trades', 'not generic advice'],
-                    ['Execution-first framework', 'the system behind every trade I take'],
-                    ['Actual accountability', 'someone checking your journal'],
-                    ['Weekly live breakdowns', 'real mistakes, real fixes'],
+                    ['Private Discord Community', 'direct access to traders serious about improvement'],
+                    ['Trade Breakdowns & Market Context', 'understand the why behind market moves'],
+                    ['Live Weekly Sessions', 'real-time guidance and market analysis when it matters'],
+                    ['Journaling & Consistency Support', 'build the habits that compound into profits'],
+                    ['Active Direct Feedback', 'get evaluated by someone who trades actively'],
                   ].map(([main, sub]) => (
                     <div key={main} className="flex items-start gap-2">
                       <span className="w-1 h-1 rounded-full shrink-0 mt-1.5" style={{ background: '#34d399' }} />
@@ -724,7 +725,7 @@ export default function Page() {
                     </div>
                   ))}
                 </div>
-                <p className="text-[11px] font-semibold pt-1" style={{ color: '#34d39966' }}>This is where most people stay.</p>
+                <p className="text-[11px] font-semibold pt-1" style={{ color: '#34d39966' }}>Structure. Education. Community. Results.</p>
               </a>
             </TiltCard>
 
@@ -759,24 +760,35 @@ export default function Page() {
                 </div>
 
                 <p className="text-[11px] font-semibold text-neutral-500 -mt-1">
-                  Not a course. Not signals. Direct work on your trades.
+                  Stop leaving money on the table. Personalized coaching that fixes your specific leaks.
                 </p>
 
                 <p className="text-xs text-neutral-400 leading-relaxed">
-                  We break down your trades, fix execution issues, and build a system around you — your instrument, your schedule, your specific problems.
+                  You'll work one-on-one with me — reviewing your actual trades, identifying exactly where you're losing money, and building a repeatable process that works in any market condition.
                 </p>
 
                 <div className="space-y-1.5">
-                  {['Actively trading futures', 'Want to get funded', 'Tired of guessing'].map(x => (
-                    <div key={x} className="flex items-center gap-2 text-[11px] text-neutral-500">
-                      <span style={{ color: '#60a5fa' }}>✓</span> {x}
+                  {[
+                    ['Personal Trade Analysis', 'deep dive into your entries, exits, and decision-making'],
+                    ['Real-Time Feedback', 'direct guidance on execution and emotional discipline'],
+                    ['Risk Mastery', 'position sizing and capital management that protects your account'],
+                    ['Consistent Process', 'a trading system you can execute day after day with confidence'],
+                    ['Ongoing Support', 'direct communication whenever you need clarity or coaching'],
+                    ['Scheduled Calls', 'jump on calls when critical moments arise or you need live guidance'],
+                  ].map(([main, sub]) => (
+                    <div key={main} className="flex items-start gap-2">
+                      <span style={{ color: '#60a5fa', fontSize: 10, marginTop: 2, flexShrink: 0 }}>✓</span>
+                      <span className="text-[11px] leading-tight">
+                        <span className="text-neutral-300 font-semibold">{main}</span>
+                        <span className="text-neutral-600"> — {sub}</span>
+                      </span>
                     </div>
                   ))}
                 </div>
 
                 <p className="text-[11px] text-neutral-600 leading-relaxed border-t pt-3" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-                  Limited spots — I keep this small so I can actually go deep with each person.
-                  <span className="block mt-1 text-neutral-700">Most people should start in the <span className="text-neutral-500 font-medium">$99 membership</span> first.</span>
+                  Journal your trades. Apply feedback. Show effort. If you're looking for signals or shortcuts, this isn't for you.
+                  <span className="block mt-1 text-neutral-700">Limited spots — I keep this small so I can go deep with each person.</span>
                 </p>
               </a>
             </TiltCard>
