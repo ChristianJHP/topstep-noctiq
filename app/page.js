@@ -485,7 +485,7 @@ export default function Page() {
               <span className="text-xs text-neutral-500">Live daily sessions</span>
             </div>
             <span className="text-neutral-800">·</span>
-            <span className="text-xs text-neutral-500">1,300+ traders</span>
+            <span className="text-xs text-neutral-500">1,300+ traders following</span>
             <span className="text-neutral-800">·</span>
             <span className="text-xs text-neutral-500">Free to join</span>
           </div>
@@ -496,12 +496,12 @@ export default function Page() {
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-4 rounded-2xl border border-white/[0.06] bg-[#0a0e17]">
             <div className="flex items-center gap-2">
               <span className="text-base font-black text-white">1,300+</span>
-              <span className="text-xs text-neutral-500">traders</span>
+              <span className="text-xs text-neutral-500">traders following</span>
             </div>
             <span className="text-neutral-800">·</span>
             <div className="flex items-center gap-2">
               <span className="text-base font-black" style={{ color: '#818cf8' }}>200+</span>
-              <span className="text-xs text-neutral-500">Discord members</span>
+              <span className="text-xs text-neutral-500">active members</span>
             </div>
             <span className="text-neutral-800">·</span>
             <div className="flex items-center gap-1.5">
