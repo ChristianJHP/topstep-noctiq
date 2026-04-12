@@ -594,7 +594,8 @@ export default function Page() {
               </h1>
 
               <p className="text-sm text-neutral-400 mb-7 leading-relaxed">
-                Trading multiple funded futures accounts live. The results on the right are one of many copy traded accounts — base hits, consistently, across all of them.
+                Most traders don't fail from strategy. They fail from execution.<br />
+                That's what we fix. Live, every day.
               </p>
             </div>
 
