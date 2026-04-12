@@ -570,7 +570,7 @@ export default function Page() {
 
         {/* ── proof ── */}
         <FadeIn delay={80} className="mb-10">
-          <div className="flex flex-wrap items-center gap-x-8 gap-y-2 px-5 py-4 rounded-2xl border border-white/[0.06] bg-[#0a0e17]">
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-2 px-5 py-4 rounded-2xl border border-white/[0.06] bg-[#0c0c10]">
             <div className="flex items-center gap-2">
               <span className="text-base font-black text-white">1,300+</span>
               <span className="text-xs text-neutral-500">traders following</span>
@@ -608,7 +608,7 @@ export default function Page() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="shine group relative flex flex-col gap-3 px-6 py-6 rounded-2xl border overflow-hidden transition-all duration-200"
-                style={{ background: 'linear-gradient(135deg, #0d1528 0%, #0a0e17 100%)', borderColor: 'rgba(99,102,241,0.45)', boxShadow: '0 0 24px rgba(99,102,241,0.08)' }}
+                style={{ background: 'linear-gradient(135deg, #0d1528 0%, #0c0c10 100%)', borderColor: 'rgba(99,102,241,0.45)', boxShadow: '0 0 24px rgba(99,102,241,0.08)' }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,0.75)'; e.currentTarget.style.boxShadow = '0 0 44px rgba(99,102,241,0.16)' }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,0.45)'; e.currentTarget.style.boxShadow = '0 0 24px rgba(99,102,241,0.08)' }}
               >
@@ -652,7 +652,7 @@ export default function Page() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="shine group relative flex flex-col gap-3 px-6 py-6 rounded-2xl border overflow-hidden transition-all duration-200"
-                style={{ background: 'linear-gradient(135deg, #0a120e 0%, #0a0e17 100%)', borderColor: 'rgba(52,211,153,0.35)', boxShadow: '0 0 28px rgba(52,211,153,0.06)' }}
+                style={{ background: 'linear-gradient(135deg, #0a120e 0%, #0c0c10 100%)', borderColor: 'rgba(52,211,153,0.35)', boxShadow: '0 0 28px rgba(52,211,153,0.06)' }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(52,211,153,0.65)'; e.currentTarget.style.boxShadow = '0 0 44px rgba(52,211,153,0.12)' }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(52,211,153,0.35)'; e.currentTarget.style.boxShadow = '0 0 28px rgba(52,211,153,0.06)' }}
               >
@@ -702,7 +702,7 @@ export default function Page() {
             <TiltCard>
               <a
                 href="/apply"
-                className="shine group relative flex flex-col gap-4 px-6 py-6 rounded-2xl border bg-[#0a0e17] overflow-hidden transition-all duration-200"
+                className="shine group relative flex flex-col gap-4 px-6 py-6 rounded-2xl border bg-[#0c0c10] overflow-hidden transition-all duration-200"
                 style={{ borderColor: 'rgba(59,130,246,0.2)' }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(59,130,246,0.45)'; e.currentTarget.style.boxShadow = '0 0 32px rgba(59,130,246,0.08)' }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(59,130,246,0.2)'; e.currentTarget.style.boxShadow = 'none' }}
@@ -751,7 +751,7 @@ export default function Page() {
         {/* ── objection killer ── */}
         <FadeIn delay={200} className="mb-12">
           <div className="grid grid-cols-2 gap-3">
-            <div className="px-5 py-5 rounded-2xl border border-white/[0.06] bg-[#0a0e17]">
+            <div className="px-5 py-5 rounded-2xl border border-white/[0.06] bg-[#0c0c10]">
               <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: '#f87171' }}>This is NOT</div>
               <div className="space-y-2">
                 {['Signals or alerts', 'Copy trading', 'Gambling tips', 'Hype or predictions'].map(x => (
@@ -761,7 +761,7 @@ export default function Page() {
                 ))}
               </div>
             </div>
-            <div className="px-5 py-5 rounded-2xl border border-white/[0.06] bg-[#0a0e17]" style={{ borderColor: 'rgba(52,211,153,0.15)' }}>
+            <div className="px-5 py-5 rounded-2xl border border-white/[0.06] bg-[#0c0c10]" style={{ borderColor: 'rgba(52,211,153,0.15)' }}>
               <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: '#34d399' }}>This IS</div>
               <div className="space-y-2">
                 {['Execution discipline', 'Trade journaling', 'Real consistency', 'Funded account results'].map(x => (
@@ -791,7 +791,7 @@ export default function Page() {
                     href={t.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="shine group relative flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.08] bg-[#0a0e17] overflow-hidden transition-all duration-200"
+                    className="shine group relative flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.08] bg-[#0c0c10] overflow-hidden transition-all duration-200"
                     onMouseEnter={e => {
                       e.currentTarget.style.borderColor = t.accent + '55'
                       e.currentTarget.style.boxShadow = `0 0 24px ${t.accent}18`
@@ -840,7 +840,7 @@ export default function Page() {
                 target="_blank"
                 rel="noopener noreferrer"
                 title={s.name}
-                className="flex items-center justify-center w-9 h-9 rounded-xl border border-white/[0.08] bg-[#0a0e17] transition-all duration-200 hover:border-white/20"
+                className="flex items-center justify-center w-9 h-9 rounded-xl border border-white/[0.08] bg-[#0c0c10] transition-all duration-200 hover:border-white/20"
                 style={{ color: s.accent }}
               >
                 {s.icon}
