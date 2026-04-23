@@ -359,9 +359,7 @@ function PnLCalendar({ daily = [] }) {
               <div className="h-full flex flex-col justify-between">
                 <span className="text-[10px] text-neutral-500">{day.day}</span>
                 {day.hasData && (
-                  <span className={`text-[10px] font-medium ${getPnLTextColor(day.pnl)}`}>
-                    {day.pnl >= 0 ? '+' : ''}{day.pnl.toFixed(0)}
-                  </span>
+                  <span className={`text-[10px] font-medium ${getPnLTextColor(day.pnl)}`} />
                 )}
               </div>
             )}
@@ -390,9 +388,9 @@ function TradingStats({ stats, periodPnl, target }) {
     { label: 'Win Rate', value: `${stats.winRate?.toFixed(1)}%`, color: stats.winRate >= 50 ? 'text-emerald-400' : 'text-amber-400' },
     { label: 'Profit Factor', value: stats.profitFactor ? stats.profitFactor.toFixed(2) : 'N/A', color: stats.profitFactor > 1.5 ? 'text-emerald-400' : 'text-neutral-400' },
     { label: 'Sharpe Ratio', value: stats.sharpeRatio?.toFixed(2) || 'N/A', color: stats.sharpeRatio > 1 ? 'text-emerald-400' : 'text-neutral-400' },
-    { label: 'Avg Win', value: `$${stats.avgWin?.toFixed(0) || 0}`, color: 'text-emerald-400' },
-    { label: 'Avg Loss', value: `$${stats.avgLoss?.toFixed(0) || 0}`, color: 'text-red-400' },
-    { label: 'Avg Daily P&L', value: `$${stats.avgDailyPnl?.toFixed(0) || 0}`, color: stats.avgDailyPnl > 0 ? 'text-emerald-400' : 'text-red-400' },
+    { label: 'Avg Win', value: '—', color: 'text-emerald-400' },
+    { label: 'Avg Loss', value: '—', color: 'text-red-400' },
+    { label: 'Avg Daily P&L', value: '—', color: stats.avgDailyPnl > 0 ? 'text-emerald-400' : 'text-red-400' },
   ]
 
   return (
@@ -406,16 +404,12 @@ function TradingStats({ stats, periodPnl, target }) {
           <p className="text-xl font-semibold text-blue-400">
             {daysToTarget !== null && daysToTarget > 0 ? `${daysToTarget} days` : remaining <= 0 ? 'Complete!' : '--'}
           </p>
-          <p className="text-[10px] text-neutral-600">
-            {daysToTarget !== null && daysToTarget > 0 && stats.avgDailyPnl > 0
-              ? `At $${stats.avgDailyPnl.toFixed(0)}/day avg`
-              : ''}
-          </p>
+          <p className="text-[10px] text-neutral-600" />
         </div>
         <div>
           <p className="text-[10px] text-neutral-600 mb-1">Annualized Equiv.</p>
           <p className={`text-xl font-semibold ${annualizedReturn > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-            ${Math.abs(annualizedReturn).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            —
           </p>
           <p className="text-[10px] text-neutral-600">Projected yearly</p>
         </div>
@@ -804,19 +798,19 @@ export default function Dashboard() {
                   </div>
                 </div>
                 {accountName && <p className="text-[10px] text-neutral-600 font-mono mb-2">{accountName}</p>}
-                {balance > 0 && <p className="text-[10px] text-neutral-500 mb-3">Balance: ${balance.toLocaleString()}</p>}
+                {balance > 0 && <p className="text-[10px] text-neutral-500 mb-3">Balance: —</p>}
                 <div className="grid grid-cols-2 gap-4 mb-3">
                   <div>
                     <p className="text-[10px] text-neutral-600">Today</p>
                     <p className={`text-2xl font-semibold ${hasPnl ? (isPositiveToday ? 'text-emerald-400' : 'text-red-400') : 'text-neutral-500'}`}>
-                      {hasPnl ? `${isPositiveToday ? '+' : '-'}$${Math.abs(todayPnl).toFixed(0)}` : '--'}
+                      {hasPnl ? (isPositiveToday ? '+' : '−') : '--'}
                     </p>
                     <p className="text-[10px] text-neutral-700">{trades} trades</p>
                   </div>
                   <div>
                     <p className="text-[10px] text-neutral-600">30 Day Total</p>
                     <p className={`text-2xl font-semibold ${hasPnl ? (isPositivePeriod ? 'text-emerald-400' : 'text-red-400') : 'text-neutral-500'}`}>
-                      {hasPnl ? `${isPositivePeriod ? '+' : '-'}$${Math.abs(periodPnl).toFixed(0)}` : '--'}
+                      {hasPnl ? (isPositivePeriod ? '+' : '−') : '--'}
                     </p>
                     <p className="text-[10px] text-neutral-700">{periodTrades} trades</p>
                   </div>
@@ -825,7 +819,7 @@ export default function Dashboard() {
                 {hasPnl && (
                   <div className="mt-3 pt-3 border-t border-neutral-800">
                     <div className="flex justify-between text-xs mb-2">
-                      <span className="text-neutral-500">Target: ${target.toLocaleString()}</span>
+                      <span className="text-neutral-500">Target</span>
                       <span className={periodPnl >= target ? 'text-emerald-400 font-medium' : 'text-neutral-400'}>{progress.toFixed(0)}%</span>
                     </div>
                     <div className="h-2 bg-neutral-800 rounded-full overflow-hidden">
@@ -834,9 +828,7 @@ export default function Dashboard() {
                         style={{ width: `${Math.abs(progress)}%` }}
                       />
                     </div>
-                    <p className="text-[10px] text-neutral-600 mt-2">
-                      {periodPnl >= 0 ? `$${(target - periodPnl).toFixed(0)} to go` : `$${target.toFixed(0)} to go`}
-                    </p>
+                    <p className="text-[10px] text-neutral-600 mt-2" />
                   </div>
                 )}
               </div>
