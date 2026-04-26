@@ -347,6 +347,87 @@ For issues or questions:
 - Review `/api/trading/status` for system health
 - Verify TradingView webhook is sending correct format
 
+## Truth Social Alerts Setup
+
+Polls Trump's Truth Social account every minute via cron-job.org and forwards new posts to a Discord channel. No paid hosting required — runs entirely on Vercel serverless functions with Supabase for deduplication.
+
+### 1. Supabase SQL
+
+Run this in the Supabase SQL editor (already included in `supabase/schema.sql`):
+
+```sql
+CREATE TABLE IF NOT EXISTS truthsocial_alerts (
+  id TEXT PRIMARY KEY,
+  username TEXT NOT NULL,
+  content TEXT,
+  url TEXT,
+  raw JSONB,
+  created_at TIMESTAMPTZ,
+  sent_to_discord_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_truthsocial_alerts_created_at
+ON truthsocial_alerts(created_at DESC);
+```
+
+### 2. Environment Variables (add in Vercel dashboard)
+
+| Variable | Description |
+|---|---|
+| `SUPABASE_URL` | Already set — your Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Already set — Supabase service role key |
+| `DISCORD_TRUTH_WEBHOOK_URL` | Discord webhook URL for the alert channel |
+| `CRON_SECRET` | Random secret token to authenticate cron requests |
+| `TRUTH_SOCIAL_USERNAME` | Truth Social handle to monitor (default: `realDonaldTrump`) |
+
+Generate a `CRON_SECRET`:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+### 3. Create a Discord Webhook
+
+1. Open your Discord server and go to the channel you want alerts in.
+2. Click **Edit Channel** → **Integrations** → **Webhooks** → **New Webhook**.
+3. Give it a name (e.g. "Trump Alerts") and copy the webhook URL.
+4. Paste the URL as `DISCORD_TRUTH_WEBHOOK_URL` in Vercel.
+
+### 4. Set Up cron-job.org
+
+1. Sign up free at [cron-job.org](https://cron-job.org).
+2. Create a new cron job with these settings:
+   - **URL:** `https://jhptrades.com/api/truthsocial/check?secret=YOUR_CRON_SECRET`
+   - **Schedule:** Every 1 minute (`* * * * *`)
+   - **Request method:** GET
+3. Save and enable the job.
+
+### 5. Test Manually
+
+Browser or curl:
+```bash
+curl "https://jhptrades.com/api/truthsocial/check?secret=YOUR_CRON_SECRET"
+```
+
+Expected response when no new posts:
+```json
+{ "ok": true, "checked": 10, "sent": 0, "duplicates": 10, "errors": [] }
+```
+
+Expected response when a new post is forwarded:
+```json
+{ "ok": true, "checked": 10, "sent": 1, "duplicates": 9, "errors": [] }
+```
+
+If Truth Social blocks the request:
+```json
+{ "ok": false, "error": "Account lookup failed: HTTP 403 — ...", ... }
+```
+
+The endpoint URL to paste into cron-job.org:
+```
+https://jhptrades.com/api/truthsocial/check?secret=YOUR_CRON_SECRET
+```
+
 ## License
 
 Private use only.
