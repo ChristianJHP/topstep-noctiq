@@ -52,3 +52,17 @@ ON daily_briefings(date DESC);
 
 -- Add meta column for risk sentiment, macro context, calendar
 ALTER TABLE daily_briefings ADD COLUMN IF NOT EXISTS meta JSONB;
+
+-- Truth Social alert deduplication log
+CREATE TABLE IF NOT EXISTS truthsocial_alerts (
+  id TEXT PRIMARY KEY,
+  username TEXT NOT NULL,
+  content TEXT,
+  url TEXT,
+  raw JSONB,
+  created_at TIMESTAMPTZ,
+  sent_to_discord_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_truthsocial_alerts_created_at
+ON truthsocial_alerts(created_at DESC);
