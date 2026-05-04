@@ -45,7 +45,7 @@ export default function MentorshipPage() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60" />
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" />
             </span>
-            <span className="text-xs text-neutral-500 font-mono">1 on 1 · limited spots · $300/month</span>
+            <span className="text-xs text-neutral-500 font-mono">1 on 1 · limited spots</span>
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Apply to work with me</h1>
           <p className="text-sm text-neutral-400 leading-relaxed max-w-md">

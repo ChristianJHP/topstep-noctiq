@@ -699,7 +699,6 @@ export default function Page() {
                     <span className="text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-md shrink-0" style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399' }}>02</span>
                     <div>
                       <div className="text-sm font-black text-white leading-none mb-1">Execution Lab</div>
-                      <div className="text-[11px] font-semibold" style={{ color: '#34d399' }}>$99 / month · Cancel anytime</div>
                     </div>
                   </div>
                   <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0" style={{ background: 'rgba(52,211,153,0.18)', color: '#34d399' }}>
@@ -752,7 +751,6 @@ export default function Page() {
                     <span className="text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-md shrink-0" style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa' }}>03</span>
                     <div>
                       <div className="text-sm font-black text-white leading-none mb-1">1 on 1 Mentorship</div>
-                      <div className="text-[11px] font-semibold" style={{ color: '#60a5fa' }}>Personalized · $300/month</div>
                     </div>
                   </div>
                   <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0" style={{ background: 'rgba(59,130,246,0.12)', color: '#60a5fa' }}>
