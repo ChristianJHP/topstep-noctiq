@@ -1,34 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 
-/* ── scramble hook ── */
-const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%'
-function useScramble(text, { speed = 28, delay = 120 } = {}) {
-  const [out, setOut] = useState(() =>
-    text.split('').map(() => GLYPHS[Math.floor(Math.random() * GLYPHS.length)]).join('')
-  )
-  useEffect(() => {
-    let iter = 0
-    let iv
-    const t = setTimeout(() => {
-      iv = setInterval(() => {
-        setOut(
-          text.split('').map((ch, i) =>
-            i < iter ? ch : GLYPHS[Math.floor(Math.random() * GLYPHS.length)]
-          ).join('')
-        )
-        iter += 0.45
-        if (iter > text.length) clearInterval(iv)
-      }, speed)
-    }, delay)
-    return () => { clearTimeout(t); clearInterval(iv) }
-  }, [text, speed, delay])
-  return out
-}
-
-/* ── spring fade-in ── */
 function FadeIn({ children, delay = 0, className = '' }) {
   const ref = useRef(null)
   const [on, setOn] = useState(false)
@@ -47,8 +21,8 @@ function FadeIn({ children, delay = 0, className = '' }) {
       className={className}
       style={{
         opacity: on ? 1 : 0,
-        transform: on ? 'translateY(0px)' : 'translateY(22px)',
-        transition: `opacity 0.65s cubic-bezier(.16,1,.3,1) ${delay}ms, transform 0.65s cubic-bezier(.16,1,.3,1) ${delay}ms`,
+        transform: on ? 'translateY(0)' : 'translateY(16px)',
+        transition: `opacity 0.6s cubic-bezier(.16,1,.3,1) ${delay}ms, transform 0.6s cubic-bezier(.16,1,.3,1) ${delay}ms`,
       }}
     >
       {children}
@@ -56,226 +30,44 @@ function FadeIn({ children, delay = 0, className = '' }) {
   )
 }
 
-/* ── 3-D tilt card ── */
-function TiltCard({ children, className = '' }) {
-  const ref = useRef(null)
-  const raf = useRef(null)
-
-  const onMove = useCallback((e) => {
-    if (raf.current) cancelAnimationFrame(raf.current)
-    raf.current = requestAnimationFrame(() => {
-      const el = ref.current
-      if (!el) return
-      const r = el.getBoundingClientRect()
-      const x = (e.clientX - r.left) / r.width - 0.5
-      const y = (e.clientY - r.top) / r.height - 0.5
-      el.style.transform = `perspective(700px) rotateX(${-y * 7}deg) rotateY(${x * 7}deg) scale(1.025)`
-    })
-  }, [])
-
-  const onLeave = useCallback(() => {
-    if (raf.current) cancelAnimationFrame(raf.current)
-    const el = ref.current
-    if (el) el.style.transform = 'perspective(700px) rotateX(0deg) rotateY(0deg) scale(1)'
-  }, [])
-
-  return (
-    <div
-      ref={ref}
-      className={className}
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
-      style={{ transition: 'transform 0.35s cubic-bezier(.16,1,.3,1)', willChange: 'transform' }}
-    >
-      {children}
-    </div>
-  )
-}
-
-/* ── drifting blob ── */
-function Blob({ style }) {
-  return (
-    <div
-      className="fixed -z-10 rounded-full blur-[120px] pointer-events-none"
-      style={style}
-    />
-  )
-}
-
-/* ── candlestick background ── */
-function CandlestickBackground() {
-  const canvasRef = useRef(null)
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-
-    let animId
-    let frameOffset = 0
-
-    const CW = 14
-    const GAP = 10
-    const STRIDE = CW + GAP
-    const SPEED = 0.3
-
-    const nextCandle = (prev) => {
-      const open = prev
-      const change = (Math.random() - 0.48) * 0.09
-      const close = Math.max(0.08, Math.min(0.92, open + change))
-      const wickUp = Math.random() * 0.04
-      const wickDown = Math.random() * 0.04
-      return {
-        open,
-        close,
-        high: Math.min(Math.max(open, close) + wickUp, 0.96),
-        low: Math.max(Math.min(open, close) - wickDown, 0.04),
-      }
-    }
-
-    const INIT_COUNT = 100
-    const candles = []
-    let price = 0.48
-    for (let i = 0; i < INIT_COUNT; i++) {
-      const c = nextCandle(price)
-      candles.push(c)
-      price = c.close
-    }
-
-    const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-    resize()
-    window.addEventListener('resize', resize)
-
-    const draw = () => {
-      const W = canvas.width
-      const H = canvas.height
-      ctx.clearRect(0, 0, W, H)
-
-      frameOffset += SPEED
-      const fullShifts = Math.floor(frameOffset / STRIDE)
-      if (fullShifts > 0) {
-        frameOffset -= fullShifts * STRIDE
-        for (let i = 0; i < fullShifts; i++) {
-          const last = candles[candles.length - 1]
-          candles.push(nextCandle(last.close))
-          candles.shift()
-        }
-      }
-
-      const chartTop = H * 0.08
-      const chartH = H * 0.84
-      const toY = (v) => chartTop + (1 - v) * chartH
-
-      for (let i = 0; i < candles.length; i++) {
-        const c = candles[i]
-        const stepsFromRight = candles.length - 1 - i
-        const x = W - GAP - CW - stepsFromRight * STRIDE - frameOffset
-        if (x + CW < -STRIDE || x > W + STRIDE) continue
-
-        const isBullish = c.close >= c.open
-        const openY = toY(c.open)
-        const closeY = toY(c.close)
-        const highY = toY(c.high)
-        const lowY = toY(c.low)
-        const bodyTop = Math.min(openY, closeY)
-        const bodyH = Math.max(Math.abs(closeY - openY), 2)
-
-        // wick
-        ctx.strokeStyle = isBullish
-          ? 'rgba(96,165,250,0.28)'
-          : 'rgba(203,213,225,0.18)'
-        ctx.lineWidth = 1
-        ctx.beginPath()
-        ctx.moveTo(x + CW / 2, highY)
-        ctx.lineTo(x + CW / 2, lowY)
-        ctx.stroke()
-
-        // body fill
-        ctx.fillStyle = isBullish
-          ? 'rgba(59,130,246,0.22)'
-          : 'rgba(148,163,184,0.14)'
-        ctx.fillRect(x, bodyTop, CW, bodyH)
-
-        // body border
-        ctx.strokeStyle = isBullish
-          ? 'rgba(96,165,250,0.45)'
-          : 'rgba(203,213,225,0.28)'
-        ctx.lineWidth = 0.8
-        ctx.strokeRect(x, bodyTop, CW, bodyH)
-      }
-
-      animId = requestAnimationFrame(draw)
-    }
-
-    draw()
-
-    return () => {
-      cancelAnimationFrame(animId)
-      window.removeEventListener('resize', resize)
-    }
-  }, [])
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 0, opacity: 0.35 }}
-    />
-  )
-}
-
-/* ─────────────── data ─────────────── */
 const SOCIALS = [
   {
     name: 'TikTok',
-    handle: '@jhp.trades',
     url: 'https://www.tiktok.com/@jhp.trades',
-    accent: '#e2e8f0',
     icon: (
-      <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+      <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
         <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.72a8.19 8.19 0 004.76 1.52V6.79a4.83 4.83 0 01-1-.1z"/>
       </svg>
     ),
   },
   {
     name: 'YouTube',
-    handle: '@JHPTrades',
     url: 'https://www.youtube.com/@JHPTrades',
-    accent: '#f87171',
     icon: (
-      <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+      <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
         <path d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 00.5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 002.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 002.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81zM9.75 15.52V8.48L15.5 12l-5.75 3.52z"/>
       </svg>
     ),
   },
   {
     name: 'Discord',
-    handle: 'Join server',
     url: 'https://discord.gg/aCNadDMvmH',
-    accent: '#818cf8',
     icon: (
-      <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+      <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
         <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.056a19.904 19.904 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
       </svg>
     ),
   },
   {
     name: 'Instagram',
-    handle: '@christiannpark',
     url: 'https://www.instagram.com/christiannpark',
-    accent: '#e879f9',
     icon: (
-      <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+      <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
         <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
       </svg>
     ),
   },
 ]
-
-const EMAIL = { accent: '#60a5fa' }
 
 const TOOLS = [
   {
@@ -283,11 +75,12 @@ const TOOLS = [
     desc: 'My full chart setup — indicators, scripts, alerts, and execution all in one place',
     url: 'https://www.tradingview.com/?aff_id=164318&aff_sub=jhp',
     tag: 'Charting',
-    accent: '#34d399',
+    accent: '#10b981',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4 h-4">
         <polyline points="2,18 8,11 13,15 22,5"/>
-        <line x1="8" y1="11" x2="8" y2="20"/><line x1="13" y1="15" x2="13" y2="20"/>
+        <line x1="8" y1="11" x2="8" y2="20"/>
+        <line x1="13" y1="15" x2="13" y2="20"/>
         <line x1="2" y1="20" x2="22" y2="20"/>
       </svg>
     ),
@@ -297,11 +90,13 @@ const TOOLS = [
     desc: 'Journal built for active traders — track every trade, find patterns, cut losing habits',
     url: 'https://refer.tradezella.com/christian-park',
     tag: 'Journal',
-    accent: '#38bdf8',
+    accent: '#0ea5e9',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4 h-4">
-        <path d="M4 4h16v16H4z" rx="2"/><line x1="8" y1="9" x2="16" y2="9"/>
-        <line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/>
+        <path d="M4 4h16v16H4z" rx="2"/>
+        <line x1="8" y1="9" x2="16" y2="9"/>
+        <line x1="8" y1="13" x2="16" y2="13"/>
+        <line x1="8" y1="17" x2="12" y2="17"/>
       </svg>
     ),
   },
@@ -310,10 +105,10 @@ const TOOLS = [
 const FIRMS = [
   {
     name: 'Alpha Futures',
-    desc: 'The prop firm I\'m currently funded with — use my link if you\'re signing up anyway',
+    desc: "The prop firm I'm currently funded with — use my link if you're signing up anyway",
     url: 'https://app.alpha-futures.com/signup/Christian018978/',
     tag: 'Prop Firm',
-    accent: '#60a5fa',
+    accent: '#2563eb',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4 h-4">
         <rect x="3" y="10" width="18" height="11" rx="1"/>
@@ -327,7 +122,7 @@ const FIRMS = [
     desc: 'Competitive prop firm with fast scaling and solid payouts — code JHP for 50% off',
     url: 'https://checkout.toponefutures.com/',
     tag: 'Prop Firm',
-    accent: '#fbbf24',
+    accent: '#f59e0b',
     badge: 'CODE: JHP · 50% OFF',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4 h-4">
@@ -345,41 +140,34 @@ const PROOF_IMAGES = [
 
 function ProofCarousel({ images }) {
   const [active, setActive] = useState(0)
-
   useEffect(() => {
     const t = setInterval(() => setActive(i => (i + 1) % images.length), 5000)
     return () => clearInterval(t)
   }, [images.length])
-
   const n = images.length
-
   return (
     <div>
-      {/* overflow:hidden clips side cards to this column — no more bleeding left */}
-      <div style={{ overflow: 'hidden', borderRadius: 12 }}>
+      <div style={{ overflow: 'hidden', borderRadius: 16 }}>
         <div style={{ position: 'relative', height: 300, perspective: '1000px' }}>
           {images.map(({ src, label }, i) => {
             let offset = ((i - active) % n + n) % n
             if (offset > Math.floor(n / 2)) offset -= n
-
             const isActive = offset === 0
-            const isLeft  = offset === -1
-            const isRight = offset === 1
-
+            const isLeft   = offset === -1
+            const isRight  = offset === 1
             let transform, opacity, zIndex, cursor
             if (isActive) {
               transform = 'translateX(0) rotateY(0deg) scale(1)'
               opacity = 1; zIndex = 10; cursor = 'default'
             } else if (isLeft) {
               transform = 'translateX(-72%) rotateY(45deg) scale(0.78)'
-              opacity = 0.35; zIndex = 5; cursor = 'pointer'
+              opacity = 0.3; zIndex = 5; cursor = 'pointer'
             } else if (isRight) {
               transform = 'translateX(72%) rotateY(-45deg) scale(0.78)'
-              opacity = 0.35; zIndex = 5; cursor = 'pointer'
+              opacity = 0.3; zIndex = 5; cursor = 'pointer'
             } else {
               transform = 'scale(0.6)'; opacity = 0; zIndex = 1; cursor = 'default'
             }
-
             return (
               <div
                 key={src}
@@ -389,24 +177,21 @@ function ProofCarousel({ images }) {
                   width: '85%', height: '100%',
                   transform, opacity, zIndex, cursor,
                   transition: 'all 0.55s cubic-bezier(.16,1,.3,1)',
-                  borderRadius: 10, overflow: 'hidden',
-                  background: 'transparent',
-                  boxShadow: isActive ? '0 20px 60px rgba(0,0,0,0.45)' : 'none',
+                  borderRadius: 12, overflow: 'hidden',
+                  boxShadow: isActive ? '0 16px 48px rgba(0,0,0,0.12)' : 'none',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}
               >
                 <img
                   src={src}
                   alt={label}
-                  style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto', display: 'block', borderRadius: 8 }}
+                  style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto', display: 'block', borderRadius: 10 }}
                 />
               </div>
             )
           })}
         </div>
       </div>
-
-      {/* pill indicators */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 6, paddingTop: 14 }}>
         {images.map((_, i) => (
           <button
@@ -414,7 +199,7 @@ function ProofCarousel({ images }) {
             onClick={() => setActive(i)}
             style={{
               width: active === i ? 20 : 6, height: 6, borderRadius: 3,
-              background: active === i ? '#60a5fa' : 'rgba(255,255,255,0.2)',
+              background: active === i ? '#2563eb' : '#d1d5db',
               border: 'none', padding: 0, cursor: 'pointer',
               transition: 'all 0.3s ease',
             }}
@@ -426,461 +211,339 @@ function ProofCarousel({ images }) {
   )
 }
 
+/* ── Logo ── */
+function Logo() {
+  return (
+    <svg viewBox="0 0 148 52" width="148" height="52" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-auto block shrink-0">
+      <line x1="8" y1="42" x2="140" y2="8" stroke="#94a3b8" strokeWidth="1.2" strokeOpacity="0.5" strokeLinecap="round"/>
+      <line x1="8"  y1="34" x2="8"  y2="27" stroke="#94a3b8" strokeWidth="1" strokeOpacity="0.7"/>
+      <rect x="5"   y="27" width="6" height="10" rx="0.5" fill="#94a3b8" fillOpacity="0.55"/>
+      <line x1="8"  y1="37" x2="8"  y2="40" stroke="#94a3b8" strokeWidth="1" strokeOpacity="0.7"/>
+      <line x1="17" y1="31" x2="17" y2="24" stroke="#94a3b8" strokeWidth="1" strokeOpacity="0.6"/>
+      <rect x="14"  y="25" width="6" height="8"  rx="0.5" fill="#64748b" fillOpacity="0.6"/>
+      <line x1="17" y1="33" x2="17" y2="36" stroke="#94a3b8" strokeWidth="1" strokeOpacity="0.6"/>
+      <line x1="26" y1="28" x2="26" y2="20" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.6"/>
+      <rect x="23"  y="20" width="6" height="10" rx="0.5" fill="#2563eb" fillOpacity="0.5"/>
+      <line x1="26" y1="30" x2="26" y2="34" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.6"/>
+      <text x="34" y="46" fontFamily="Arial Black, Impact, sans-serif" fontWeight="900" fontSize="36" fill="#0f172a" letterSpacing="-1">JHP</text>
+      <line x1="118" y1="26" x2="118" y2="18" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.7"/>
+      <rect x="115"  y="19" width="6" height="11" rx="0.5" fill="#2563eb" fillOpacity="0.7"/>
+      <line x1="118" y1="30" x2="118" y2="33" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.7"/>
+      <line x1="128" y1="20" x2="128" y2="12" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.85"/>
+      <rect x="125"  y="13" width="6" height="12" rx="0.5" fill="#2563eb" fillOpacity="0.85"/>
+      <line x1="128" y1="25" x2="128" y2="28" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.85"/>
+      <line x1="138" y1="14" x2="138" y2="7"  stroke="#3b82f6" strokeWidth="1"/>
+      <rect x="135"  y="8"  width="6" height="14" rx="0.5" fill="#2563eb"/>
+      <line x1="138" y1="22" x2="138" y2="26" stroke="#3b82f6" strokeWidth="1"/>
+    </svg>
+  )
+}
+
 /* ─────────────── page ─────────────── */
 export default function Page() {
   return (
-    <div className="min-h-screen text-white overflow-x-hidden">
+    <div className="min-h-screen bg-white text-gray-900">
 
-      {/* candlestick chart background */}
-      <CandlestickBackground />
-
-      {/* page content sits above the canvas */}
-      <div className="relative z-10">
-
-      {/* CSS for shine sweep & grid */}
       <style>{`
-        @keyframes drift1 {
-          0%,100% { transform: translate(0,0) scale(1); }
-          50%      { transform: translate(60px,-40px) scale(1.08); }
-        }
-        @keyframes drift2 {
-          0%,100% { transform: translate(0,0) scale(1); }
-          50%      { transform: translate(-50px,50px) scale(1.05); }
-        }
-        @keyframes drawline {
-          from { transform: scaleX(0); }
-          to   { transform: scaleX(1); }
-        }
-        .blob1 { animation: drift1 12s ease-in-out infinite; }
-        .blob2 { animation: drift2 16s ease-in-out infinite; }
-
-        .shine {
-          position: relative;
-          overflow: hidden;
-        }
-        .shine::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(105deg, transparent 40%, rgba(59,130,246,0.08) 50%, transparent 60%);
-          transform: translateX(-100%);
-          transition: transform 0s;
-        }
-        .shine:hover::after {
-          transform: translateX(100%);
-          transition: transform 0.55s ease;
-        }
-
-        .section-line {
-          display: block;
-          height: 1px;
-          background: #3b82f6;
-          transform-origin: left;
-          animation: drawline 0.6s cubic-bezier(.16,1,.3,1) both;
-        }
         @keyframes badgepulse {
-          0%,100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.35); }
-          50%      { box-shadow: 0 0 0 5px rgba(251,191,36,0); }
+          0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4); }
+          50%      { box-shadow: 0 0 0 5px rgba(245,158,11,0); }
         }
         .badge-pulse { animation: badgepulse 2s ease-in-out infinite; }
       `}</style>
 
-      {/* background blobs */}
-      <div
-        className="blob1 fixed -z-10 rounded-full pointer-events-none"
-        style={{
-          width: 560, height: 400,
-          top: '-80px', left: '50%', marginLeft: '-280px',
-          background: 'radial-gradient(ellipse, rgba(37,99,235,0.09) 0%, transparent 70%)',
-          filter: 'blur(80px)',
-        }}
-      />
-      <div
-        className="blob2 fixed -z-10 rounded-full pointer-events-none"
-        style={{
-          width: 400, height: 320,
-          bottom: '10%', right: '-80px',
-          background: 'radial-gradient(ellipse, rgba(59,130,246,0.06) 0%, transparent 70%)',
-          filter: 'blur(100px)',
-        }}
-      />
+      {/* ── nav ── */}
+      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between gap-6">
 
-      {/* grid */}
-      <div
-        className="fixed inset-0 -z-10"
-        style={{
-          backgroundImage: `linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
-                            linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px)`,
-          backgroundSize: '52px 52px',
-        }}
-      />
-
-      {/* nav */}
-      <nav className="px-6 py-4 max-w-3xl mx-auto">
-        <div className="flex items-center justify-between">
-
-          {/* JHP logo — code-built, no PNG */}
           <Link href="/" aria-label="JHP Trades">
-            <svg viewBox="0 0 148 52" width="148" height="52" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-9 w-auto block shrink-0">
-
-              {/* ── trend line (diagonal, low-left → high-right) ── */}
-              <line x1="8" y1="42" x2="140" y2="8" stroke="white" strokeWidth="1.2" strokeOpacity="0.25" strokeLinecap="round"/>
-
-              {/* ── left cluster — white/gray bearish candles ── */}
-              {/* candle A */}
-              <line x1="8"  y1="34" x2="8"  y2="27" stroke="#cbd5e1" strokeWidth="1" strokeOpacity="0.7"/>
-              <rect x="5"   y="27" width="6" height="10" rx="0.5" fill="#94a3b8" fillOpacity="0.55"/>
-              <line x1="8"  y1="37" x2="8"  y2="40" stroke="#cbd5e1" strokeWidth="1" strokeOpacity="0.7"/>
-              {/* candle B */}
-              <line x1="17" y1="31" x2="17" y2="24" stroke="#cbd5e1" strokeWidth="1" strokeOpacity="0.6"/>
-              <rect x="14"  y="25" width="6" height="8"  rx="0.5" fill="#64748b" fillOpacity="0.6"/>
-              <line x1="17" y1="33" x2="17" y2="36" stroke="#cbd5e1" strokeWidth="1" strokeOpacity="0.6"/>
-              {/* candle C — slightly blue */}
-              <line x1="26" y1="28" x2="26" y2="20" stroke="#93c5fd" strokeWidth="1" strokeOpacity="0.55"/>
-              <rect x="23"  y="20" width="6" height="10" rx="0.5" fill="#3b82f6" fillOpacity="0.45"/>
-              <line x1="26" y1="30" x2="26" y2="34" stroke="#93c5fd" strokeWidth="1" strokeOpacity="0.55"/>
-
-              {/* ── JHP text ── */}
-              <text
-                x="34" y="46"
-                fontFamily="Arial Black, Impact, sans-serif"
-                fontWeight="900"
-                fontSize="36"
-                fill="white"
-                letterSpacing="-1"
-              >JHP</text>
-
-              {/* ── right cluster — blue bullish candles ── */}
-              {/* candle D */}
-              <line x1="118" y1="26" x2="118" y2="18" stroke="#60a5fa" strokeWidth="1" strokeOpacity="0.7"/>
-              <rect x="115"  y="19" width="6" height="11" rx="0.5" fill="#3b82f6" fillOpacity="0.7"/>
-              <line x1="118" y1="30" x2="118" y2="33" stroke="#60a5fa" strokeWidth="1" strokeOpacity="0.7"/>
-              {/* candle E */}
-              <line x1="128" y1="20" x2="128" y2="12" stroke="#60a5fa" strokeWidth="1" strokeOpacity="0.85"/>
-              <rect x="125"  y="13" width="6" height="12" rx="0.5" fill="#3b82f6" fillOpacity="0.85"/>
-              <line x1="128" y1="25" x2="128" y2="28" stroke="#60a5fa" strokeWidth="1" strokeOpacity="0.85"/>
-              {/* candle F — tallest, brightest */}
-              <line x1="138" y1="14" x2="138" y2="7"  stroke="#93c5fd" strokeWidth="1"/>
-              <rect x="135"  y="8"  width="6" height="14" rx="0.5" fill="#60a5fa"/>
-              <line x1="138" y1="22" x2="138" y2="26" stroke="#93c5fd" strokeWidth="1"/>
-            </svg>
+            <Logo />
           </Link>
 
-          <Link
-            href="/dashboard"
-            className="text-xs text-neutral-600 hover:text-neutral-400 transition-colors duration-200 border border-white/[0.06] px-3 py-1.5 rounded-lg"
+          <div className="hidden md:flex items-center gap-7">
+            <a href="https://discord.gg/aCNadDMvmH" target="_blank" rel="noopener noreferrer"
+              className="text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium">
+              Community
+            </a>
+            <a href="https://whop.com/jhp-trades/jhp-trading-community" target="_blank" rel="noopener noreferrer"
+              className="text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium">
+              Execution Lab
+            </a>
+            <Link href="/apply" className="text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium">
+              Mentorship
+            </Link>
+            <a href="#tools" className="text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium">
+              Tools
+            </a>
+          </div>
+
+          <a
+            href="https://discord.gg/aCNadDMvmH"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 text-sm font-semibold bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            live charts →
-          </Link>
+            Join Free
+          </a>
         </div>
       </nav>
 
-      <main className="max-w-3xl mx-auto px-6 pb-24">
+      {/* ── hero ── */}
+      <section className="py-20 px-6 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <FadeIn>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-14 items-center">
 
-        {/* ── hero ── */}
-        <FadeIn className="mt-10 mb-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 items-center">
+              <div>
+                <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-4">
+                  5 years trading · $30k+ proven results
+                </p>
+                <h1 className="text-5xl font-black text-gray-900 leading-tight mb-5 tracking-tight">
+                  Get funded.<br />
+                  <span className="text-blue-600">Stay funded.</span>
+                </h1>
+                <p className="text-base text-gray-500 mb-8 leading-relaxed">
+                  Most traders don't fail from strategy — they fail from execution.
+                  That's what we fix. Live, every day.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <a
+                    href="https://discord.gg/aCNadDMvmH"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-colors"
+                  >
+                    Join Discord Free →
+                  </a>
+                  <a
+                    href="https://whop.com/jhp-trades/jhp-trading-community"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 border border-gray-200 text-gray-700 text-sm font-semibold px-5 py-2.5 rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                  >
+                    Execution Lab
+                  </a>
+                </div>
+              </div>
 
-            {/* left */}
-            <div>
-              <p className="text-xs text-neutral-500 mb-5">
-                <a href="https://www.tiktok.com/@jhp.trades" target="_blank" rel="noopener noreferrer" className="text-neutral-300 hover:text-white transition-colors font-semibold">JHP</a>
-                {' '}· 5 years trading · $30k+ from options & stocks · now scaling in futures
-              </p>
+              <ProofCarousel images={PROOF_IMAGES} />
 
-              <h1 className="text-4xl font-black text-white mb-4 leading-[1.1] tracking-tight">
-                Get funded.<br />
-                <span style={{ color: '#60a5fa' }}>Stay funded.</span>
-              </h1>
-
-              <p className="text-sm text-neutral-400 mb-7 leading-relaxed">
-                Most traders don't fail from strategy. They fail from execution.<br />
-                That's what we fix. Live, every day.
-              </p>
             </div>
+          </FadeIn>
+        </div>
+      </section>
 
-            {/* right — 3D proof carousel */}
-            <ProofCarousel images={PROOF_IMAGES} />
-
+      {/* ── stats bar ── */}
+      <div className="border-y border-gray-100 bg-gray-50">
+        <div className="max-w-5xl mx-auto px-6 py-5 flex flex-wrap items-center gap-x-10 gap-y-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-lg font-black text-gray-900">1,300+</span>
+            <span className="text-sm text-gray-400">traders following</span>
           </div>
-        </FadeIn>
-
-        {/* ── proof ── */}
-        <FadeIn delay={80} className="mb-10">
-          <div className="flex flex-wrap items-center gap-x-8 gap-y-2 px-5 py-4 rounded-2xl border border-white/[0.06] bg-[#111315]">
-            <div className="flex items-center gap-2">
-              <span className="text-base font-black text-white">1,300+</span>
-              <span className="text-xs text-neutral-500">traders following</span>
-            </div>
-            <span className="text-neutral-700">·</span>
-            <div className="flex items-center gap-2">
-              <span className="text-base font-black" style={{ color: '#818cf8' }}>200+</span>
-              <span className="text-xs font-semibold text-neutral-400">active members</span>
-            </div>
-            <span className="text-neutral-700">·</span>
-            <div className="flex items-center gap-1.5">
-              <span className="relative flex h-1.5 w-1.5 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
-              </span>
-              <span className="text-base font-black" style={{ color: '#f87171' }}>Live</span>
-              <span className="text-xs text-neutral-500">daily sessions</span>
-            </div>
+          <span className="text-gray-200 select-none">·</span>
+          <div className="flex items-center gap-2.5">
+            <span className="text-lg font-black text-blue-600">200+</span>
+            <span className="text-sm text-gray-400 font-medium">active members</span>
           </div>
-        </FadeIn>
-
-        {/* ── path ── */}
-        <FadeIn delay={160} className="mb-12">
-          <div className="flex items-center gap-3 mb-5">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Start here</span>
-            <span className="section-line flex-1" />
+          <span className="text-gray-200 select-none">·</span>
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-1.5 w-1.5 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
+            </span>
+            <span className="text-lg font-black text-red-500">Live</span>
+            <span className="text-sm text-gray-400">daily sessions</span>
           </div>
+        </div>
+      </div>
 
-          <div className="space-y-2">
+      {/* ── offerings ── */}
+      <section className="py-16 px-6 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <FadeIn>
+            <div className="mb-10">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Start here</p>
+              <h2 className="text-2xl font-black text-gray-900">Choose your path</h2>
+            </div>
+          </FadeIn>
 
-            {/* step 01 — Discord (dominant, highlighted) */}
-            <TiltCard>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+            {/* Community */}
+            <FadeIn delay={0}>
               <a
                 href="https://discord.gg/aCNadDMvmH"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="shine group relative flex flex-col gap-3 px-6 py-6 rounded-2xl border overflow-hidden transition-all duration-200"
-                style={{ background: 'linear-gradient(135deg, #0d1528 0%, #0c0c10 100%)', borderColor: 'rgba(99,102,241,0.45)', boxShadow: '0 0 24px rgba(99,102,241,0.08)' }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,0.75)'; e.currentTarget.style.boxShadow = '0 0 44px rgba(99,102,241,0.16)' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,0.45)'; e.currentTarget.style.boxShadow = '0 0 24px rgba(99,102,241,0.08)' }}
+                className="group flex flex-col h-full rounded-2xl border border-gray-100 hover:border-indigo-200 hover:shadow-lg p-6 transition-all duration-200 bg-white"
+                style={{ '--tw-shadow-color': 'rgba(99,102,241,0.08)' }}
               >
-                <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.7), transparent)' }} />
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-md shrink-0" style={{ background: 'rgba(99,102,241,0.18)', color: '#818cf8' }}>01</span>
-                    <div>
-                      <div className="text-sm font-black text-white leading-none mb-1">Join the Discord</div>
-                      <div className="text-[11px] font-semibold" style={{ color: '#818cf8' }}>Free · Live sessions this week</div>
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0" style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc' }}>
-                    Join Free →
+                <div className="flex items-center justify-between mb-5">
+                  <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600">
+                    Free
                   </span>
+                  <svg className="w-4 h-4 text-gray-200 group-hover:text-indigo-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10"/>
+                  </svg>
                 </div>
-                <p className="text-xs text-neutral-400 leading-relaxed mb-3">
-                  Start here. No commitment, no pitch. Just watch how we trade.
+                <h3 className="text-base font-black text-gray-900 mb-1">Discord Community</h3>
+                <p className="text-xs text-indigo-600 font-semibold mb-3">Free · Live sessions this week</p>
+                <p className="text-sm text-gray-500 leading-relaxed flex-1">
+                  Watch trades live, understand execution in real time, and decide if you want in — no commitment required.
                 </p>
-                <div className="grid grid-cols-3 gap-2">
-                  {[['👁', 'Watch', 'trades live, in real time'], ['📈', 'See', 'how execution actually works'], ['✓', 'Decide', 'if you want in']].map(([icon, label, desc]) => (
-                    <div key={label} className="flex flex-col gap-0.5 px-2.5 py-2 rounded-lg" style={{ background: 'rgba(99,102,241,0.08)' }}>
-                      <span className="text-xs">{icon} <span className="font-bold text-white">{label}</span></span>
-                      <span className="text-[10px] text-neutral-500 leading-tight">{desc}</span>
-                    </div>
-                  ))}
+                <div className="mt-5 pt-4 border-t border-gray-50">
+                  <span className="text-xs font-semibold text-indigo-600">Join Free →</span>
                 </div>
               </a>
-            </TiltCard>
+            </FadeIn>
 
-            <div className="flex justify-center py-0.5">
-              <svg className="w-4 h-4 text-neutral-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-
-            {/* step 02 — Execution Lab */}
-            <TiltCard>
+            {/* Execution Lab */}
+            <FadeIn delay={80}>
               <a
                 href="https://whop.com/jhp-trades/jhp-trading-community"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="shine group relative flex flex-col gap-3 px-6 py-6 rounded-2xl border overflow-hidden transition-all duration-200"
-                style={{ background: 'linear-gradient(135deg, #141618 0%, #16181c 100%)', borderColor: 'rgba(52,211,153,0.35)', boxShadow: '0 0 28px rgba(52,211,153,0.06)' }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(52,211,153,0.65)'; e.currentTarget.style.boxShadow = '0 0 44px rgba(52,211,153,0.12)' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(52,211,153,0.35)'; e.currentTarget.style.boxShadow = '0 0 28px rgba(52,211,153,0.06)' }}
+                className="group flex flex-col h-full rounded-2xl border border-emerald-100 hover:border-emerald-300 hover:shadow-lg p-6 transition-all duration-200"
+                style={{ background: 'linear-gradient(160deg, #f0fdf4 0%, #ffffff 60%)' }}
               >
-                <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(52,211,153,0.6), transparent)' }} />
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-md shrink-0" style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399' }}>02</span>
-                    <div>
-                      <div className="text-sm font-black text-white leading-none mb-1">Execution Lab</div>
-                      <div className="text-[11px] font-semibold" style={{ color: '#34d399' }}>$99 / month · Cancel anytime</div>
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0" style={{ background: 'rgba(52,211,153,0.18)', color: '#34d399' }}>
-                    Join →
+                <div className="flex items-center justify-between mb-5">
+                  <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700">
+                    $99 / mo
                   </span>
+                  <svg className="w-4 h-4 text-gray-200 group-hover:text-emerald-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10"/>
+                  </svg>
                 </div>
-                <p className="text-xs text-neutral-300 leading-relaxed">
-                  Stop chasing signals. Start building a sustainable trading edge. Built for traders who understand that consistency beats tips and discipline beats luck.
+                <h3 className="text-base font-black text-gray-900 mb-1">Execution Lab</h3>
+                <p className="text-xs text-emerald-600 font-semibold mb-3">Cancel anytime</p>
+                <p className="text-sm text-gray-500 leading-relaxed flex-1">
+                  Stop chasing signals. Build a sustainable edge with live sessions, trade breakdowns, journaling support, and a serious trading community.
                 </p>
-                <div className="space-y-1.5">
-                  {[
-                    ['Private Discord Community', 'direct access to traders serious about improvement'],
-                    ['Trade Breakdowns & Market Context', 'understand the why behind market moves'],
-                    ['Live Weekly Sessions', 'real-time guidance and market analysis when it matters'],
-                    ['Journaling & Consistency Support', 'build the habits that compound into profits'],
-                    ['Active Direct Feedback', 'get evaluated by someone who trades actively'],
-                  ].map(([main, sub]) => (
-                    <div key={main} className="flex items-start gap-2">
-                      <span className="w-1 h-1 rounded-full shrink-0 mt-1.5" style={{ background: '#34d399' }} />
-                      <span className="text-[11px] leading-tight">
-                        <span className="text-neutral-300 font-semibold">{main}</span>
-                        <span className="text-neutral-600"> — {sub}</span>
-                      </span>
-                    </div>
-                  ))}
+                <div className="mt-5 pt-4 border-t border-emerald-50">
+                  <span className="text-xs font-semibold text-emerald-600">Explore →</span>
                 </div>
-                <p className="text-[11px] font-semibold pt-1" style={{ color: '#34d39966' }}>Structure. Education. Community. Results.</p>
               </a>
-            </TiltCard>
+            </FadeIn>
 
-            <div className="flex justify-center py-0.5">
-              <svg className="w-4 h-4 text-neutral-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-
-            {/* step 03 — 1 on 1 */}
-            <TiltCard>
+            {/* 1-on-1 */}
+            <FadeIn delay={160}>
               <a
                 href="/apply"
-                className="shine group relative flex flex-col gap-4 px-6 py-6 rounded-2xl border bg-[#111315] overflow-hidden transition-all duration-200"
-                style={{ borderColor: 'rgba(59,130,246,0.2)' }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(59,130,246,0.45)'; e.currentTarget.style.boxShadow = '0 0 32px rgba(59,130,246,0.08)' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(59,130,246,0.2)'; e.currentTarget.style.boxShadow = 'none' }}
+                className="group flex flex-col h-full rounded-2xl border border-blue-100 hover:border-blue-300 hover:shadow-lg p-6 transition-all duration-200"
+                style={{ background: 'linear-gradient(160deg, #eff6ff 0%, #ffffff 60%)' }}
               >
-                <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.35), transparent)' }} />
-
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-md shrink-0" style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa' }}>03</span>
-                    <div>
-                      <div className="text-sm font-black text-white leading-none mb-1">1 on 1 Mentorship</div>
-                      <div className="text-[11px] font-semibold" style={{ color: '#60a5fa' }}>Personalized · $300/month</div>
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0" style={{ background: 'rgba(59,130,246,0.12)', color: '#60a5fa' }}>
-                    See if it's a fit →
+                <div className="flex items-center justify-between mb-5">
+                  <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700">
+                    $300 / mo
                   </span>
+                  <svg className="w-4 h-4 text-gray-200 group-hover:text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10"/>
+                  </svg>
                 </div>
-
-                <p className="text-[11px] font-semibold text-neutral-500 -mt-1">
-                  Stop leaving money on the table. Personalized coaching that fixes your specific leaks.
+                <h3 className="text-base font-black text-gray-900 mb-1">1-on-1 Mentorship</h3>
+                <p className="text-xs text-blue-600 font-semibold mb-3">Personalized · Limited spots</p>
+                <p className="text-sm text-gray-500 leading-relaxed flex-1">
+                  Deep-dive review of your actual trades. Fix your specific leaks and build a repeatable process with direct, personal coaching.
                 </p>
-
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  You'll work one-on-one with me — reviewing your actual trades, identifying exactly where you're losing money, and building a repeatable process that works in any market condition.
-                </p>
-
-                <div className="space-y-1.5">
-                  {[
-                    ['Personal Trade Analysis', 'deep dive into your entries, exits, and decision-making'],
-                    ['Real-Time Feedback', 'direct guidance on execution and emotional discipline'],
-                    ['Risk Mastery', 'position sizing and capital management that protects your account'],
-                    ['Consistent Process', 'a trading system you can execute day after day with confidence'],
-                    ['Ongoing Support', 'direct communication whenever you need clarity or coaching'],
-                    ['Scheduled Calls', 'jump on calls when critical moments arise or you need live guidance'],
-                  ].map(([main, sub]) => (
-                    <div key={main} className="flex items-start gap-2">
-                      <span style={{ color: '#60a5fa', fontSize: 10, marginTop: 2, flexShrink: 0 }}>✓</span>
-                      <span className="text-[11px] leading-tight">
-                        <span className="text-neutral-300 font-semibold">{main}</span>
-                        <span className="text-neutral-600"> — {sub}</span>
-                      </span>
-                    </div>
-                  ))}
+                <div className="mt-5 pt-4 border-t border-blue-50">
+                  <span className="text-xs font-semibold text-blue-600">See if it's a fit →</span>
                 </div>
-
-                <p className="text-[11px] text-neutral-600 leading-relaxed border-t pt-3" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-                  Journal your trades. Apply feedback. Show effort. If you're looking for signals or shortcuts, this isn't for you.
-                  <span className="block mt-1 text-neutral-700">Limited spots.</span>
-                </p>
               </a>
-            </TiltCard>
+            </FadeIn>
 
           </div>
-        </FadeIn>
+        </div>
+      </section>
 
-        {/* ── objection killer ── */}
-        <FadeIn delay={200} className="mb-12">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="px-5 py-5 rounded-2xl border border-white/[0.06] bg-[#111315]">
-              <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: '#f87171' }}>This is NOT</div>
-              <div className="space-y-2">
+      {/* ── this is / not ── */}
+      <section className="py-12 px-6 bg-gray-50 border-y border-gray-100">
+        <FadeIn>
+          <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+            <div className="px-6 py-6 rounded-2xl border border-red-100 bg-white">
+              <div className="text-[10px] font-black uppercase tracking-widest mb-4 text-red-500">This is NOT</div>
+              <div className="space-y-2.5">
                 {['Signals or alerts', 'Copy trading', 'Gambling tips', 'Hype or predictions'].map(x => (
-                  <div key={x} className="flex items-center gap-2 text-[11px] text-neutral-500">
-                    <span style={{ color: '#f87171' }}>✕</span> {x}
+                  <div key={x} className="flex items-center gap-2.5 text-sm text-gray-400">
+                    <span className="text-red-400 text-xs font-bold">✕</span> {x}
                   </div>
                 ))}
               </div>
             </div>
-            <div className="px-5 py-5 rounded-2xl border border-white/[0.06] bg-[#111315]" style={{ borderColor: 'rgba(52,211,153,0.15)' }}>
-              <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: '#34d399' }}>This IS</div>
-              <div className="space-y-2">
+
+            <div className="px-6 py-6 rounded-2xl border border-emerald-100 bg-white">
+              <div className="text-[10px] font-black uppercase tracking-widest mb-4 text-emerald-600">This IS</div>
+              <div className="space-y-2.5">
                 {['Execution discipline', 'Trade journaling', 'Real consistency', 'Funded account results'].map(x => (
-                  <div key={x} className="flex items-center gap-2 text-[11px] text-neutral-400">
-                    <span style={{ color: '#34d399' }}>✓</span> {x}
+                  <div key={x} className="flex items-center gap-2.5 text-sm text-gray-600">
+                    <span className="text-emerald-500 text-xs font-bold">✓</span> {x}
                   </div>
                 ))}
               </div>
             </div>
+
           </div>
         </FadeIn>
+      </section>
 
-        {/* ── tools ── */}
-        <div id="tools">
-        <FadeIn delay={250} className="mb-10">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500">Tools</span>
-            <span className="section-line flex-1" />
-          </div>
+      {/* ── tools & prop firms ── */}
+      <section id="tools" className="py-16 px-6 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <FadeIn>
+            <div className="mb-8">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Resources</p>
+              <h2 className="text-2xl font-black text-gray-900">Tools & Prop Firms</h2>
+            </div>
+          </FadeIn>
 
-          {/* tools + prop firms — single stacked list */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             {[...TOOLS, ...FIRMS].map((t, i) => (
-              <FadeIn key={t.name} delay={520 + i * 50}>
-                <TiltCard>
-                  <a
-                    href={t.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shine group relative flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.08] bg-[#111315] overflow-hidden transition-all duration-200"
-                    onMouseEnter={e => {
-                      e.currentTarget.style.borderColor = t.accent + '55'
-                      e.currentTarget.style.boxShadow = `0 0 24px ${t.accent}18`
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
-                      e.currentTarget.style.boxShadow = 'none'
-                    }}
+              <FadeIn key={t.name} delay={i * 60}>
+                <a
+                  href={t.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-4 px-5 py-4 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-sm bg-white transition-all duration-200"
+                >
+                  <span
+                    className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl"
+                    style={{ background: t.accent + '15', color: t.accent }}
                   >
-                    <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full opacity-70" style={{ background: t.accent }} />
-                    <span className="shrink-0 flex items-center justify-center w-8 h-8 rounded-xl" style={{ background: t.accent + '18', color: t.accent }}>
-                      {t.icon}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-sm font-semibold text-white">{t.name}</span>
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold tracking-wider uppercase" style={{ background: t.accent + '18', color: t.accent, border: `1px solid ${t.accent}40` }}>
-                          {t.tag}
+                    {t.icon}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-sm font-semibold text-gray-900">{t.name}</span>
+                      <span
+                        className="text-[9px] px-1.5 py-0.5 rounded-md font-bold tracking-wider uppercase border"
+                        style={{ color: t.accent, borderColor: t.accent + '40', background: t.accent + '10' }}
+                      >
+                        {t.tag}
+                      </span>
+                      {t.badge && (
+                        <span
+                          className="badge-pulse text-[9px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded-md border"
+                          style={{ color: t.accent, borderColor: t.accent + '50', background: t.accent + '15' }}
+                        >
+                          {t.badge}
                         </span>
-                        {t.badge && (
-                          <span className="badge-pulse text-[9px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded-md" style={{ background: t.accent + '20', color: t.accent, border: `1px solid ${t.accent}50` }}>
-                            {t.badge}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-neutral-500 leading-relaxed">{t.desc}</p>
+                      )}
                     </div>
-                    <svg className="w-3 h-3 text-neutral-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10" />
-                    </svg>
-                  </a>
-                </TiltCard>
+                    <p className="text-xs text-gray-400 leading-relaxed">{t.desc}</p>
+                  </div>
+                  <svg className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10"/>
+                  </svg>
+                </a>
               </FadeIn>
             ))}
           </div>
-        </FadeIn>
-        </div>{/* end #tools */}
+        </div>
+      </section>
 
-        {/* ── socials ── */}
-        <FadeIn delay={400} className="mb-10">
+      {/* ── socials ── */}
+      <section className="py-10 px-6 border-t border-gray-100 bg-white">
+        <div className="max-w-5xl mx-auto">
           <div className="flex items-center gap-2">
             {SOCIALS.map(s => (
               <a
@@ -889,31 +552,29 @@ export default function Page() {
                 target="_blank"
                 rel="noopener noreferrer"
                 title={s.name}
-                className="flex items-center justify-center w-9 h-9 rounded-xl border border-white/[0.08] bg-[#111315] transition-all duration-200 hover:border-white/20"
-                style={{ color: s.accent }}
+                className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-100 hover:border-gray-200 bg-gray-50 hover:bg-white text-gray-400 hover:text-gray-600 transition-all duration-200"
               >
                 {s.icon}
               </a>
             ))}
           </div>
-        </FadeIn>
+        </div>
+      </section>
 
-      </main>
-
-      <footer className="border-t border-white/[0.04] py-6 px-6">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <span className="text-xs text-neutral-800 font-mono">noctiq.ai</span>
-          <div className="flex items-center gap-4">
-            <a href="mailto:christian.park2002@gmail.com" className="text-xs text-neutral-700 hover:text-neutral-400 transition-colors duration-200">
+      {/* ── footer ── */}
+      <footer className="border-t border-gray-100 py-6 px-6 bg-white">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <span className="text-xs text-gray-300 font-mono">noctiq.ai</span>
+          <div className="flex items-center gap-5">
+            <a href="mailto:christian.park2002@gmail.com" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
               christian.park2002@gmail.com
             </a>
-            <Link href="/dashboard" className="text-xs text-neutral-700 hover:text-white transition-colors duration-200">
+            <Link href="/dashboard" className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
               live charts →
             </Link>
           </div>
         </div>
       </footer>
-      </div>{/* end relative z-10 content wrapper */}
 
     </div>
   )
