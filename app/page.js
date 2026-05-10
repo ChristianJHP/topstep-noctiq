@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 
+/* ── fade-in on scroll ── */
 function FadeIn({ children, delay = 0, className = '' }) {
   const ref = useRef(null)
   const [on, setOn] = useState(false)
@@ -30,6 +31,147 @@ function FadeIn({ children, delay = 0, className = '' }) {
   )
 }
 
+/* ── dark/light moon/sun icon ── */
+function ThemeToggle({ isDark, onToggle }) {
+  return (
+    <button
+      onClick={onToggle}
+      aria-label="Toggle dark mode"
+      className="flex items-center justify-center w-9 h-9 rounded-xl border transition-colors duration-200
+        border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100
+        dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
+    >
+      {isDark ? (
+        /* sun */
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      ) : (
+        /* moon */
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+        </svg>
+      )}
+    </button>
+  )
+}
+
+/* ── proof carousel ── */
+function ProofCarousel({ images, isDark }) {
+  const [active, setActive] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setActive(i => (i + 1) % images.length), 5000)
+    return () => clearInterval(t)
+  }, [images.length])
+  const n = images.length
+  return (
+    <div>
+      <div style={{ overflow: 'hidden', borderRadius: 16 }}>
+        <div style={{ position: 'relative', height: 300, perspective: '1000px' }}>
+          {images.map(({ src, label }, i) => {
+            let offset = ((i - active) % n + n) % n
+            if (offset > Math.floor(n / 2)) offset -= n
+            const isActive = offset === 0
+            const isLeft   = offset === -1
+            const isRight  = offset === 1
+            let transform, opacity, zIndex, cursor
+            if (isActive) {
+              transform = 'translateX(0) rotateY(0deg) scale(1)'
+              opacity = 1; zIndex = 10; cursor = 'default'
+            } else if (isLeft) {
+              transform = 'translateX(-72%) rotateY(45deg) scale(0.78)'
+              opacity = 0.3; zIndex = 5; cursor = 'pointer'
+            } else if (isRight) {
+              transform = 'translateX(72%) rotateY(-45deg) scale(0.78)'
+              opacity = 0.3; zIndex = 5; cursor = 'pointer'
+            } else {
+              transform = 'scale(0.6)'; opacity = 0; zIndex = 1; cursor = 'default'
+            }
+            return (
+              <div
+                key={src}
+                onClick={() => !isActive && setActive(i)}
+                style={{
+                  position: 'absolute', top: 0, left: '7.5%',
+                  width: '85%', height: '100%',
+                  transform, opacity, zIndex, cursor,
+                  transition: 'all 0.55s cubic-bezier(.16,1,.3,1)',
+                  borderRadius: 12, overflow: 'hidden',
+                  boxShadow: isActive
+                    ? isDark
+                      ? '0 16px 48px rgba(0,0,0,0.5)'
+                      : '0 16px 48px rgba(0,0,0,0.12)'
+                    : 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <img
+                  src={src}
+                  alt={label}
+                  style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto', display: 'block', borderRadius: 10 }}
+                />
+              </div>
+            )
+          })}
+        </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 6, paddingTop: 14 }}>
+        {images.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setActive(i)}
+            style={{
+              width: active === i ? 20 : 6, height: 6, borderRadius: 3,
+              background: active === i ? '#2563eb' : isDark ? 'rgba(255,255,255,0.15)' : '#d1d5db',
+              border: 'none', padding: 0, cursor: 'pointer',
+              transition: 'all 0.3s ease',
+            }}
+            aria-label={`View ${images[i].label}`}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ── logo (adapts to theme) ── */
+function Logo({ isDark }) {
+  const textFill = isDark ? '#f1f5f9' : '#0f172a'
+  return (
+    <svg viewBox="0 0 148 52" width="148" height="52" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-auto block shrink-0">
+      <line x1="8" y1="42" x2="140" y2="8" stroke="#94a3b8" strokeWidth="1.2" strokeOpacity="0.4" strokeLinecap="round"/>
+      <line x1="8"  y1="34" x2="8"  y2="27" stroke="#94a3b8" strokeWidth="1" strokeOpacity="0.6"/>
+      <rect x="5"   y="27" width="6" height="10" rx="0.5" fill="#94a3b8" fillOpacity="0.45"/>
+      <line x1="8"  y1="37" x2="8"  y2="40" stroke="#94a3b8" strokeWidth="1" strokeOpacity="0.6"/>
+      <line x1="17" y1="31" x2="17" y2="24" stroke="#94a3b8" strokeWidth="1" strokeOpacity="0.5"/>
+      <rect x="14"  y="25" width="6" height="8"  rx="0.5" fill="#64748b" fillOpacity="0.5"/>
+      <line x1="17" y1="33" x2="17" y2="36" stroke="#94a3b8" strokeWidth="1" strokeOpacity="0.5"/>
+      <line x1="26" y1="28" x2="26" y2="20" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.6"/>
+      <rect x="23"  y="20" width="6" height="10" rx="0.5" fill="#2563eb" fillOpacity="0.5"/>
+      <line x1="26" y1="30" x2="26" y2="34" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.6"/>
+      <text x="34" y="46" fontFamily="Arial Black, Impact, sans-serif" fontWeight="900" fontSize="36" fill={textFill} letterSpacing="-1">JHP</text>
+      <line x1="118" y1="26" x2="118" y2="18" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.7"/>
+      <rect x="115"  y="19" width="6" height="11" rx="0.5" fill="#2563eb" fillOpacity="0.7"/>
+      <line x1="118" y1="30" x2="118" y2="33" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.7"/>
+      <line x1="128" y1="20" x2="128" y2="12" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.85"/>
+      <rect x="125"  y="13" width="6" height="12" rx="0.5" fill="#2563eb" fillOpacity="0.85"/>
+      <line x1="128" y1="25" x2="128" y2="28" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.85"/>
+      <line x1="138" y1="14" x2="138" y2="7"  stroke="#3b82f6" strokeWidth="1"/>
+      <rect x="135"  y="8"  width="6" height="14" rx="0.5" fill="#2563eb"/>
+      <line x1="138" y1="22" x2="138" y2="26" stroke="#3b82f6" strokeWidth="1"/>
+    </svg>
+  )
+}
+
+/* ── data ── */
 const SOCIALS = [
   {
     name: 'TikTok',
@@ -138,444 +280,353 @@ const PROOF_IMAGES = [
   { src: '/alpha.png',      label: 'Alpha Futures payout' },
 ]
 
-function ProofCarousel({ images }) {
-  const [active, setActive] = useState(0)
-  useEffect(() => {
-    const t = setInterval(() => setActive(i => (i + 1) % images.length), 5000)
-    return () => clearInterval(t)
-  }, [images.length])
-  const n = images.length
-  return (
-    <div>
-      <div style={{ overflow: 'hidden', borderRadius: 16 }}>
-        <div style={{ position: 'relative', height: 300, perspective: '1000px' }}>
-          {images.map(({ src, label }, i) => {
-            let offset = ((i - active) % n + n) % n
-            if (offset > Math.floor(n / 2)) offset -= n
-            const isActive = offset === 0
-            const isLeft   = offset === -1
-            const isRight  = offset === 1
-            let transform, opacity, zIndex, cursor
-            if (isActive) {
-              transform = 'translateX(0) rotateY(0deg) scale(1)'
-              opacity = 1; zIndex = 10; cursor = 'default'
-            } else if (isLeft) {
-              transform = 'translateX(-72%) rotateY(45deg) scale(0.78)'
-              opacity = 0.3; zIndex = 5; cursor = 'pointer'
-            } else if (isRight) {
-              transform = 'translateX(72%) rotateY(-45deg) scale(0.78)'
-              opacity = 0.3; zIndex = 5; cursor = 'pointer'
-            } else {
-              transform = 'scale(0.6)'; opacity = 0; zIndex = 1; cursor = 'default'
-            }
-            return (
-              <div
-                key={src}
-                onClick={() => !isActive && setActive(i)}
-                style={{
-                  position: 'absolute', top: 0, left: '7.5%',
-                  width: '85%', height: '100%',
-                  transform, opacity, zIndex, cursor,
-                  transition: 'all 0.55s cubic-bezier(.16,1,.3,1)',
-                  borderRadius: 12, overflow: 'hidden',
-                  boxShadow: isActive ? '0 16px 48px rgba(0,0,0,0.12)' : 'none',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <img
-                  src={src}
-                  alt={label}
-                  style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto', display: 'block', borderRadius: 10 }}
-                />
-              </div>
-            )
-          })}
-        </div>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 6, paddingTop: 14 }}>
-        {images.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setActive(i)}
-            style={{
-              width: active === i ? 20 : 6, height: 6, borderRadius: 3,
-              background: active === i ? '#2563eb' : '#d1d5db',
-              border: 'none', padding: 0, cursor: 'pointer',
-              transition: 'all 0.3s ease',
-            }}
-            aria-label={`View ${images[i].label}`}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/* ── Logo ── */
-function Logo() {
-  return (
-    <svg viewBox="0 0 148 52" width="148" height="52" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-auto block shrink-0">
-      <line x1="8" y1="42" x2="140" y2="8" stroke="#94a3b8" strokeWidth="1.2" strokeOpacity="0.5" strokeLinecap="round"/>
-      <line x1="8"  y1="34" x2="8"  y2="27" stroke="#94a3b8" strokeWidth="1" strokeOpacity="0.7"/>
-      <rect x="5"   y="27" width="6" height="10" rx="0.5" fill="#94a3b8" fillOpacity="0.55"/>
-      <line x1="8"  y1="37" x2="8"  y2="40" stroke="#94a3b8" strokeWidth="1" strokeOpacity="0.7"/>
-      <line x1="17" y1="31" x2="17" y2="24" stroke="#94a3b8" strokeWidth="1" strokeOpacity="0.6"/>
-      <rect x="14"  y="25" width="6" height="8"  rx="0.5" fill="#64748b" fillOpacity="0.6"/>
-      <line x1="17" y1="33" x2="17" y2="36" stroke="#94a3b8" strokeWidth="1" strokeOpacity="0.6"/>
-      <line x1="26" y1="28" x2="26" y2="20" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.6"/>
-      <rect x="23"  y="20" width="6" height="10" rx="0.5" fill="#2563eb" fillOpacity="0.5"/>
-      <line x1="26" y1="30" x2="26" y2="34" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.6"/>
-      <text x="34" y="46" fontFamily="Arial Black, Impact, sans-serif" fontWeight="900" fontSize="36" fill="#0f172a" letterSpacing="-1">JHP</text>
-      <line x1="118" y1="26" x2="118" y2="18" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.7"/>
-      <rect x="115"  y="19" width="6" height="11" rx="0.5" fill="#2563eb" fillOpacity="0.7"/>
-      <line x1="118" y1="30" x2="118" y2="33" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.7"/>
-      <line x1="128" y1="20" x2="128" y2="12" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.85"/>
-      <rect x="125"  y="13" width="6" height="12" rx="0.5" fill="#2563eb" fillOpacity="0.85"/>
-      <line x1="128" y1="25" x2="128" y2="28" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.85"/>
-      <line x1="138" y1="14" x2="138" y2="7"  stroke="#3b82f6" strokeWidth="1"/>
-      <rect x="135"  y="8"  width="6" height="14" rx="0.5" fill="#2563eb"/>
-      <line x1="138" y1="22" x2="138" y2="26" stroke="#3b82f6" strokeWidth="1"/>
-    </svg>
-  )
-}
-
 /* ─────────────── page ─────────────── */
 export default function Page() {
+  const [isDark, setIsDark] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    const saved = localStorage.getItem('theme')
+    if (saved === 'dark') setIsDark(true)
+  }, [])
+
+  const toggleDark = () => {
+    setIsDark(d => {
+      const next = !d
+      localStorage.setItem('theme', next ? 'dark' : 'light')
+      return next
+    })
+  }
+
+  const d = isDark
+
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div
+      className={d ? 'dark' : ''}
+      suppressHydrationWarning
+    >
+      <div className="min-h-screen bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 transition-colors duration-300">
 
-      <style>{`
-        @keyframes badgepulse {
-          0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4); }
-          50%      { box-shadow: 0 0 0 5px rgba(245,158,11,0); }
-        }
-        .badge-pulse { animation: badgepulse 2s ease-in-out infinite; }
-      `}</style>
+        <style>{`
+          @keyframes badgepulse {
+            0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4); }
+            50%      { box-shadow: 0 0 0 5px rgba(245,158,11,0); }
+          }
+          .badge-pulse { animation: badgepulse 2s ease-in-out infinite; }
+        `}</style>
 
-      {/* ── nav ── */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between gap-6">
+        {/* ── nav ── */}
+        <nav className="sticky top-0 z-50 bg-white/95 dark:bg-[#0f1117]/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/[0.06] transition-colors duration-300">
+          <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between gap-6">
 
-          <Link href="/" aria-label="JHP Trades">
-            <Logo />
-          </Link>
-
-          <div className="hidden md:flex items-center gap-7">
-            <a href="https://discord.gg/aCNadDMvmH" target="_blank" rel="noopener noreferrer"
-              className="text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium">
-              Community
-            </a>
-            <a href="https://whop.com/jhp-trades/jhp-trading-community" target="_blank" rel="noopener noreferrer"
-              className="text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium">
-              Execution Lab
-            </a>
-            <Link href="/apply" className="text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium">
-              Mentorship
+            <Link href="/" aria-label="JHP Trades">
+              {mounted ? <Logo isDark={d} /> : <Logo isDark={false} />}
             </Link>
-            <a href="#tools" className="text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium">
-              Tools
-            </a>
-          </div>
 
-          <a
-            href="https://discord.gg/aCNadDMvmH"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 text-sm font-semibold bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Join Free
-          </a>
-        </div>
-      </nav>
-
-      {/* ── hero ── */}
-      <section className="py-20 px-6 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <FadeIn>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-14 items-center">
-
-              <div>
-                <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-4">
-                  5 years trading · $30k+ proven results
-                </p>
-                <h1 className="text-5xl font-black text-gray-900 leading-tight mb-5 tracking-tight">
-                  Get funded.<br />
-                  <span className="text-blue-600">Stay funded.</span>
-                </h1>
-                <p className="text-base text-gray-500 mb-8 leading-relaxed">
-                  Most traders don't fail from strategy — they fail from execution.
-                  That's what we fix. Live, every day.
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  <a
-                    href="https://discord.gg/aCNadDMvmH"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-colors"
-                  >
-                    Join Discord Free →
-                  </a>
-                  <a
-                    href="https://whop.com/jhp-trades/jhp-trading-community"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 border border-gray-200 text-gray-700 text-sm font-semibold px-5 py-2.5 rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-colors"
-                  >
-                    Execution Lab
-                  </a>
-                </div>
-              </div>
-
-              <ProofCarousel images={PROOF_IMAGES} />
-
+            <div className="hidden md:flex items-center gap-7">
+              <a href="https://discord.gg/aCNadDMvmH" target="_blank" rel="noopener noreferrer"
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors font-medium">
+                Community
+              </a>
+              <Link href="/apply"
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors font-medium">
+                Mentorship
+              </Link>
+              <a href="#tools"
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors font-medium">
+                Tools
+              </a>
             </div>
-          </FadeIn>
-        </div>
-      </section>
 
-      {/* ── stats bar ── */}
-      <div className="border-y border-gray-100 bg-gray-50">
-        <div className="max-w-5xl mx-auto px-6 py-5 flex flex-wrap items-center gap-x-10 gap-y-3">
-          <div className="flex items-center gap-2.5">
-            <span className="text-lg font-black text-gray-900">1,300+</span>
-            <span className="text-sm text-gray-400">traders following</span>
-          </div>
-          <span className="text-gray-200 select-none">·</span>
-          <div className="flex items-center gap-2.5">
-            <span className="text-lg font-black text-blue-600">200+</span>
-            <span className="text-sm text-gray-400 font-medium">active members</span>
-          </div>
-          <span className="text-gray-200 select-none">·</span>
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-1.5 w-1.5 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
-            </span>
-            <span className="text-lg font-black text-red-500">Live</span>
-            <span className="text-sm text-gray-400">daily sessions</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ── offerings ── */}
-      <section className="py-16 px-6 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <FadeIn>
-            <div className="mb-10">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Start here</p>
-              <h2 className="text-2xl font-black text-gray-900">Choose your path</h2>
-            </div>
-          </FadeIn>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-
-            {/* Community */}
-            <FadeIn delay={0}>
+            <div className="flex items-center gap-2">
+              {mounted && <ThemeToggle isDark={d} onToggle={toggleDark} />}
               <a
                 href="https://discord.gg/aCNadDMvmH"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex flex-col h-full rounded-2xl border border-gray-100 hover:border-indigo-200 hover:shadow-lg p-6 transition-all duration-200 bg-white"
-                style={{ '--tw-shadow-color': 'rgba(99,102,241,0.08)' }}
+                className="shrink-0 text-sm font-semibold bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
               >
-                <div className="flex items-center justify-between mb-5">
-                  <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600">
-                    Free
-                  </span>
-                  <svg className="w-4 h-4 text-gray-200 group-hover:text-indigo-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10"/>
-                  </svg>
-                </div>
-                <h3 className="text-base font-black text-gray-900 mb-1">Discord Community</h3>
-                <p className="text-xs text-indigo-600 font-semibold mb-3">Free · Live sessions this week</p>
-                <p className="text-sm text-gray-500 leading-relaxed flex-1">
-                  Watch trades live, understand execution in real time, and decide if you want in — no commitment required.
-                </p>
-                <div className="mt-5 pt-4 border-t border-gray-50">
-                  <span className="text-xs font-semibold text-indigo-600">Join Free →</span>
-                </div>
+                Join Free
               </a>
-            </FadeIn>
+            </div>
+          </div>
+        </nav>
 
-            {/* Execution Lab */}
-            <FadeIn delay={80}>
-              <a
-                href="https://whop.com/jhp-trades/jhp-trading-community"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex flex-col h-full rounded-2xl border border-emerald-100 hover:border-emerald-300 hover:shadow-lg p-6 transition-all duration-200"
-                style={{ background: 'linear-gradient(160deg, #f0fdf4 0%, #ffffff 60%)' }}
-              >
-                <div className="flex items-center justify-between mb-5">
-                  <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700">
-                    $99 / mo
-                  </span>
-                  <svg className="w-4 h-4 text-gray-200 group-hover:text-emerald-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10"/>
-                  </svg>
-                </div>
-                <h3 className="text-base font-black text-gray-900 mb-1">Execution Lab</h3>
-                <p className="text-xs text-emerald-600 font-semibold mb-3">Cancel anytime</p>
-                <p className="text-sm text-gray-500 leading-relaxed flex-1">
-                  Stop chasing signals. Build a sustainable edge with live sessions, trade breakdowns, journaling support, and a serious trading community.
-                </p>
-                <div className="mt-5 pt-4 border-t border-emerald-50">
-                  <span className="text-xs font-semibold text-emerald-600">Explore →</span>
-                </div>
-              </a>
-            </FadeIn>
+        {/* ── hero ── */}
+        <section className="py-20 px-6">
+          <div className="max-w-5xl mx-auto">
+            <FadeIn>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-14 items-center">
 
-            {/* 1-on-1 */}
-            <FadeIn delay={160}>
-              <a
-                href="/apply"
-                className="group flex flex-col h-full rounded-2xl border border-blue-100 hover:border-blue-300 hover:shadow-lg p-6 transition-all duration-200"
-                style={{ background: 'linear-gradient(160deg, #eff6ff 0%, #ffffff 60%)' }}
-              >
-                <div className="flex items-center justify-between mb-5">
-                  <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700">
-                    $300 / mo
-                  </span>
-                  <svg className="w-4 h-4 text-gray-200 group-hover:text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10"/>
-                  </svg>
+                <div>
+                  <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-4">
+                    5 years trading · $30k+ proven results
+                  </p>
+                  <h1 className="text-5xl font-black leading-tight mb-5 tracking-tight">
+                    Get funded.<br />
+                    <span className="text-blue-600 dark:text-blue-400">Stay funded.</span>
+                  </h1>
+                  <p className="text-base text-gray-500 dark:text-gray-400 mb-8 leading-relaxed">
+                    Most traders don't fail from strategy — they fail from execution.
+                    That's what we fix. Live, every day.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <a
+                      href="https://discord.gg/aCNadDMvmH"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-colors"
+                    >
+                      Join Discord Free →
+                    </a>
+                    <Link
+                      href="/apply"
+                      className="inline-flex items-center gap-2 border text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors
+                        border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50
+                        dark:border-white/10 dark:text-gray-300 dark:hover:border-white/20 dark:hover:bg-white/5"
+                    >
+                      Apply for Mentorship
+                    </Link>
+                  </div>
                 </div>
-                <h3 className="text-base font-black text-gray-900 mb-1">1-on-1 Mentorship</h3>
-                <p className="text-xs text-blue-600 font-semibold mb-3">Personalized · Limited spots</p>
-                <p className="text-sm text-gray-500 leading-relaxed flex-1">
-                  Deep-dive review of your actual trades. Fix your specific leaks and build a repeatable process with direct, personal coaching.
-                </p>
-                <div className="mt-5 pt-4 border-t border-blue-50">
-                  <span className="text-xs font-semibold text-blue-600">See if it's a fit →</span>
-                </div>
-              </a>
-            </FadeIn>
 
+                <ProofCarousel images={PROOF_IMAGES} isDark={d} />
+
+              </div>
+            </FadeIn>
+          </div>
+        </section>
+
+        {/* ── stats bar ── */}
+        <div className="border-y border-gray-100 dark:border-white/[0.06] bg-gray-50 dark:bg-[#161920] transition-colors duration-300">
+          <div className="max-w-5xl mx-auto px-6 py-5 flex flex-wrap items-center gap-x-10 gap-y-3">
+            <div className="flex items-center gap-2.5">
+              <span className="text-lg font-black">1,300+</span>
+              <span className="text-sm text-gray-400 dark:text-gray-500">traders following</span>
+            </div>
+            <span className="text-gray-200 dark:text-white/10 select-none">·</span>
+            <div className="flex items-center gap-2.5">
+              <span className="text-lg font-black text-blue-600 dark:text-blue-400">200+</span>
+              <span className="text-sm text-gray-400 dark:text-gray-500 font-medium">active members</span>
+            </div>
+            <span className="text-gray-200 dark:text-white/10 select-none">·</span>
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-1.5 w-1.5 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
+              </span>
+              <span className="text-lg font-black text-red-500">Live</span>
+              <span className="text-sm text-gray-400 dark:text-gray-500">daily sessions</span>
+            </div>
           </div>
         </div>
-      </section>
 
-      {/* ── this is / not ── */}
-      <section className="py-12 px-6 bg-gray-50 border-y border-gray-100">
-        <FadeIn>
-          <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-5">
-
-            <div className="px-6 py-6 rounded-2xl border border-red-100 bg-white">
-              <div className="text-[10px] font-black uppercase tracking-widest mb-4 text-red-500">This is NOT</div>
-              <div className="space-y-2.5">
-                {['Signals or alerts', 'Copy trading', 'Gambling tips', 'Hype or predictions'].map(x => (
-                  <div key={x} className="flex items-center gap-2.5 text-sm text-gray-400">
-                    <span className="text-red-400 text-xs font-bold">✕</span> {x}
-                  </div>
-                ))}
+        {/* ── 2 offering cards ── */}
+        <section className="py-16 px-6">
+          <div className="max-w-5xl mx-auto">
+            <FadeIn>
+              <div className="mb-10">
+                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Start here</p>
+                <h2 className="text-2xl font-black">Choose your path</h2>
               </div>
-            </div>
+            </FadeIn>
 
-            <div className="px-6 py-6 rounded-2xl border border-emerald-100 bg-white">
-              <div className="text-[10px] font-black uppercase tracking-widest mb-4 text-emerald-600">This IS</div>
-              <div className="space-y-2.5">
-                {['Execution discipline', 'Trade journaling', 'Real consistency', 'Funded account results'].map(x => (
-                  <div key={x} className="flex items-center gap-2.5 text-sm text-gray-600">
-                    <span className="text-emerald-500 text-xs font-bold">✓</span> {x}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
 
-          </div>
-        </FadeIn>
-      </section>
-
-      {/* ── tools & prop firms ── */}
-      <section id="tools" className="py-16 px-6 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <FadeIn>
-            <div className="mb-8">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Resources</p>
-              <h2 className="text-2xl font-black text-gray-900">Tools & Prop Firms</h2>
-            </div>
-          </FadeIn>
-
-          <div className="space-y-3">
-            {[...TOOLS, ...FIRMS].map((t, i) => (
-              <FadeIn key={t.name} delay={i * 60}>
+              {/* Discord */}
+              <FadeIn delay={0}>
                 <a
-                  href={t.url}
+                  href="https://discord.gg/aCNadDMvmH"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-center gap-4 px-5 py-4 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-sm bg-white transition-all duration-200"
+                  className="group flex flex-col h-full rounded-2xl border p-6 transition-all duration-200
+                    border-gray-100 hover:border-indigo-200 hover:shadow-lg bg-white
+                    dark:border-white/[0.07] dark:hover:border-indigo-500/40 dark:hover:shadow-none dark:bg-[#161920]"
+                  style={d ? { boxShadow: 'none' } : {}}
                 >
-                  <span
-                    className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl"
-                    style={{ background: t.accent + '15', color: t.accent }}
-                  >
-                    {t.icon}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-sm font-semibold text-gray-900">{t.name}</span>
-                      <span
-                        className="text-[9px] px-1.5 py-0.5 rounded-md font-bold tracking-wider uppercase border"
-                        style={{ color: t.accent, borderColor: t.accent + '40', background: t.accent + '10' }}
-                      >
-                        {t.tag}
-                      </span>
-                      {t.badge && (
-                        <span
-                          className="badge-pulse text-[9px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded-md border"
-                          style={{ color: t.accent, borderColor: t.accent + '50', background: t.accent + '15' }}
-                        >
-                          {t.badge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-400 leading-relaxed">{t.desc}</p>
+                  <div className="flex items-center justify-between mb-5">
+                    <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
+                      Free
+                    </span>
+                    <svg className="w-4 h-4 text-gray-200 dark:text-white/20 group-hover:text-indigo-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10"/>
+                    </svg>
                   </div>
-                  <svg className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10"/>
-                  </svg>
+                  <h3 className="text-base font-black mb-1">Discord Community</h3>
+                  <p className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold mb-3">Free · Live sessions this week</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed flex-1">
+                    Watch trades live, understand execution in real time, and decide if you want in — no commitment required.
+                  </p>
+                  <div className="mt-5 pt-4 border-t border-gray-50 dark:border-white/[0.05]">
+                    <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Join Free →</span>
+                  </div>
                 </a>
               </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* ── socials ── */}
-      <section className="py-10 px-6 border-t border-gray-100 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex items-center gap-2">
-            {SOCIALS.map(s => (
-              <a
-                key={s.name}
-                href={s.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={s.name}
-                className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-100 hover:border-gray-200 bg-gray-50 hover:bg-white text-gray-400 hover:text-gray-600 transition-all duration-200"
-              >
-                {s.icon}
+              {/* 1-on-1 */}
+              <FadeIn delay={80}>
+                <Link
+                  href="/apply"
+                  className="group flex flex-col h-full rounded-2xl border p-6 transition-all duration-200
+                    border-blue-100 hover:border-blue-300 hover:shadow-lg
+                    dark:border-blue-500/20 dark:hover:border-blue-500/50 dark:hover:shadow-none"
+                  style={d
+                    ? { background: 'linear-gradient(160deg, rgba(37,99,235,0.08) 0%, #161920 60%)' }
+                    : { background: 'linear-gradient(160deg, #eff6ff 0%, #ffffff 60%)' }
+                  }
+                >
+                  <div className="flex items-center justify-between mb-5">
+                    <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+                      1-on-1
+                    </span>
+                    <svg className="w-4 h-4 text-gray-200 dark:text-white/20 group-hover:text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10"/>
+                    </svg>
+                  </div>
+                  <h3 className="text-base font-black mb-1">1-on-1 Mentorship</h3>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold mb-3">Personalized · Limited spots</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed flex-1">
+                    Deep-dive review of your actual trades. Fix your specific leaks and build a repeatable process with direct, personal coaching.
+                  </p>
+                  <div className="mt-5 pt-4 border-t border-blue-50 dark:border-white/[0.05]">
+                    <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">See if it's a fit →</span>
+                  </div>
+                </Link>
+              </FadeIn>
+
+            </div>
+          </div>
+        </section>
+
+        {/* ── this is / not ── */}
+        <section className="py-12 px-6 border-y border-gray-100 dark:border-white/[0.06] bg-gray-50 dark:bg-[#161920] transition-colors duration-300">
+          <FadeIn>
+            <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+              <div className="px-6 py-6 rounded-2xl border border-red-100 dark:border-red-500/20 bg-white dark:bg-[#0f1117]">
+                <div className="text-[10px] font-black uppercase tracking-widest mb-4 text-red-500">This is NOT</div>
+                <div className="space-y-2.5">
+                  {['Signals or alerts', 'Copy trading', 'Gambling tips', 'Hype or predictions'].map(x => (
+                    <div key={x} className="flex items-center gap-2.5 text-sm text-gray-400 dark:text-gray-500">
+                      <span className="text-red-400 text-xs font-bold">✕</span> {x}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="px-6 py-6 rounded-2xl border border-emerald-100 dark:border-emerald-500/20 bg-white dark:bg-[#0f1117]">
+                <div className="text-[10px] font-black uppercase tracking-widest mb-4 text-emerald-600 dark:text-emerald-400">This IS</div>
+                <div className="space-y-2.5">
+                  {['Execution discipline', 'Trade journaling', 'Real consistency', 'Funded account results'].map(x => (
+                    <div key={x} className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-300">
+                      <span className="text-emerald-500 text-xs font-bold">✓</span> {x}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          </FadeIn>
+        </section>
+
+        {/* ── tools & prop firms ── */}
+        <section id="tools" className="py-16 px-6">
+          <div className="max-w-5xl mx-auto">
+            <FadeIn>
+              <div className="mb-8">
+                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Resources</p>
+                <h2 className="text-2xl font-black">Tools & Prop Firms</h2>
+              </div>
+            </FadeIn>
+
+            <div className="space-y-3">
+              {[...TOOLS, ...FIRMS].map((t, i) => (
+                <FadeIn key={t.name} delay={i * 60}>
+                  <a
+                    href={t.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center gap-4 px-5 py-4 rounded-2xl border transition-all duration-200
+                      border-gray-100 hover:border-gray-200 hover:shadow-sm bg-white
+                      dark:border-white/[0.06] dark:hover:border-white/[0.12] dark:hover:shadow-none dark:bg-[#161920]"
+                  >
+                    <span
+                      className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl"
+                      style={{ background: t.accent + '15', color: t.accent }}
+                    >
+                      {t.icon}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-sm font-semibold">{t.name}</span>
+                        <span
+                          className="text-[9px] px-1.5 py-0.5 rounded-md font-bold tracking-wider uppercase border"
+                          style={{ color: t.accent, borderColor: t.accent + '40', background: t.accent + '12' }}
+                        >
+                          {t.tag}
+                        </span>
+                        {t.badge && (
+                          <span
+                            className="badge-pulse text-[9px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded-md border"
+                            style={{ color: t.accent, borderColor: t.accent + '50', background: t.accent + '15' }}
+                          >
+                            {t.badge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">{t.desc}</p>
+                    </div>
+                    <svg className="w-3.5 h-3.5 text-gray-300 dark:text-white/20 group-hover:text-gray-500 dark:group-hover:text-white/50 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10"/>
+                    </svg>
+                  </a>
+                </FadeIn>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── socials ── */}
+        <section className="py-10 px-6 border-t border-gray-100 dark:border-white/[0.06]">
+          <div className="max-w-5xl mx-auto">
+            <div className="flex items-center gap-2">
+              {SOCIALS.map(s => (
+                <a
+                  key={s.name}
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={s.name}
+                  className="flex items-center justify-center w-9 h-9 rounded-xl border transition-all duration-200
+                    border-gray-100 hover:border-gray-200 bg-gray-50 hover:bg-white text-gray-400 hover:text-gray-600
+                    dark:border-white/[0.06] dark:hover:border-white/[0.12] dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:text-gray-500 dark:hover:text-gray-300"
+                >
+                  {s.icon}
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── footer ── */}
+        <footer className="border-t border-gray-100 dark:border-white/[0.06] py-6 px-6">
+          <div className="max-w-5xl mx-auto flex items-center justify-between">
+            <span className="text-xs text-gray-300 dark:text-white/20 font-mono">noctiq.ai</span>
+            <div className="flex items-center gap-5">
+              <a href="mailto:christian.park2002@gmail.com"
+                className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                christian.park2002@gmail.com
               </a>
-            ))}
+              <Link href="/dashboard"
+                className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                live charts →
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </footer>
 
-      {/* ── footer ── */}
-      <footer className="border-t border-gray-100 py-6 px-6 bg-white">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <span className="text-xs text-gray-300 font-mono">noctiq.ai</span>
-          <div className="flex items-center gap-5">
-            <a href="mailto:christian.park2002@gmail.com" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-              christian.park2002@gmail.com
-            </a>
-            <Link href="/dashboard" className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
-              live charts →
-            </Link>
-          </div>
-        </div>
-      </footer>
-
+      </div>
     </div>
   )
 }
