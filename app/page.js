@@ -288,13 +288,17 @@ export default function Page() {
   useEffect(() => {
     setMounted(true)
     const saved = localStorage.getItem('theme')
-    if (saved === 'dark') setIsDark(true)
+    if (saved === 'dark') {
+      setIsDark(true)
+      document.documentElement.classList.add('dark')
+    }
   }, [])
 
   const toggleDark = () => {
-    setIsDark(d => {
-      const next = !d
+    setIsDark(prev => {
+      const next = !prev
       localStorage.setItem('theme', next ? 'dark' : 'light')
+      document.documentElement.classList.toggle('dark', next)
       return next
     })
   }
@@ -302,11 +306,7 @@ export default function Page() {
   const d = isDark
 
   return (
-    <div
-      className={d ? 'dark' : ''}
-      suppressHydrationWarning
-    >
-      <div className="min-h-screen bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 transition-colors duration-300">
+    <div className="min-h-screen bg-white dark:bg-[#0f1117] text-gray-900 dark:text-gray-100 transition-colors duration-300">
 
         <style>{`
           @keyframes badgepulse {
@@ -626,7 +626,6 @@ export default function Page() {
           </div>
         </footer>
 
-      </div>
     </div>
   )
 }
