@@ -438,37 +438,6 @@ export default function Page() {
         </FadeIn>
       </section>
 
-      {/* ── this is / not ── */}
-      <section className="py-12 px-6 bg-gray-50 border-y border-gray-100">
-        <FadeIn>
-          <div className="max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-5">
-
-            <div className="px-6 py-6 rounded-2xl border border-red-100 bg-white">
-              <div className="text-[10px] font-black uppercase tracking-widest mb-4 text-red-500">This is NOT</div>
-              <div className="space-y-2.5">
-                {['Signals or alerts', 'Copy trading', 'Gambling tips', 'Hype or predictions'].map(x => (
-                  <div key={x} className="flex items-center gap-2.5 text-sm text-gray-400">
-                    <span className="text-red-400 text-xs font-bold">✕</span> {x}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="px-6 py-6 rounded-2xl border border-emerald-100 bg-white">
-              <div className="text-[10px] font-black uppercase tracking-widest mb-4 text-emerald-600">This IS</div>
-              <div className="space-y-2.5">
-                {['Execution discipline', 'Trade journaling', 'Real consistency', 'Funded account results'].map(x => (
-                  <div key={x} className="flex items-center gap-2.5 text-sm text-gray-600">
-                    <span className="text-emerald-500 text-xs font-bold">✓</span> {x}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-        </FadeIn>
-      </section>
-
       {/* ── tools ── */}
       <section id="tools" className="py-16 px-6">
         <div className="max-w-2xl mx-auto">
