@@ -236,47 +236,36 @@ function HeroBg() {
         className="absolute inset-0"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(15,23,42,0.032) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(15,23,42,0.032) 1px, transparent 1px)
+            linear-gradient(rgba(15,23,42,0.025) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(15,23,42,0.025) 1px, transparent 1px)
           `,
-          backgroundSize: '44px 44px',
+          backgroundSize: '48px 48px',
         }}
       />
-      {/* candlesticks + level lines */}
+      {/* minimal market texture */}
       <svg
         className="absolute inset-0 w-full h-full"
         viewBox="0 0 1200 480"
         preserveAspectRatio="xMidYMid slice"
         fill="none"
+        style={{ filter: 'blur(0.4px)' }}
       >
-        {/* horizontal level lines */}
-        <line x1="0" y1="118" x2="1200" y2="118" stroke="#1e3a8a" strokeWidth="0.7" strokeDasharray="5 11" opacity="0.22"/>
-        <line x1="0" y1="248" x2="1200" y2="248" stroke="#1e3a8a" strokeWidth="0.7" strokeDasharray="5 11" opacity="0.16"/>
-        <line x1="0" y1="368" x2="1200" y2="368" stroke="#1e3a8a" strokeWidth="0.7" strokeDasharray="5 11" opacity="0.12"/>
-        {/* session tick marks on levels */}
-        <line x1="190" y1="110" x2="190" y2="126" stroke="#2563eb" strokeWidth="1.5" opacity="0.32"/>
-        <line x1="430" y1="240" x2="430" y2="256" stroke="#2563eb" strokeWidth="1.5" opacity="0.26"/>
-        <line x1="880" y1="110" x2="880" y2="126" stroke="#2563eb" strokeWidth="1.5" opacity="0.28"/>
-        <line x1="1030" y1="360" x2="1030" y2="376" stroke="#2563eb" strokeWidth="1.5" opacity="0.22"/>
-        {/* left candle cluster */}
-        <line x1="52"  y1="58"  x2="52"  y2="198" stroke="#94a3b8" strokeWidth="1" opacity="0.35"/>
-        <rect x="44"   y="88"  width="16" height="80"  rx="1" fill="#94a3b8" opacity="0.12"/>
-        <line x1="78"  y1="38"  x2="78"  y2="178" stroke="#2563eb" strokeWidth="1" opacity="0.3"/>
-        <rect x="70"   y="58"  width="16" height="90"  rx="1" fill="#2563eb" opacity="0.1"/>
-        <line x1="104" y1="18"  x2="104" y2="198" stroke="#1d4ed8" strokeWidth="1" opacity="0.36"/>
-        <rect x="96"   y="28"  width="16" height="148" rx="1" fill="#1d4ed8" opacity="0.13"/>
-        {/* right candle cluster */}
-        <line x1="1082" y1="78"  x2="1082" y2="258" stroke="#94a3b8" strokeWidth="1" opacity="0.28"/>
-        <rect x="1074"  y="108" width="16" height="100" rx="1" fill="#94a3b8" opacity="0.09"/>
-        <line x1="1108" y1="58"  x2="1108" y2="238" stroke="#2563eb" strokeWidth="1" opacity="0.28"/>
-        <rect x="1100"  y="78"  width="16" height="120" rx="1" fill="#2563eb" opacity="0.09"/>
-        <line x1="1134" y1="28"  x2="1134" y2="198" stroke="#1d4ed8" strokeWidth="1" opacity="0.32"/>
-        <rect x="1126"  y="38"  width="16" height="138" rx="1" fill="#1d4ed8" opacity="0.11"/>
-        {/* small bottom candles */}
-        <line x1="330" y1="378" x2="330" y2="468" stroke="#94a3b8" strokeWidth="0.8" opacity="0.18"/>
-        <rect x="324"  y="393" width="12" height="54"  rx="0.5" fill="#94a3b8" opacity="0.07"/>
-        <line x1="770" y1="358" x2="770" y2="468" stroke="#2563eb" strokeWidth="0.8" opacity="0.18"/>
-        <rect x="764"  y="368" width="12" height="70"  rx="0.5" fill="#2563eb" opacity="0.07"/>
+        {/* two subtle level lines */}
+        <line x1="0" y1="148" x2="1200" y2="148" stroke="#1e3a8a" strokeWidth="0.6" strokeDasharray="5 14" opacity="0.14"/>
+        <line x1="0" y1="320" x2="1200" y2="320" stroke="#1e3a8a" strokeWidth="0.6" strokeDasharray="5 14" opacity="0.1"/>
+        {/* session ticks */}
+        <line x1="220" y1="141" x2="220" y2="155" stroke="#2563eb" strokeWidth="1.2" opacity="0.2"/>
+        <line x1="860" y1="313" x2="860" y2="327" stroke="#2563eb" strokeWidth="1.2" opacity="0.18"/>
+        {/* left candles — only 2, pushed to edge */}
+        <line x1="60"  y1="60"  x2="60"  y2="200" stroke="#94a3b8" strokeWidth="0.8" opacity="0.2"/>
+        <rect x="53"   y="95"  width="14" height="72" rx="1" fill="#94a3b8" opacity="0.07"/>
+        <line x1="84"  y1="30"  x2="84"  y2="200" stroke="#1d4ed8" strokeWidth="0.8" opacity="0.22"/>
+        <rect x="77"   y="45"  width="14" height="130" rx="1" fill="#1d4ed8" opacity="0.08"/>
+        {/* right candles — only 2, pushed to edge */}
+        <line x1="1116" y1="50"  x2="1116" y2="210" stroke="#2563eb" strokeWidth="0.8" opacity="0.2"/>
+        <rect x="1109"  y="70"  width="14" height="112" rx="1" fill="#2563eb" opacity="0.07"/>
+        <line x1="1140" y1="25"  x2="1140" y2="200" stroke="#1d4ed8" strokeWidth="0.8" opacity="0.22"/>
+        <rect x="1133"  y="38"  width="14" height="136" rx="1" fill="#1d4ed8" opacity="0.08"/>
       </svg>
     </div>
   )
@@ -285,7 +274,7 @@ function HeroBg() {
 /* ─────────────── page ─────────────── */
 export default function Page() {
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-[#F7F8FA] text-[#0B1020]">
 
       <style>{`
         @keyframes badgepulse {
@@ -296,7 +285,7 @@ export default function Page() {
       `}</style>
 
       {/* ── nav ── */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-[10px] border-b border-gray-200/80">
         <div className="max-w-5xl mx-auto px-8 py-4 flex items-center justify-between">
 
           {/* logo */}
@@ -350,25 +339,25 @@ export default function Page() {
 
             {/* pills */}
             <div className="flex flex-wrap justify-center gap-2 mb-7">
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-red-50 text-red-600 border border-red-100">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-white border border-gray-200 text-red-600 shadow-sm">
                 <span className="relative flex h-1.5 w-1.5 shrink-0">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
                 </span>
                 Live daily
               </span>
-              <span className="inline-flex items-center text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">
+              <span className="inline-flex items-center text-xs font-semibold px-3 py-1.5 rounded-full bg-white border border-gray-200 text-[#0B1020] shadow-sm">
                 Futures
               </span>
-              <span className="inline-flex items-center text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">
+              <span className="inline-flex items-center text-xs font-semibold px-3 py-1.5 rounded-full bg-white border border-gray-200 text-[#0B1020] shadow-sm">
                 No signals
               </span>
             </div>
 
-            <h1 className="text-[2rem] sm:text-4xl md:text-5xl font-black text-gray-900 leading-[1.15] tracking-tight mb-4">
+            <h1 className="text-[2rem] sm:text-4xl md:text-5xl font-black text-[#0B1020] leading-[1.15] tracking-tight mb-4">
               Trading doesn't have<br className="hidden sm:block" /> to be complicated.
             </h1>
-            <p className="text-base sm:text-lg text-gray-500 leading-relaxed mb-8 max-w-md mx-auto">
+            <p className="text-base sm:text-lg text-slate-500 leading-relaxed mb-8 max-w-md mx-auto">
               Focused on clean execution, market structure, and staying consistent in live markets.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
@@ -376,13 +365,13 @@ export default function Page() {
                 href="https://discord.gg/aCNadDMvmH"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center bg-blue-600 text-white font-semibold px-6 py-3 rounded-full hover:bg-blue-700 transition-colors text-sm"
+                className="inline-flex items-center bg-[#2563EB] text-white font-semibold px-6 py-3 rounded-full hover:bg-blue-700 transition-colors text-sm shadow-sm"
               >
                 Watch Live →
               </a>
               <Link
                 href="/apply"
-                className="inline-flex items-center border border-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-full hover:border-gray-300 hover:bg-gray-50 transition-colors text-sm"
+                className="inline-flex items-center bg-white border border-gray-200 text-[#0B1020] font-semibold px-6 py-3 rounded-full hover:border-gray-300 hover:shadow-sm transition-all text-sm shadow-sm"
               >
                 Apply for 1-on-1s
               </Link>
@@ -391,74 +380,75 @@ export default function Page() {
         </FadeIn>
       </section>
 
-      {/* ── 4 feature cards (TTrades icon grid) ── */}
-      <section className="pb-16 px-6 border-b border-gray-100">
+      {/* ── nav cards ── */}
+      <section className="pb-12 px-6 border-b border-gray-200/70">
         <FadeIn delay={80}>
-          <div className="max-w-2xl mx-auto grid grid-cols-4 gap-6">
+          <div className="max-w-2xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-3">
 
-            <FeatureCard
-              href="https://discord.gg/aCNadDMvmH"
-              external
-              label="Community"
-              icon={
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-6 h-6">
-                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-                  <circle cx="9" cy="7" r="4"/>
-                  <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
-                </svg>
-              }
-            />
-
-            <FeatureCard
-              href="/apply"
-              label="1-on-1s"
-              icon={
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-6 h-6">
-                  <path d="M12 20h9"/>
-                  <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
-                </svg>
-              }
-            />
-
-            <FeatureCard
-              href="#tools"
-              label="Tools"
-              icon={
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-6 h-6">
-                  <polyline points="2,18 8,11 13,15 22,5"/>
-                  <line x1="2" y1="20" x2="22" y2="20"/>
-                </svg>
-              }
-            />
-
-            <FeatureCard
-              href="#firms"
-              label="Prop Firms"
-              icon={
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-6 h-6">
-                  <rect x="3" y="10" width="18" height="11" rx="1"/>
-                  <path d="M8 10V7a4 4 0 018 0v3"/>
-                  <circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/>
-                </svg>
-              }
-            />
+            {[
+              {
+                href: 'https://discord.gg/aCNadDMvmH', external: true,
+                label: 'Community', sub: 'Live sessions daily',
+                color: '#4F46E5',
+                icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
+              },
+              {
+                href: '/apply', external: false,
+                label: '1-on-1s', sub: 'Private coaching',
+                color: '#2563EB',
+                icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+              },
+              {
+                href: '#tools', external: false,
+                label: 'Tools', sub: 'Charts & journal',
+                color: '#059669',
+                icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4"><polyline points="2,18 8,11 13,15 22,5"/><line x1="2" y1="20" x2="22" y2="20"/></svg>,
+              },
+              {
+                href: '#firms', external: false,
+                label: 'Prop Firms', sub: 'Funded accounts',
+                color: '#D97706',
+                icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4"><rect x="3" y="10" width="18" height="11" rx="1"/><path d="M8 10V7a4 4 0 018 0v3"/><circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>,
+              },
+            ].map(({ href, external, label, sub, color, icon }) => {
+              const cls = 'group bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-3 hover:shadow-md hover:border-gray-300 transition-all duration-200 cursor-pointer'
+              const inner = (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: color + '12', color }}>
+                      {icon}
+                    </span>
+                    <svg className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-[#0B1020]">{label}</div>
+                    <div className="text-xs text-slate-400 mt-0.5">{sub}</div>
+                  </div>
+                </>
+              )
+              return external
+                ? <a key={label} href={href} target="_blank" rel="noopener noreferrer" className={cls}>{inner}</a>
+                : <Link key={label} href={href} className={cls}>{inner}</Link>
+            })}
 
           </div>
         </FadeIn>
       </section>
 
       {/* ── stats ── */}
-      <section className="py-10 px-6 bg-gray-50 border-b border-gray-100">
+      <section className="py-10 px-6 bg-white border-b border-gray-200/70">
         <FadeIn>
           <div className="max-w-2xl mx-auto flex flex-wrap justify-center items-center gap-x-12 gap-y-4 text-center">
             <div>
-              <div className="text-2xl font-black text-gray-900">1,800+</div>
-              <div className="text-xs text-gray-400 mt-0.5">traders following</div>
+              <div className="text-2xl font-black text-[#0B1020]">1,800+</div>
+              <div className="text-xs text-slate-400 mt-0.5">traders following</div>
             </div>
             <div className="text-gray-200 select-none text-xl">·</div>
             <div>
-              <div className="text-2xl font-black text-blue-600">300+</div>
-              <div className="text-xs text-gray-400 mt-0.5">active members</div>
+              <div className="text-2xl font-black text-[#2563EB]">300+</div>
+              <div className="text-xs text-slate-400 mt-0.5">active members</div>
             </div>
             <div className="text-gray-200 select-none text-xl">·</div>
             <div className="flex items-center gap-2">
@@ -468,7 +458,7 @@ export default function Page() {
               </span>
               <div>
                 <div className="text-2xl font-black text-red-500 leading-none">Live</div>
-                <div className="text-xs text-gray-400 mt-0.5">daily sessions</div>
+                <div className="text-xs text-slate-400 mt-0.5">daily sessions</div>
               </div>
             </div>
           </div>
@@ -489,21 +479,21 @@ export default function Page() {
       <section id="tools" className="py-16 px-6">
         <div className="max-w-2xl mx-auto">
           <FadeIn>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2 text-center">Resources</p>
-            <h2 className="text-2xl font-black text-gray-900 text-center mb-8">Tools</h2>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2 text-center">Resources</p>
+            <h2 className="text-2xl font-black text-[#0B1020] text-center mb-8">Tools</h2>
           </FadeIn>
           <div className="space-y-3">
             {TOOLS.map((t, i) => (
               <FadeIn key={t.name} delay={i * 60}>
                 <a href={t.url} target="_blank" rel="noopener noreferrer"
-                  className="group flex items-center gap-4 px-5 py-4 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-sm bg-white transition-all duration-200">
+                  className="group flex items-center gap-4 px-5 py-4 rounded-2xl border border-gray-200 hover:border-gray-300 hover:shadow-md bg-white transition-all duration-200">
                   <span className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl"
                     style={{ background: t.accent + '15', color: t.accent }}>
                     {t.icon}
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-sm font-semibold text-gray-900">{t.name}</span>
+                      <span className="text-sm font-semibold text-[#0B1020]">{t.name}</span>
                       <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold tracking-wider uppercase border"
                         style={{ color: t.accent, borderColor: t.accent + '40', background: t.accent + '12' }}>
                         {t.tag}
@@ -525,20 +515,20 @@ export default function Page() {
       <section id="firms" className="pb-16 px-6">
         <div className="max-w-2xl mx-auto">
           <FadeIn>
-            <h2 className="text-2xl font-black text-gray-900 text-center mb-8">Prop Firms</h2>
+            <h2 className="text-2xl font-black text-[#0B1020] text-center mb-8">Prop Firms</h2>
           </FadeIn>
           <div className="space-y-3">
             {FIRMS.map((t, i) => (
               <FadeIn key={t.name} delay={i * 60}>
                 <a href={t.url} target="_blank" rel="noopener noreferrer"
-                  className="group flex items-center gap-4 px-5 py-4 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-sm bg-white transition-all duration-200">
+                  className="group flex items-center gap-4 px-5 py-4 rounded-2xl border border-gray-200 hover:border-gray-300 hover:shadow-md bg-white transition-all duration-200">
                   <span className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl"
                     style={{ background: t.accent + '15', color: t.accent }}>
                     {t.icon}
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-sm font-semibold text-gray-900">{t.name}</span>
+                      <span className="text-sm font-semibold text-[#0B1020]">{t.name}</span>
                       <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold tracking-wider uppercase border"
                         style={{ color: t.accent, borderColor: t.accent + '40', background: t.accent + '12' }}>
                         {t.tag}
@@ -563,11 +553,11 @@ export default function Page() {
       </section>
 
       {/* ── socials ── */}
-      <section className="py-10 px-6 border-t border-gray-100">
+      <section className="py-10 px-6 border-t border-gray-200/70">
         <div className="max-w-2xl mx-auto flex justify-center gap-2">
           {SOCIALS.map(s => (
             <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer" title={s.name}
-              className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-100 hover:border-gray-200 bg-gray-50 hover:bg-white text-gray-400 hover:text-gray-600 transition-all duration-200">
+              className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 hover:border-gray-300 bg-white hover:shadow-sm text-slate-400 hover:text-slate-600 transition-all duration-200">
               {s.icon}
             </a>
           ))}
@@ -575,9 +565,9 @@ export default function Page() {
       </section>
 
       {/* ── footer ── */}
-      <footer className="border-t border-gray-100 py-6 px-6">
+      <footer className="border-t border-gray-200/70 py-6 px-6">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <span className="text-xs text-gray-300 font-mono">noctiq.ai</span>
+          <span className="text-xs text-slate-300 font-mono">noctiq.ai</span>
           <div className="flex items-center gap-5">
             <a href="mailto:christian.park2002@gmail.com"
               className="text-xs text-gray-400 hover:text-gray-600 transition-colors">

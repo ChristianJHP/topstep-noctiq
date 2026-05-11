@@ -9,7 +9,8 @@ html {
 }
 
 body {
-  background-color: #ffffff;
+  background-color: #F7F8FA;
+  color: #0B1020;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -22,10 +23,10 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #262626;
+  background: #CBD5E1;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #404040;
+  background: #94A3B8;
 }
