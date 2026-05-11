@@ -376,6 +376,9 @@ export default function Page() {
                 Apply for 1-on-1s
               </Link>
             </div>
+            <p className="mt-6 text-xs text-slate-400 font-light italic text-center">
+              A few good decisions repeated consistently can change your life.
+            </p>
           </div>
         </FadeIn>
       </section>
