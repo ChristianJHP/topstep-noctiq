@@ -397,7 +397,7 @@ export default function Page() {
               },
               {
                 href: '/apply', external: false,
-                label: '1-on-1s', sub: 'Private coaching',
+                label: '1-on-1s', sub: 'Personalized feedback',
                 color: '#2563EB',
                 icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
               },

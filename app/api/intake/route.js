@@ -1,9 +1,9 @@
 export async function POST(req) {
   try {
     const body = await req.json()
-    const { name, discord, market, experience, struggle, baddays, improve, commitment, notes } = body
+    const { name, discord, market, experience, livetrading, struggle, baddays, referral, commitment, notes } = body
 
-    const required = { name, discord, market, experience, struggle, baddays, improve, commitment }
+    const required = { name, discord, market, experience, livetrading, struggle, baddays, referral, commitment }
     for (const [key, val] of Object.entries(required)) {
       if (!val || !val.toString().trim()) {
         return Response.json({ error: `Missing field: ${key}` }, { status: 400 })
@@ -20,14 +20,15 @@ export async function POST(req) {
       title: '📋 New 1-on-1 Application',
       color: 0x2563eb,
       fields: [
-        { name: '👤 Name',             value: name,       inline: true  },
-        { name: '💬 Discord',          value: discord,    inline: true  },
-        { name: '📈 Market',           value: market,     inline: true  },
-        { name: '⏱ Experience',        value: experience, inline: false },
-        { name: '⚠️ Biggest Struggle', value: struggle,   inline: false },
-        { name: '📉 Bad Day Causes',   value: baddays,    inline: false },
-        { name: '🎯 Goals',            value: improve,    inline: false },
-        { name: '🔥 Commitment',       value: commitment, inline: false },
+        { name: '👤 Name',             value: name,        inline: true  },
+        { name: '💬 Discord',          value: discord,     inline: true  },
+        { name: '📈 Market',           value: market,      inline: true  },
+        { name: '⏱ Experience',        value: experience,  inline: true  },
+        { name: '💵 Trading Live',     value: livetrading, inline: true  },
+        { name: '⚠️ Biggest Struggle', value: struggle,    inline: false },
+        { name: '📉 Bad Day Causes',   value: baddays,     inline: false },
+        { name: '📣 Found Me Via',     value: referral,    inline: true  },
+        { name: '🔥 Commitment',       value: commitment,  inline: true  },
         ...(notes?.trim() ? [{ name: '📝 Notes', value: notes, inline: false }] : []),
       ],
       timestamp: new Date().toISOString(),

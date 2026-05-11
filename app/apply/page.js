@@ -13,7 +13,7 @@ const STEPS = [
   {
     id: 'discord',
     type: 'text',
-    question: 'Discord username',
+    question: "What's your Discord username?",
     placeholder: 'e.g. jhp.trades',
   },
   {
@@ -29,6 +29,12 @@ const STEPS = [
     options: ['Just getting started', 'Under 6 months', '6–12 months', '1–2 years', '2+ years'],
   },
   {
+    id: 'livetrading',
+    type: 'options',
+    question: 'Are you currently trading live?',
+    options: ['Live money', 'Funded account', 'Paper trading', 'Not yet'],
+  },
+  {
     id: 'struggle',
     type: 'options',
     question: 'What do you struggle with most right now?',
@@ -41,10 +47,10 @@ const STEPS = [
     placeholder: 'Be specific — this helps a lot',
   },
   {
-    id: 'improve',
-    type: 'textarea',
-    question: 'What are you trying to improve most over the next few months?',
-    placeholder: 'Where do you want to be?',
+    id: 'referral',
+    type: 'options',
+    question: 'How did you find me?',
+    options: ['YouTube', 'Discord', 'Live stream', 'Someone referred me', 'Other'],
   },
   {
     id: 'commitment',
