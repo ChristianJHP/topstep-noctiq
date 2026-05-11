@@ -101,23 +101,6 @@ function ProofCarousel({ images }) {
   )
 }
 
-/* ── feature card (TTrades-style icon + label) ── */
-function FeatureCard({ icon, label, sub, href, external = false }) {
-  const inner = (
-    <div className="group flex flex-col items-center gap-3 cursor-pointer">
-      <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 group-hover:bg-gray-200 transition-colors duration-200">
-        {icon}
-      </div>
-      <div className="text-center">
-        <div className="text-sm font-semibold text-gray-800">{label}</div>
-        {sub && <div className="text-xs text-gray-400 mt-0.5">{sub}</div>}
-      </div>
-    </div>
-  )
-  if (external) return <a href={href} target="_blank" rel="noopener noreferrer">{inner}</a>
-  return <Link href={href}>{inner}</Link>
-}
-
 /* ── data ── */
 const SOCIALS = [
   {
@@ -191,11 +174,40 @@ const TOOLS = [
   },
 ]
 
-
 const PROOF_IMAGES = [
   { src: '/tradezella.png', label: 'TradeZella stats' },
   { src: '/apex.png',       label: 'Apex payout' },
   { src: '/alpha.png',      label: 'Alpha Futures payout' },
+]
+
+const PROBLEMS = [
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    ),
+    label: 'Failing evals repeatedly',
+    sub: 'Blowing funded accounts over mistakes you already know not to make',
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
+        <path d="M3 3h18v18H3z" rx="2"/><path d="M3 9h18M9 21V9"/>
+      </svg>
+    ),
+    label: 'No consistency',
+    sub: 'Good days followed by blow-ups — no clear system driving your decisions',
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+      </svg>
+    ),
+    label: 'Trading alone',
+    sub: 'No accountability, no one to compare notes with, no real feedback on your trades',
+  },
 ]
 
 /* ── subtle trading background for hero ── */
@@ -221,18 +233,14 @@ function HeroBg() {
         fill="none"
         style={{ filter: 'blur(0.4px)' }}
       >
-        {/* two subtle level lines */}
         <line x1="0" y1="148" x2="1200" y2="148" stroke="#1e3a8a" strokeWidth="0.6" strokeDasharray="5 14" opacity="0.14"/>
         <line x1="0" y1="320" x2="1200" y2="320" stroke="#1e3a8a" strokeWidth="0.6" strokeDasharray="5 14" opacity="0.1"/>
-        {/* session ticks */}
         <line x1="220" y1="141" x2="220" y2="155" stroke="#2563eb" strokeWidth="1.2" opacity="0.2"/>
         <line x1="860" y1="313" x2="860" y2="327" stroke="#2563eb" strokeWidth="1.2" opacity="0.18"/>
-        {/* left candles — only 2, pushed to edge */}
         <line x1="60"  y1="60"  x2="60"  y2="200" stroke="#94a3b8" strokeWidth="0.8" opacity="0.2"/>
         <rect x="53"   y="95"  width="14" height="72" rx="1" fill="#94a3b8" opacity="0.07"/>
         <line x1="84"  y1="30"  x2="84"  y2="200" stroke="#1d4ed8" strokeWidth="0.8" opacity="0.22"/>
         <rect x="77"   y="45"  width="14" height="130" rx="1" fill="#1d4ed8" opacity="0.08"/>
-        {/* right candles — only 2, pushed to edge */}
         <line x1="1116" y1="50"  x2="1116" y2="210" stroke="#2563eb" strokeWidth="0.8" opacity="0.2"/>
         <rect x="1109"  y="70"  width="14" height="112" rx="1" fill="#2563eb" opacity="0.07"/>
         <line x1="1140" y1="25"  x2="1140" y2="200" stroke="#1d4ed8" strokeWidth="0.8" opacity="0.22"/>
@@ -247,14 +255,6 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-[#F7F8FA] text-[#0B1020]">
 
-      <style>{`
-        @keyframes badgepulse {
-          0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4); }
-          50%      { box-shadow: 0 0 0 5px rgba(245,158,11,0); }
-        }
-        .badge-pulse { animation: badgepulse 2s ease-in-out infinite; }
-      `}</style>
-
       {/* ── nav ── */}
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-[10px] border-b border-gray-200/80">
         <div className="max-w-5xl mx-auto px-8 py-4 flex items-center justify-between">
@@ -262,19 +262,15 @@ export default function Page() {
           {/* logo */}
           <Link href="/" aria-label="JHP Trades">
             <svg viewBox="0 0 106 36" width="106" height="36" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-9 w-auto block shrink-0">
-              {/* candle 1 — slate/neutral */}
               <line x1="6.5" y1="9"  x2="6.5" y2="13" stroke="#94a3b8" strokeWidth="1.2"/>
               <rect x="3"   y="13" width="7" height="10" rx="1" fill="#94a3b8" fillOpacity="0.55"/>
               <line x1="6.5" y1="23" x2="6.5" y2="27" stroke="#94a3b8" strokeWidth="1.2"/>
-              {/* candle 2 — blue/mid */}
               <line x1="16.5" y1="7"  x2="16.5" y2="11" stroke="#2563eb" strokeWidth="1.2" strokeOpacity="0.7"/>
               <rect x="13"   y="11" width="7" height="14" rx="1" fill="#2563eb" fillOpacity="0.55"/>
               <line x1="16.5" y1="25" x2="16.5" y2="29" stroke="#2563eb" strokeWidth="1.2" strokeOpacity="0.7"/>
-              {/* candle 3 — navy/breakout */}
               <line x1="26.5" y1="2"  x2="26.5" y2="6"  stroke="#1d4ed8" strokeWidth="1.2"/>
               <rect x="23"   y="6"  width="7" height="22" rx="1" fill="#1d4ed8"/>
               <line x1="26.5" y1="28" x2="26.5" y2="33" stroke="#1d4ed8" strokeWidth="1.2"/>
-              {/* JHP */}
               <text x="36" y="29" fontFamily="Arial Black, Impact, sans-serif" fontWeight="900" fontSize="26" fill="#0f172a" letterSpacing="-0.5">JHP</text>
             </svg>
           </Link>
@@ -322,10 +318,10 @@ export default function Page() {
             </div>
 
             <h1 className="text-[2rem] sm:text-4xl md:text-5xl font-black text-[#0B1020] leading-[1.15] tracking-tight mb-4">
-              Trading doesn't have<br className="hidden sm:block" /> to be complicated.
+              I help futures traders<br className="hidden sm:block" /> stop losing on discipline<br className="hidden sm:block" /> and get funded.
             </h1>
             <p className="text-base sm:text-lg text-slate-500 leading-relaxed mb-8 max-w-md mx-auto">
-              Focused on clean execution, market structure, and staying consistent in live markets.
+              Every morning I trade NQ and ES live — real entries, real risk, real mistakes. No signals, no theory. Just execution you can actually follow.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <a
@@ -350,53 +346,80 @@ export default function Page() {
         </FadeIn>
       </section>
 
-      {/* ── nav cards ── */}
-      <section className="pb-12 px-6 border-b border-gray-200/70">
+      {/* ── problem ── */}
+      <section className="py-14 px-6 border-t border-gray-200/70">
+        <FadeIn>
+          <div className="max-w-2xl mx-auto">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest text-center mb-3">Sound familiar?</p>
+            <h2 className="text-xl font-black text-[#0B1020] text-center mb-10">
+              Most traders don't fail because they can't read charts.<br className="hidden sm:block" /> They fail on discipline.
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {PROBLEMS.map(({ icon, label, sub }) => (
+                <div key={label} className="bg-white border border-gray-200 rounded-xl p-5">
+                  <div className="text-slate-400 mb-3">{icon}</div>
+                  <div className="text-sm font-bold text-[#0B1020] mb-1">{label}</div>
+                  <div className="text-xs text-slate-400 leading-relaxed">{sub}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </FadeIn>
+      </section>
+
+      {/* ── solution / nav cards ── */}
+      <section className="pb-14 px-6 border-b border-gray-200/70">
         <FadeIn delay={80}>
-          <div className="max-w-2xl mx-auto grid grid-cols-3 gap-3">
+          <div className="max-w-2xl mx-auto">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest text-center mb-3">How I help</p>
+            <div className="grid grid-cols-3 gap-3">
 
-            {[
-              {
-                href: 'https://discord.gg/aCNadDMvmH', external: true,
-                label: 'Community', sub: 'Live sessions daily',
-                color: '#4F46E5',
-                icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
-              },
-              {
-                href: '/apply', external: false,
-                label: '1-on-1s', sub: 'Personalized feedback',
-                color: '#2563EB',
-                icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
-              },
-              {
-                href: '#tools', external: false,
-                label: 'Tools', sub: 'Charts & journal',
-                color: '#059669',
-                icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4"><polyline points="2,18 8,11 13,15 22,5"/><line x1="2" y1="20" x2="22" y2="20"/></svg>,
-              },
-            ].map(({ href, external, label, sub, color, icon }) => {
-              const cls = 'group bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-3 hover:shadow-md hover:border-gray-300 transition-all duration-200 cursor-pointer'
-              const inner = (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: color + '12', color }}>
-                      {icon}
-                    </span>
-                    <svg className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-[#0B1020]">{label}</div>
-                    <div className="text-xs text-slate-400 mt-0.5">{sub}</div>
-                  </div>
-                </>
-              )
-              return external
-                ? <a key={label} href={href} target="_blank" rel="noopener noreferrer" className={cls}>{inner}</a>
-                : <Link key={label} href={href} className={cls}>{inner}</Link>
-            })}
+              {[
+                {
+                  href: 'https://discord.gg/aCNadDMvmH', external: true,
+                  label: 'Community',
+                  sub: 'Watch every trade, live',
+                  color: '#4F46E5',
+                  icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
+                },
+                {
+                  href: '/apply', external: false,
+                  label: '1-on-1s',
+                  sub: 'Fix your specific leaks',
+                  color: '#2563EB',
+                  icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+                },
+                {
+                  href: '#tools', external: false,
+                  label: 'Tools',
+                  sub: 'My exact setup',
+                  color: '#059669',
+                  icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4"><polyline points="2,18 8,11 13,15 22,5"/><line x1="2" y1="20" x2="22" y2="20"/></svg>,
+                },
+              ].map(({ href, external, label, sub, color, icon }) => {
+                const cls = 'group bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-3 hover:shadow-md hover:border-gray-300 transition-all duration-200 cursor-pointer'
+                const inner = (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: color + '12', color }}>
+                        {icon}
+                      </span>
+                      <svg className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-[#0B1020]">{label}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">{sub}</div>
+                    </div>
+                  </>
+                )
+                return external
+                  ? <a key={label} href={href} target="_blank" rel="noopener noreferrer" className={cls}>{inner}</a>
+                  : <Link key={label} href={href} className={cls}>{inner}</Link>
+              })}
 
+            </div>
           </div>
         </FadeIn>
       </section>
@@ -429,12 +452,42 @@ export default function Page() {
         </FadeIn>
       </section>
 
-      {/* ── proof carousel ── */}
-      <section className="py-16 px-6">
+      {/* ── proof ── */}
+      <section className="py-16 px-6 border-b border-gray-200/70">
         <FadeIn>
           <div className="max-w-lg mx-auto">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest text-center mb-8">Results</p>
             <ProofCarousel images={PROOF_IMAGES} />
+          </div>
+        </FadeIn>
+      </section>
+
+      {/* ── mid-page CTA ── */}
+      <section className="py-16 px-6 bg-white border-b border-gray-200/70">
+        <FadeIn>
+          <div className="max-w-md mx-auto text-center">
+            <h2 className="text-2xl font-black text-[#0B1020] mb-3">
+              Ready to build something real?
+            </h2>
+            <p className="text-sm text-slate-500 leading-relaxed mb-8">
+              Apply for a 1-on-1 and I'll figure out exactly what's holding you back — then give you a specific plan to fix it.
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link
+                href="/apply"
+                className="inline-flex items-center bg-[#2563EB] text-white font-semibold px-7 py-3 rounded-full hover:bg-blue-700 transition-colors text-sm shadow-sm"
+              >
+                Apply for 1-on-1s →
+              </Link>
+              <a
+                href="https://discord.gg/aCNadDMvmH"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center bg-white border border-gray-200 text-[#0B1020] font-semibold px-6 py-3 rounded-full hover:border-gray-300 hover:shadow-sm transition-all text-sm shadow-sm"
+              >
+                Watch Live First
+              </a>
+            </div>
           </div>
         </FadeIn>
       </section>
@@ -444,7 +497,7 @@ export default function Page() {
         <div className="max-w-2xl mx-auto">
           <FadeIn>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2 text-center">Resources</p>
-            <h2 className="text-2xl font-black text-[#0B1020] text-center mb-8">Tools</h2>
+            <h2 className="text-2xl font-black text-[#0B1020] text-center mb-8">Tools I use</h2>
           </FadeIn>
           <div className="space-y-3">
             {TOOLS.map((t, i) => (
