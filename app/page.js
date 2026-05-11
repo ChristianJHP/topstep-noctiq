@@ -278,7 +278,7 @@ export default function Page() {
             </a>
             <Link href="/apply"
               className="text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium">
-              Mentorship
+              1-on-1s
             </Link>
             <a href="#tools"
               className="text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium">
@@ -314,10 +314,7 @@ export default function Page() {
                 Execution-focused
               </span>
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">
-                Transparent P&amp;L
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">
-                No signals. No guru.
+                No signals
               </span>
             </div>
 
@@ -340,7 +337,7 @@ export default function Page() {
                 href="/apply"
                 className="inline-flex items-center gap-2 border border-gray-200 text-gray-700 font-semibold px-7 py-3.5 rounded-full hover:border-gray-300 hover:bg-gray-50 transition-colors text-sm"
               >
-                Apply for mentorship
+                Work With Me
               </Link>
             </div>
           </div>
@@ -367,7 +364,7 @@ export default function Page() {
 
             <FeatureCard
               href="/apply"
-              label="Mentorship"
+              label="1-on-1s"
               icon={
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-6 h-6">
                   <path d="M12 20h9"/>
@@ -408,12 +405,12 @@ export default function Page() {
         <FadeIn>
           <div className="max-w-2xl mx-auto flex flex-wrap justify-center items-center gap-x-12 gap-y-4 text-center">
             <div>
-              <div className="text-2xl font-black text-gray-900">1,300+</div>
+              <div className="text-2xl font-black text-gray-900">1,800+</div>
               <div className="text-xs text-gray-400 mt-0.5">traders following</div>
             </div>
             <div className="text-gray-200 select-none text-xl">·</div>
             <div>
-              <div className="text-2xl font-black text-blue-600">200+</div>
+              <div className="text-2xl font-black text-blue-600">300+</div>
               <div className="text-xs text-gray-400 mt-0.5">active members</div>
             </div>
             <div className="text-gray-200 select-none text-xl">·</div>
