@@ -75,7 +75,7 @@ function SuccessCard() {
           Next step is booking a quick call so we can go over where you're at and see if this is a good fit.
         </p>
         <a
-          href="https://calendly.com/YOUR-LINK-HERE"
+          href="https://calendly.com/christian-park2002/1-on-1-introduction"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center justify-center w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition-colors text-sm"
