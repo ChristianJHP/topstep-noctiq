@@ -191,35 +191,6 @@ const TOOLS = [
   },
 ]
 
-const FIRMS = [
-  {
-    name: 'Alpha Futures',
-    desc: "The prop firm I'm currently funded with — use my link if you're signing up anyway",
-    url: 'https://app.alpha-futures.com/signup/Christian018978/',
-    tag: 'Prop Firm',
-    accent: '#2563eb',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4 h-4">
-        <rect x="3" y="10" width="18" height="11" rx="1"/>
-        <path d="M8 10V7a4 4 0 018 0v3"/>
-        <circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/>
-      </svg>
-    ),
-  },
-  {
-    name: 'Top One Futures',
-    desc: 'Competitive prop firm with fast scaling and solid payouts — code JHP for 50% off',
-    url: 'https://checkout.toponefutures.com/',
-    tag: 'Prop Firm',
-    accent: '#f59e0b',
-    badge: 'CODE: JHP · 50% OFF',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4 h-4">
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-      </svg>
-    ),
-  },
-]
 
 const PROOF_IMAGES = [
   { src: '/tradezella.png', label: 'TradeZella stats' },
@@ -322,10 +293,6 @@ export default function Page() {
               className="text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium">
               Tools
             </a>
-            <a href="#firms"
-              className="text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium">
-              Prop Firms
-            </a>
           </div>
 
         </div>
@@ -386,7 +353,7 @@ export default function Page() {
       {/* ── nav cards ── */}
       <section className="pb-12 px-6 border-b border-gray-200/70">
         <FadeIn delay={80}>
-          <div className="max-w-2xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="max-w-2xl mx-auto grid grid-cols-3 gap-3">
 
             {[
               {
@@ -406,12 +373,6 @@ export default function Page() {
                 label: 'Tools', sub: 'Charts & journal',
                 color: '#059669',
                 icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4"><polyline points="2,18 8,11 13,15 22,5"/><line x1="2" y1="20" x2="22" y2="20"/></svg>,
-              },
-              {
-                href: '#firms', external: false,
-                label: 'Prop Firms', sub: 'Funded accounts',
-                color: '#D97706',
-                icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4"><rect x="3" y="10" width="18" height="11" rx="1"/><path d="M8 10V7a4 4 0 018 0v3"/><circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>,
               },
             ].map(({ href, external, label, sub, color, icon }) => {
               const cls = 'group bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-3 hover:shadow-md hover:border-gray-300 transition-all duration-200 cursor-pointer'
@@ -501,47 +462,6 @@ export default function Page() {
                         style={{ color: t.accent, borderColor: t.accent + '40', background: t.accent + '12' }}>
                         {t.tag}
                       </span>
-                    </div>
-                    <p className="text-xs text-gray-400 leading-relaxed">{t.desc}</p>
-                  </div>
-                  <svg className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7v10"/>
-                  </svg>
-                </a>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── prop firms ── */}
-      <section id="firms" className="pb-16 px-6">
-        <div className="max-w-2xl mx-auto">
-          <FadeIn>
-            <h2 className="text-2xl font-black text-[#0B1020] text-center mb-8">Prop Firms</h2>
-          </FadeIn>
-          <div className="space-y-3">
-            {FIRMS.map((t, i) => (
-              <FadeIn key={t.name} delay={i * 60}>
-                <a href={t.url} target="_blank" rel="noopener noreferrer"
-                  className="group flex items-center gap-4 px-5 py-4 rounded-2xl border border-gray-200 hover:border-gray-300 hover:shadow-md bg-white transition-all duration-200">
-                  <span className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl"
-                    style={{ background: t.accent + '15', color: t.accent }}>
-                    {t.icon}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-sm font-semibold text-[#0B1020]">{t.name}</span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold tracking-wider uppercase border"
-                        style={{ color: t.accent, borderColor: t.accent + '40', background: t.accent + '12' }}>
-                        {t.tag}
-                      </span>
-                      {t.badge && (
-                        <span className="badge-pulse text-[9px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded-md border"
-                          style={{ color: t.accent, borderColor: t.accent + '50', background: t.accent + '15' }}>
-                          {t.badge}
-                        </span>
-                      )}
                     </div>
                     <p className="text-xs text-gray-400 leading-relaxed">{t.desc}</p>
                   </div>
