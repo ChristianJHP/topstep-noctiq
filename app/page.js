@@ -227,6 +227,61 @@ const PROOF_IMAGES = [
   { src: '/alpha.png',      label: 'Alpha Futures payout' },
 ]
 
+/* ── subtle trading background for hero ── */
+function HeroBg() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none select-none" aria-hidden="true">
+      {/* fine grid */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(15,23,42,0.032) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(15,23,42,0.032) 1px, transparent 1px)
+          `,
+          backgroundSize: '44px 44px',
+        }}
+      />
+      {/* candlesticks + level lines */}
+      <svg
+        className="absolute inset-0 w-full h-full"
+        viewBox="0 0 1200 480"
+        preserveAspectRatio="xMidYMid slice"
+        fill="none"
+      >
+        {/* horizontal level lines */}
+        <line x1="0" y1="118" x2="1200" y2="118" stroke="#1e3a8a" strokeWidth="0.7" strokeDasharray="5 11" opacity="0.22"/>
+        <line x1="0" y1="248" x2="1200" y2="248" stroke="#1e3a8a" strokeWidth="0.7" strokeDasharray="5 11" opacity="0.16"/>
+        <line x1="0" y1="368" x2="1200" y2="368" stroke="#1e3a8a" strokeWidth="0.7" strokeDasharray="5 11" opacity="0.12"/>
+        {/* session tick marks on levels */}
+        <line x1="190" y1="110" x2="190" y2="126" stroke="#2563eb" strokeWidth="1.5" opacity="0.32"/>
+        <line x1="430" y1="240" x2="430" y2="256" stroke="#2563eb" strokeWidth="1.5" opacity="0.26"/>
+        <line x1="880" y1="110" x2="880" y2="126" stroke="#2563eb" strokeWidth="1.5" opacity="0.28"/>
+        <line x1="1030" y1="360" x2="1030" y2="376" stroke="#2563eb" strokeWidth="1.5" opacity="0.22"/>
+        {/* left candle cluster */}
+        <line x1="52"  y1="58"  x2="52"  y2="198" stroke="#94a3b8" strokeWidth="1" opacity="0.35"/>
+        <rect x="44"   y="88"  width="16" height="80"  rx="1" fill="#94a3b8" opacity="0.12"/>
+        <line x1="78"  y1="38"  x2="78"  y2="178" stroke="#2563eb" strokeWidth="1" opacity="0.3"/>
+        <rect x="70"   y="58"  width="16" height="90"  rx="1" fill="#2563eb" opacity="0.1"/>
+        <line x1="104" y1="18"  x2="104" y2="198" stroke="#1d4ed8" strokeWidth="1" opacity="0.36"/>
+        <rect x="96"   y="28"  width="16" height="148" rx="1" fill="#1d4ed8" opacity="0.13"/>
+        {/* right candle cluster */}
+        <line x1="1082" y1="78"  x2="1082" y2="258" stroke="#94a3b8" strokeWidth="1" opacity="0.28"/>
+        <rect x="1074"  y="108" width="16" height="100" rx="1" fill="#94a3b8" opacity="0.09"/>
+        <line x1="1108" y1="58"  x2="1108" y2="238" stroke="#2563eb" strokeWidth="1" opacity="0.28"/>
+        <rect x="1100"  y="78"  width="16" height="120" rx="1" fill="#2563eb" opacity="0.09"/>
+        <line x1="1134" y1="28"  x2="1134" y2="198" stroke="#1d4ed8" strokeWidth="1" opacity="0.32"/>
+        <rect x="1126"  y="38"  width="16" height="138" rx="1" fill="#1d4ed8" opacity="0.11"/>
+        {/* small bottom candles */}
+        <line x1="330" y1="378" x2="330" y2="468" stroke="#94a3b8" strokeWidth="0.8" opacity="0.18"/>
+        <rect x="324"  y="393" width="12" height="54"  rx="0.5" fill="#94a3b8" opacity="0.07"/>
+        <line x1="770" y1="358" x2="770" y2="468" stroke="#2563eb" strokeWidth="0.8" opacity="0.18"/>
+        <rect x="764"  y="368" width="12" height="70"  rx="0.5" fill="#2563eb" opacity="0.07"/>
+      </svg>
+    </div>
+  )
+}
+
 /* ─────────────── page ─────────────── */
 export default function Page() {
   return (
@@ -246,27 +301,21 @@ export default function Page() {
 
           {/* logo */}
           <Link href="/" aria-label="JHP Trades">
-            <svg viewBox="0 0 148 52" width="148" height="52" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-auto block shrink-0">
-              <line x1="8" y1="42" x2="140" y2="8" stroke="#94a3b8" strokeWidth="1.2" strokeOpacity="0.4" strokeLinecap="round"/>
-              <line x1="8"  y1="34" x2="8"  y2="27" stroke="#94a3b8" strokeWidth="1" strokeOpacity="0.6"/>
-              <rect x="5"   y="27" width="6" height="10" rx="0.5" fill="#94a3b8" fillOpacity="0.45"/>
-              <line x1="8"  y1="37" x2="8"  y2="40" stroke="#94a3b8" strokeWidth="1" strokeOpacity="0.6"/>
-              <line x1="17" y1="31" x2="17" y2="24" stroke="#94a3b8" strokeWidth="1" strokeOpacity="0.5"/>
-              <rect x="14"  y="25" width="6" height="8"  rx="0.5" fill="#64748b" fillOpacity="0.5"/>
-              <line x1="17" y1="33" x2="17" y2="36" stroke="#94a3b8" strokeWidth="1" strokeOpacity="0.5"/>
-              <line x1="26" y1="28" x2="26" y2="20" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.6"/>
-              <rect x="23"  y="20" width="6" height="10" rx="0.5" fill="#2563eb" fillOpacity="0.5"/>
-              <line x1="26" y1="30" x2="26" y2="34" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.6"/>
-              <text x="34" y="46" fontFamily="Arial Black, Impact, sans-serif" fontWeight="900" fontSize="36" fill="#0f172a" letterSpacing="-1">JHP</text>
-              <line x1="118" y1="26" x2="118" y2="18" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.7"/>
-              <rect x="115"  y="19" width="6" height="11" rx="0.5" fill="#2563eb" fillOpacity="0.7"/>
-              <line x1="118" y1="30" x2="118" y2="33" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.7"/>
-              <line x1="128" y1="20" x2="128" y2="12" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.85"/>
-              <rect x="125"  y="13" width="6" height="12" rx="0.5" fill="#2563eb" fillOpacity="0.85"/>
-              <line x1="128" y1="25" x2="128" y2="28" stroke="#2563eb" strokeWidth="1" strokeOpacity="0.85"/>
-              <line x1="138" y1="14" x2="138" y2="7"  stroke="#3b82f6" strokeWidth="1"/>
-              <rect x="135"  y="8"  width="6" height="14" rx="0.5" fill="#2563eb"/>
-              <line x1="138" y1="22" x2="138" y2="26" stroke="#3b82f6" strokeWidth="1"/>
+            <svg viewBox="0 0 106 36" width="106" height="36" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-9 w-auto block shrink-0">
+              {/* candle 1 — slate/neutral */}
+              <line x1="6.5" y1="9"  x2="6.5" y2="13" stroke="#94a3b8" strokeWidth="1.2"/>
+              <rect x="3"   y="13" width="7" height="10" rx="1" fill="#94a3b8" fillOpacity="0.55"/>
+              <line x1="6.5" y1="23" x2="6.5" y2="27" stroke="#94a3b8" strokeWidth="1.2"/>
+              {/* candle 2 — blue/mid */}
+              <line x1="16.5" y1="7"  x2="16.5" y2="11" stroke="#2563eb" strokeWidth="1.2" strokeOpacity="0.7"/>
+              <rect x="13"   y="11" width="7" height="14" rx="1" fill="#2563eb" fillOpacity="0.55"/>
+              <line x1="16.5" y1="25" x2="16.5" y2="29" stroke="#2563eb" strokeWidth="1.2" strokeOpacity="0.7"/>
+              {/* candle 3 — navy/breakout */}
+              <line x1="26.5" y1="2"  x2="26.5" y2="6"  stroke="#1d4ed8" strokeWidth="1.2"/>
+              <rect x="23"   y="6"  width="7" height="22" rx="1" fill="#1d4ed8"/>
+              <line x1="26.5" y1="28" x2="26.5" y2="33" stroke="#1d4ed8" strokeWidth="1.2"/>
+              {/* JHP */}
+              <text x="36" y="29" fontFamily="Arial Black, Impact, sans-serif" fontWeight="900" fontSize="26" fill="#0f172a" letterSpacing="-0.5">JHP</text>
             </svg>
           </Link>
 
@@ -293,35 +342,33 @@ export default function Page() {
         </div>
       </nav>
 
-      {/* ── hero (centered, TTrades style) ── */}
-      <section className="pt-16 pb-14 px-6 text-center">
+      {/* ── hero ── */}
+      <section className="relative pt-14 pb-12 px-6 text-center overflow-hidden">
+        <HeroBg />
         <FadeIn>
-          <div className="max-w-2xl mx-auto">
+          <div className="relative z-10 max-w-xl mx-auto">
 
-            {/* instant-read signals */}
-            <div className="flex flex-wrap justify-center gap-2 mb-8">
+            {/* pills */}
+            <div className="flex flex-wrap justify-center gap-2 mb-7">
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-red-50 text-red-600 border border-red-100">
                 <span className="relative flex h-1.5 w-1.5 shrink-0">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
                 </span>
-                Streams live daily
+                Live daily
               </span>
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">
-                Futures trader
+              <span className="inline-flex items-center text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">
+                Futures
               </span>
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">
-                Execution-focused
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">
+              <span className="inline-flex items-center text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">
                 No signals
               </span>
             </div>
 
-            <h1 className="text-5xl font-black text-gray-900 leading-tight tracking-tight mb-5">
-              Trading doesn't have<br />to be complicated.
+            <h1 className="text-[2rem] sm:text-4xl md:text-5xl font-black text-gray-900 leading-[1.15] tracking-tight mb-4">
+              Trading doesn't have<br className="hidden sm:block" /> to be complicated.
             </h1>
-            <p className="text-lg text-gray-500 leading-relaxed mb-10 max-w-lg mx-auto">
+            <p className="text-base sm:text-lg text-gray-500 leading-relaxed mb-8 max-w-md mx-auto">
               Focused on clean execution, market structure, and staying consistent in live markets.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
@@ -329,15 +376,15 @@ export default function Page() {
                 href="https://discord.gg/aCNadDMvmH"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-blue-600 text-white font-semibold px-7 py-3.5 rounded-full hover:bg-blue-700 transition-colors text-sm"
+                className="inline-flex items-center bg-blue-600 text-white font-semibold px-6 py-3 rounded-full hover:bg-blue-700 transition-colors text-sm"
               >
-                Watch me trade live →
+                Watch Live →
               </a>
               <Link
                 href="/apply"
-                className="inline-flex items-center gap-2 border border-gray-200 text-gray-700 font-semibold px-7 py-3.5 rounded-full hover:border-gray-300 hover:bg-gray-50 transition-colors text-sm"
+                className="inline-flex items-center border border-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-full hover:border-gray-300 hover:bg-gray-50 transition-colors text-sm"
               >
-                Work With Me
+                Apply for 1-on-1s
               </Link>
             </div>
           </div>
