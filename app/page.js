@@ -294,23 +294,55 @@ export default function Page() {
       </nav>
 
       {/* ── hero (centered, TTrades style) ── */}
-      <section className="pt-20 pb-16 px-6 text-center">
+      <section className="pt-16 pb-14 px-6 text-center">
         <FadeIn>
           <div className="max-w-2xl mx-auto">
-            <h1 className="text-6xl font-black text-gray-900 leading-tight tracking-tight mb-6">
-              Master your trading<br />with <span className="text-blue-600">JHP</span>
+
+            {/* instant-read signals */}
+            <div className="flex flex-wrap justify-center gap-2 mb-8">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-red-50 text-red-600 border border-red-100">
+                <span className="relative flex h-1.5 w-1.5 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
+                </span>
+                Streams live daily
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">
+                Futures trader
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">
+                Execution-focused
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">
+                Transparent P&amp;L
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">
+                No signals. No guru.
+              </span>
+            </div>
+
+            <h1 className="text-5xl font-black text-gray-900 leading-tight tracking-tight mb-5">
+              Trading doesn't have<br />to be complicated.
             </h1>
             <p className="text-lg text-gray-500 leading-relaxed mb-10 max-w-lg mx-auto">
-              Cut through the noise with a simple, repeatable execution system built around how the markets actually move.
+              Focused on clean execution, market structure, and staying consistent in live markets.
             </p>
-            <a
-              href="https://discord.gg/aCNadDMvmH"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-blue-600 text-white font-semibold px-8 py-3.5 rounded-full hover:bg-blue-700 transition-colors text-sm"
-            >
-              Join the Community
-            </a>
+            <div className="flex flex-wrap justify-center gap-3">
+              <a
+                href="https://discord.gg/aCNadDMvmH"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-blue-600 text-white font-semibold px-7 py-3.5 rounded-full hover:bg-blue-700 transition-colors text-sm"
+              >
+                Watch me trade live →
+              </a>
+              <Link
+                href="/apply"
+                className="inline-flex items-center gap-2 border border-gray-200 text-gray-700 font-semibold px-7 py-3.5 rounded-full hover:border-gray-300 hover:bg-gray-50 transition-colors text-sm"
+              >
+                Apply for mentorship
+              </Link>
+            </div>
           </div>
         </FadeIn>
       </section>
