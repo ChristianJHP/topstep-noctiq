@@ -277,7 +277,7 @@ export default function Page() {
 
           {/* nav links */}
           <div className="hidden md:flex items-center gap-8">
-            <a href="https://discord.gg/aCNadDMvmH" target="_blank" rel="noopener noreferrer"
+            <a href="#community"
               className="text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium">
               Community
             </a>
@@ -325,9 +325,7 @@ export default function Page() {
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <a
-                href="https://discord.gg/aCNadDMvmH"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="#community"
                 className="inline-flex items-center bg-[#2563EB] text-white font-semibold px-6 py-3 rounded-full hover:bg-blue-700 transition-colors text-sm shadow-sm"
               >
                 Watch Live →
@@ -376,7 +374,7 @@ export default function Page() {
 
               {[
                 {
-                  href: 'https://discord.gg/aCNadDMvmH', external: true,
+                  href: '#community', external: false,
                   label: 'Community',
                   sub: 'Watch every trade, live',
                   color: '#4F46E5',
@@ -462,6 +460,30 @@ export default function Page() {
         </FadeIn>
       </section>
 
+      {/* ── community / discord widget ── */}
+      <section id="community" className="py-16 px-6 bg-white border-b border-gray-200/70">
+        <FadeIn>
+          <div className="max-w-2xl mx-auto text-center">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Community</p>
+            <h2 className="text-2xl font-black text-[#0B1020] mb-3">Watch every trade, live</h2>
+            <p className="text-sm text-slate-500 leading-relaxed mb-8 max-w-md mx-auto">
+              Join the Discord to watch live sessions, ask questions in real time, and see exactly how I manage trades from entry to exit.
+            </p>
+            <div className="flex justify-center">
+              <iframe
+                src="https://discord.com/widget?id=1483585715643355199&theme=dark"
+                width="350"
+                height="500"
+                allowTransparency="true"
+                frameBorder="0"
+                sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+                className="rounded-xl"
+              />
+            </div>
+          </div>
+        </FadeIn>
+      </section>
+
       {/* ── mid-page CTA ── */}
       <section className="py-16 px-6 bg-white border-b border-gray-200/70">
         <FadeIn>
@@ -480,9 +502,7 @@ export default function Page() {
                 Apply for 1-on-1s →
               </Link>
               <a
-                href="https://discord.gg/aCNadDMvmH"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="#community"
                 className="inline-flex items-center bg-white border border-gray-200 text-[#0B1020] font-semibold px-6 py-3 rounded-full hover:border-gray-300 hover:shadow-sm transition-all text-sm shadow-sm"
               >
                 Watch Live First
