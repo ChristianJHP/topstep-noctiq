@@ -325,7 +325,9 @@ export default function Page() {
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <a
-                href="#community"
+                href="https://discord.gg/aCNadDMvmH"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center bg-[#2563EB] text-white font-semibold px-6 py-3 rounded-full hover:bg-blue-700 transition-colors text-sm shadow-sm"
               >
                 Watch Live →
