@@ -545,9 +545,9 @@ export default function Page() {
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <span className="text-xs text-slate-300 font-mono">noctiq.ai</span>
           <div className="flex items-center gap-5">
-            <a href="mailto:christian.park2002@gmail.com"
+            <a href="mailto:christian@jhptrades.com"
               className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-              christian.park2002@gmail.com
+              christian@jhptrades.com
             </a>
             <Link href="/dashboard" className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
               live charts →
