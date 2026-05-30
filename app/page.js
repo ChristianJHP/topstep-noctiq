@@ -318,10 +318,10 @@ export default function Page() {
             </div>
 
             <h1 className="text-[2rem] sm:text-4xl md:text-5xl font-black text-[#0B1020] leading-[1.15] tracking-tight mb-4">
-              I help futures traders<br className="hidden sm:block" /> stop losing on discipline<br className="hidden sm:block" /> and get funded.
+              Trading doesn't have<br className="hidden sm:block" /> to be complicated.
             </h1>
             <p className="text-base sm:text-lg text-slate-500 leading-relaxed mb-8 max-w-md mx-auto">
-              Every morning I trade NQ and ES live — real entries, real risk, real mistakes. No signals, no theory. Just execution you can actually follow.
+              Focused on clean execution, market structure, and staying consistent in live markets.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <a
@@ -346,27 +346,6 @@ export default function Page() {
         </FadeIn>
       </section>
 
-      {/* ── problem ── */}
-      <section className="py-14 px-6 border-t border-gray-200/70">
-        <FadeIn>
-          <div className="max-w-2xl mx-auto">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest text-center mb-3">Sound familiar?</p>
-            <h2 className="text-xl font-black text-[#0B1020] text-center mb-10">
-              Most traders don't fail because they can't read charts.<br className="hidden sm:block" /> They fail on discipline.
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {PROBLEMS.map(({ icon, label, sub }) => (
-                <div key={label} className="bg-white border border-gray-200 rounded-xl p-5">
-                  <div className="text-slate-400 mb-3">{icon}</div>
-                  <div className="text-sm font-bold text-[#0B1020] mb-1">{label}</div>
-                  <div className="text-xs text-slate-400 leading-relaxed">{sub}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </FadeIn>
-      </section>
-
       {/* ── solution / nav cards ── */}
       <section className="pb-14 px-6 border-b border-gray-200/70">
         <FadeIn delay={80}>
@@ -378,21 +357,21 @@ export default function Page() {
                 {
                   href: 'https://discord.gg/aCNadDMvmH', external: true,
                   label: 'Community',
-                  sub: 'Watch every trade, live',
+                  sub: 'Live sessions daily',
                   color: '#4F46E5',
                   icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
                 },
                 {
                   href: '/apply', external: false,
                   label: '1-on-1s',
-                  sub: 'Fix your specific leaks',
+                  sub: 'Personalized feedback',
                   color: '#2563EB',
                   icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
                 },
                 {
                   href: '#tools', external: false,
                   label: 'Tools',
-                  sub: 'My exact setup',
+                  sub: 'Charts & journal',
                   color: '#059669',
                   icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4"><polyline points="2,18 8,11 13,15 22,5"/><line x1="2" y1="20" x2="22" y2="20"/></svg>,
                 },
