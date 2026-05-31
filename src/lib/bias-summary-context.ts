@@ -116,3 +116,33 @@ export async function buildBiasSummaryMarketContext(): Promise<BiasSummaryMarket
       : null,
   };
 }
+
+export type BiasScenariosContext = BiasSummaryMarketContext & {
+  upcomingRedFolderEvents: {
+    title: string;
+    dayEt: string;
+    timeEt: string;
+  }[];
+  headlines: string[];
+};
+
+export async function buildBiasScenariosContext(): Promise<BiasScenariosContext> {
+  const { fetchHeadlinesMeta } = await import("@/lib/headlines");
+  const [base, cal, headlinesPayload] = await Promise.all([
+    buildBiasSummaryMarketContext(),
+    fetchCalendarMeta(),
+    fetchHeadlinesMeta(),
+  ]);
+
+  return {
+    ...base,
+    upcomingRedFolderEvents: cal.events.slice(0, 6).map((e) => ({
+      title: e.title,
+      dayEt: e.dayEt,
+      timeEt: e.timeEt,
+    })),
+    headlines: headlinesPayload.marketMoving
+      .slice(0, 5)
+      .map((h) => h.title),
+  };
+}

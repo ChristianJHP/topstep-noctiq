@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BiasScenarios } from "@/components/BiasScenarios";
 import { BiasSummary } from "@/components/BiasSummary";
 import { CalendarPanel } from "@/components/CalendarPanel";
 import { MarketMovingHeadlines } from "@/components/MarketMovingHeadlines";
@@ -31,6 +32,8 @@ export default function BiasPage() {
       <RadarAccordion title="Raw headlines">
         <RawHeadlinesWidget />
       </RadarAccordion>
+
+      <BiasScenarios />
     </main>
   );
 }
