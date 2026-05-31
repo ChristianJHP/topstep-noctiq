@@ -2,26 +2,18 @@
 
 import { useState } from "react";
 import type { SymbolContext } from "@/lib/htf-status";
-import type { MarketContext } from "@/lib/htf-status";
 import { CHART_TIMEFRAMES, type ChartTimeframe } from "@/lib/chart-timeframe";
-import { allWatchChips, formatPrice, symbolWatchChips } from "@/lib/strategy-prep";
+import type { SymbolLabel } from "@/lib/strategy-prep";
+import { formatPrice } from "@/lib/strategy-prep";
 import { CandleStateDots } from "@/components/radar/CandleStateDots";
+import { LevelsSummary } from "@/components/radar/LevelsSummary";
 import { SymbolChartPane } from "@/components/radar/SymbolChartPane";
-import { SymbolWatch } from "@/components/radar/SymbolWatch";
 import { useIsWideDesktop } from "@/hooks/use-is-wide-desktop";
 
-export function SymbolColumn({
-  symbol,
-  markets,
-}: {
-  symbol: SymbolContext;
-  markets: MarketContext;
-}) {
+export function SymbolColumn({ symbol }: { symbol: SymbolContext }) {
   const isWide = useIsWideDesktop();
   const [timeframe, setTimeframe] = useState<ChartTimeframe>("4H");
-  const watchChips = isWide
-    ? allWatchChips(symbol, markets)
-    : symbolWatchChips(symbol, markets, timeframe);
+  const label = symbol.label as SymbolLabel;
 
   return (
     <div className={`sym-col sym-col--solo${isWide ? " sym-col--wide" : ""}`}>
@@ -57,7 +49,7 @@ export function SymbolColumn({
         </>
       )}
 
-      <SymbolWatch chips={watchChips} />
+      <LevelsSummary symbol={label} />
     </div>
   );
 }

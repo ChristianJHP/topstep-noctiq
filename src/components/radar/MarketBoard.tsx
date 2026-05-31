@@ -69,7 +69,7 @@ export function MarketBoard({
           ))}
         </div>
 
-        <SymbolColumn key={tab} symbol={symbol} markets={markets} />
+        <SymbolColumn key={tab} symbol={symbol} />
       </div>
     </section>
   );

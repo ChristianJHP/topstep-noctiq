@@ -10,6 +10,7 @@ import type { ChartCandlesPayload } from "@/lib/chart-candles-cache";
 import { useSeedChartCandles } from "@/hooks/use-seed-chart-candles";
 import { MarketBoard } from "@/components/radar/MarketBoard";
 import { GeopoliticsStrip } from "@/components/radar/GeopoliticsStrip";
+import { RadarLoader } from "@/components/radar/RadarLoader";
 
 type RadarData = {
   markets: MarketContext | null;
@@ -69,21 +70,20 @@ export function MarketRadar() {
         <EtClock now={now} />
       </header>
 
-      <GeopoliticsStrip />
-
       {isLoading || !ctx || now == null ? (
-        <div className="mr-board mr-board--loading">
-          <p>Loading NQ / ES / Gold…</p>
-        </div>
+        <RadarLoader />
       ) : (
-        <MarketBoard
-          markets={ctx}
-          now={now}
-          oneHMs={oneH.remainingMs}
-          fourHMs={fourH.remainingMs}
-          candlesPaused={oneH.paused}
-          chartCandles={data?.chartCandles}
-        />
+        <>
+          <GeopoliticsStrip />
+          <MarketBoard
+            markets={ctx}
+            now={now}
+            oneHMs={oneH.remainingMs}
+            fourHMs={fourH.remainingMs}
+            candlesPaused={oneH.paused}
+            chartCandles={data?.chartCandles}
+          />
+        </>
       )}
     </div>
   );
