@@ -1,0 +1,118 @@
+import { fetchCalendarMeta, pickNextHighImpact } from "@/lib/events";
+import { computeMarketContext, type SymbolContext } from "@/lib/htf-status";
+
+export type IntervalSnapshot = {
+  candleColor: string | null;
+  high: number | null;
+  low: number | null;
+  pctInRange: number | null;
+  distToHighPts: number | null;
+  distToLowPts: number | null;
+};
+
+export type SymbolSnapshot = {
+  price: number | null;
+  fourHour: IntervalSnapshot;
+  oneHour: IntervalSnapshot;
+};
+
+export type BiasSummaryMarketContext = {
+  timezone: "America/New_York";
+  nq: SymbolSnapshot;
+  es: SymbolSnapshot;
+  relativeStrength: {
+    stronger: "ES" | "NQ" | "neutral" | null;
+    headline: string | null;
+    nqPtsFromH4High: number | null;
+    esPtsFromH4High: number | null;
+  };
+  smt: {
+    type: "bearish" | "bullish" | null;
+    message: string | null;
+  };
+  nextRedFolderEvent: {
+    title: string;
+    dayEt: string;
+    timeEt: string;
+  } | null;
+};
+
+const EMPTY_INTERVAL: IntervalSnapshot = {
+  candleColor: null,
+  high: null,
+  low: null,
+  pctInRange: null,
+  distToHighPts: null,
+  distToLowPts: null,
+};
+
+function colorLabel(label: string): string | null {
+  if (!label || label === "—") return null;
+  return label;
+}
+
+function interval4h(s: SymbolContext): IntervalSnapshot {
+  if (!s.current || !s.h4High || !s.h4Low) return { ...EMPTY_INTERVAL };
+
+  return {
+    candleColor: colorLabel(s.fourHour.colorLabel),
+    high: s.h4High,
+    low: s.h4Low,
+    pctInRange: s.pctInH4Range,
+    distToHighPts: s.distances.toH4High,
+    distToLowPts: s.distances.toH4Low,
+  };
+}
+
+function interval1h(s: SymbolContext): IntervalSnapshot {
+  if (!s.current || !s.h1High || !s.h1Low) return { ...EMPTY_INTERVAL };
+
+  return {
+    candleColor: colorLabel(s.oneHour.colorLabel),
+    high: s.h1High,
+    low: s.h1Low,
+    pctInRange: s.pctInH1Range,
+    distToHighPts: s.distances.toH1High,
+    distToLowPts: s.distances.toH1Low,
+  };
+}
+
+function symbolSnapshot(s: SymbolContext): SymbolSnapshot {
+  return {
+    price: s.current || null,
+    fourHour: interval4h(s),
+    oneHour: interval1h(s),
+  };
+}
+
+export async function buildBiasSummaryMarketContext(): Promise<BiasSummaryMarketContext> {
+  const [markets, cal] = await Promise.all([
+    computeMarketContext(),
+    fetchCalendarMeta(),
+  ]);
+
+  const next = pickNextHighImpact(cal.events);
+  const rs = markets.relativeStrength;
+
+  return {
+    timezone: "America/New_York",
+    nq: symbolSnapshot(markets.nq),
+    es: symbolSnapshot(markets.es),
+    relativeStrength: {
+      stronger: rs.stronger ?? null,
+      headline: rs.headline || null,
+      nqPtsFromH4High: Number.isFinite(rs.nqPtsFromH4High)
+        ? rs.nqPtsFromH4High
+        : null,
+      esPtsFromH4High: Number.isFinite(rs.esPtsFromH4High)
+        ? rs.esPtsFromH4High
+        : null,
+    },
+    smt: markets.smt
+      ? { type: markets.smt.type, message: markets.smt.message }
+      : { type: null, message: null },
+    nextRedFolderEvent: next
+      ? { title: next.title, dayEt: next.dayEt, timeEt: next.timeEt }
+      : null,
+  };
+}

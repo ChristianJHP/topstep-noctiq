@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { BIAS_SUMMARY_REVALIDATE_SEC } from "@/lib/bias-summary-config";
+import type { BiasSummaryRows } from "@/lib/bias-summary";
 
 const REVALIDATE_MS = BIAS_SUMMARY_REVALIDATE_SEC * 1000;
 const STORAGE_KEY = "jhp-bias-summary";
 
 type SummaryPayload = {
-  summary: string | null;
+  rows: BiasSummaryRows | null;
   generatedAt?: string;
   configured?: boolean;
   stale?: boolean;
@@ -19,6 +20,14 @@ type StoredSummary = {
   fetchedAt: number;
   data: SummaryPayload;
 };
+
+const ROW_LABELS: { key: keyof BiasSummaryRows; label: string }[] = [
+  { key: "context", label: "Context" },
+  { key: "location", label: "Location" },
+  { key: "relativeStrength", label: "Relative strength" },
+  { key: "watch", label: "Watch" },
+  { key: "catalyst", label: "Catalyst" },
+];
 
 function readStoredSummary(): SummaryPayload | undefined {
   if (typeof window === "undefined") return undefined;
@@ -34,7 +43,7 @@ function readStoredSummary(): SummaryPayload | undefined {
 }
 
 function writeStoredSummary(data: SummaryPayload) {
-  if (typeof window === "undefined" || !data.summary) return;
+  if (typeof window === "undefined" || !data.rows) return;
   try {
     const stored: StoredSummary = { fetchedAt: Date.now(), data };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
@@ -60,7 +69,7 @@ export function BiasSummary() {
   );
 
   useEffect(() => {
-    if (data?.summary) writeStoredSummary(data);
+    if (data?.rows) writeStoredSummary(data);
   }, [data]);
 
   if (data?.configured === false) return null;
@@ -70,10 +79,17 @@ export function BiasSummary() {
       <header className="bias-summary-head">
         <span className="bias-summary-label">Read</span>
       </header>
-      {isLoading && !data?.summary ? (
+      {isLoading && !data?.rows ? (
         <p className="bias-summary-text bias-summary-text--muted">Loading…</p>
-      ) : data?.summary ? (
-        <p className="bias-summary-text">{data.summary}</p>
+      ) : data?.rows ? (
+        <dl className="bias-summary-rows">
+          {ROW_LABELS.map(({ key, label }) => (
+            <div key={key} className="bias-summary-row">
+              <dt className="bias-summary-row-label">{label}</dt>
+              <dd className="bias-summary-row-value">{data.rows![key]}</dd>
+            </div>
+          ))}
+        </dl>
       ) : null}
     </section>
   );

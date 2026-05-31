@@ -13,6 +13,8 @@ export interface IntervalBias {
 export interface SymbolDistances {
   toH4High: number;
   toH4Low: number;
+  toH1High: number;
+  toH1Low: number;
 }
 
 export interface SymbolContext {
@@ -24,10 +26,13 @@ export interface SymbolContext {
   expansion: string;
   h4High: number;
   h4Low: number;
+  h1High: number;
+  h1Low: number;
   priorH4High: number;
   priorH4Low: number;
   distances: SymbolDistances;
-  pctToH4High: number;
+  pctInH4Range: number;
+  pctInH1Range: number;
 }
 
 export interface RelativeStrength {
@@ -94,6 +99,8 @@ function buildSymbolContext(
 
   const h4High = current4h?.high ?? current;
   const h4Low = current4h?.low ?? current;
+  const h1High = current1h?.high ?? current;
+  const h1Low = current1h?.low ?? current;
 
   return {
     label,
@@ -108,13 +115,18 @@ function buildSymbolContext(
     expansion: expansionStatus(current, prior4h),
     h4High: roundPts(h4High),
     h4Low: roundPts(h4Low),
+    h1High: roundPts(h1High),
+    h1Low: roundPts(h1Low),
     priorH4High: roundPts(prior4h?.high ?? h4High),
     priorH4Low: roundPts(prior4h?.low ?? h4Low),
     distances: {
       toH4High: roundPts(h4High - current),
       toH4Low: roundPts(current - h4Low),
+      toH1High: roundPts(h1High - current),
+      toH1Low: roundPts(current - h1Low),
     },
-    pctToH4High: pctTowardHigh(current, h4Low, h4High),
+    pctInH4Range: pctTowardHigh(current, h4Low, h4High),
+    pctInH1Range: pctTowardHigh(current, h1Low, h1High),
   };
 }
 

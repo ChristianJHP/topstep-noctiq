@@ -561,4 +561,40 @@
   .bias-summary-text--muted {
     color: var(--muted);
   }
+
+  .bias-summary-rows {
+    margin: 0;
+    padding: 0.625rem 0.875rem 0.875rem;
+  }
+
+  .bias-summary-row {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .bias-summary-row:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .bias-summary-row:first-child {
+    padding-top: 0;
+  }
+
+  .bias-summary-row-label {
+    margin: 0 0 0.25rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .bias-summary-row-value {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--foreground);
+  }
 }
