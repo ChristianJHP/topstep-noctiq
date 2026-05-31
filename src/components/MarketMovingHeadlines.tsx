@@ -3,12 +3,40 @@
 import useSWR from "swr";
 import type { HeadlinesPayload } from "@/lib/headlines";
 
-function formatTime(iso: string) {
-  return new Intl.DateTimeFormat("en-US", {
+function formatPublishedAt(iso: string) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  const now = new Date();
+  const etToday = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+  }).format(now);
+  const etHeadline = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+  }).format(date);
+
+  const time = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
     hour: "numeric",
     minute: "2-digit",
-  }).format(new Date(iso));
+  }).format(date);
+
+  if (etHeadline === etToday) return `Today · ${time}`;
+
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const etYesterday = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+  }).format(yesterday);
+  if (etHeadline === etYesterday) return `Yesterday · ${time}`;
+
+  const dateLabel = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    month: "short",
+    day: "numeric",
+  }).format(date);
+
+  return `${dateLabel} · ${time}`;
 }
 
 export function MarketMovingHeadlines() {
@@ -73,7 +101,7 @@ export function MarketMovingHeadlines() {
             <span className="moving-headlines-tag">
               {h.priority === "critical" ? "Critical" : "Macro"}
             </span>
-            <time>{formatTime(h.publishedAt)}</time>
+            <time dateTime={h.publishedAt}>{formatPublishedAt(h.publishedAt)}</time>
           </div>
         </li>
       ))}
