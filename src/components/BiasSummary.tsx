@@ -6,7 +6,7 @@ import { BIAS_SUMMARY_REVALIDATE_SEC } from "@/lib/bias-summary-config";
 import type { BiasSummaryRows } from "@/lib/bias-summary";
 
 const REVALIDATE_MS = BIAS_SUMMARY_REVALIDATE_SEC * 1000;
-const STORAGE_KEY = "jhp-bias-summary";
+const STORAGE_KEY = "jhp-bias-summary-v2";
 
 type SummaryPayload = {
   rows: BiasSummaryRows | null;
