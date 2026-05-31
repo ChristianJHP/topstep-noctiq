@@ -9,184 +9,123 @@ import {
 } from "@/lib/bias-summary-context";
 import { BIAS_SUMMARY_REVALIDATE_SEC } from "@/lib/bias-summary-config";
 
-export type BiasSummaryRows = {
-  context: string;
-  location: string;
-  relativeStrength: string;
-  watch: string;
-  catalyst: string;
-};
-
 export type BiasSummaryPayload = {
-  rows: BiasSummaryRows | null;
+  line: string | null;
   generatedAt?: string;
   configured?: boolean;
 };
 
-const ROW_KEYS = [
-  "context",
-  "location",
-  "relativeStrength",
-  "watch",
-  "catalyst",
-] as const;
-
-function buildPrompt(marketContext: BiasSummaryMarketContext): string {
-  return `You format a futures market read from structured JSON only.
+function buildPrompt(ctx: BiasSummaryMarketContext): string {
+  return `You write ONE sentence on NQ/ES for the next hour.
 
 INPUT JSON:
-${JSON.stringify(marketContext)}
+${JSON.stringify(ctx)}
 
-Return ONLY valid JSON:
-{
-  "context": "",
-  "location": "",
-  "relativeStrength": "",
-  "watch": "",
-  "catalyst": ""
+Return ONLY valid JSON: {"line": ""}
+
+The sentence must:
+- State current 1H/4H color and where price sits vs the nearest 1H or 4H level (from JSON).
+- Mention ES vs NQ strength if not balanced.
+- Note 1H candle close in minutesTo1HClose if relevant.
+- Note nextRedFolderEvent timing if within 6 hours (minutesUntil).
+- Give a brief next-hour lean (grind, chop, test high/low, vol into event) — speculative, not certain.
+
+Rules:
+- Exactly ONE sentence, max 40 words. Plain text.
+- Use ONLY JSON facts. No chart analysis. Do not invent levels.
+- If data missing, say "insufficient data" for that part only.`;
 }
 
-Each row is ONE short sentence (max 18 words). Each row must contain ONLY its assigned facts — never repeat information from another row.
-
-- context: NQ and ES last price plus 4H/1H candle colors. No levels, no distances, no events.
-- location: range position % and distance to the nearest 4H/1H boundary per symbol. No prices, no colors, no relative-strength comparison.
-- relativeStrength: stronger index and headline label only. No prices, levels, distances, or SMT.
-- watch: smt.message only. If smt.message is null, write exactly: "No SMT divergence."
-- catalyst: nextRedFolderEvent title and time only. If null, write exactly: "No red-folder event scheduled."
-
-Hard rules:
-- Do NOT analyze charts. Do NOT predict direction.
-- Do NOT invent data. Use "insufficient data" only when the JSON field needed for that row is null.
-- No markdown. No extra keys.`;
-}
-
-function parseRows(text: string): BiasSummaryRows | null {
+function parseLine(text: string): string | null {
   try {
     const cleaned = text
       .replace(/```json\n?/g, "")
       .replace(/```\n?/g, "")
       .trim();
-    const parsed = JSON.parse(cleaned) as Partial<BiasSummaryRows>;
-    if (!ROW_KEYS.every((k) => typeof parsed[k] === "string")) return null;
-    return {
-      context: parsed.context!.trim(),
-      location: parsed.location!.trim(),
-      relativeStrength: parsed.relativeStrength!.trim(),
-      watch: parsed.watch!.trim(),
-      catalyst: parsed.catalyst!.trim(),
-    };
+    const parsed = JSON.parse(cleaned) as { line?: string };
+    if (typeof parsed.line !== "string" || !parsed.line.trim()) return null;
+    return parsed.line.replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
   } catch {
-    return null;
+    const fallback = text.replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
+    return fallback.length > 10 && fallback.length < 280 ? fallback : null;
   }
 }
 
-function fmtColors(snap: SymbolSnapshot): string {
-  if (snap.price == null) return "insufficient data";
-  const h4 = snap.fourHour.candleColor ?? "?";
-  const h1 = snap.oneHour.candleColor ?? "?";
-  return `${snap.price} (4H ${h4}, 1H ${h1})`;
-}
-
-function nearestBoundary(interval: IntervalSnapshot, tf: string): string | null {
-  const { pctInRange, distToHighPts, distToLowPts, high, low } = interval;
-  if (pctInRange == null || distToHighPts == null || distToLowPts == null) {
-    return null;
-  }
+function nearestTarget(interval: IntervalSnapshot): string | null {
+  const { distToHighPts, distToLowPts, high, low, candleColor } = interval;
+  if (distToHighPts == null || distToLowPts == null) return null;
 
   if (distToHighPts <= distToLowPts) {
-    return `${tf} ${pctInRange}% range, ${distToHighPts}pt to H ${high ?? "?"}`;
+    return `${distToHighPts}pt from ${candleColor ?? "?"} candle high ${high ?? "?"}`;
   }
-  return `${tf} ${pctInRange}% range, ${distToLowPts}pt to L ${low ?? "?"}`;
+  return `${distToLowPts}pt from ${candleColor ?? "?"} candle low ${low ?? "?"}`;
 }
 
-function fmtLocationSymbol(label: string, snap: SymbolSnapshot): string {
-  if (snap.price == null) return `${label}: insufficient data`;
-
-  const h4 = nearestBoundary(snap.fourHour, "4H");
-  const h1 = nearestBoundary(snap.oneHour, "1H");
-  const parts = [h4, h1].filter(Boolean);
-
-  return parts.length
-    ? `${label} ${parts.join(", ")}`
-    : `${label}: insufficient data`;
+function symbolTone(snap: SymbolSnapshot): string {
+  const h1 = snap.oneHour.candleColor ?? "?";
+  const h4 = snap.fourHour.candleColor ?? "?";
+  const near = nearestTarget(snap.oneHour) ?? nearestTarget(snap.fourHour);
+  return near ? `1H ${h1}, 4H ${h4}, ${near}` : `1H ${h1}, 4H ${h4}`;
 }
 
-export function formatRowsDeterministic(
-  ctx: BiasSummaryMarketContext
-): BiasSummaryRows {
-  const rs = ctx.relativeStrength;
+export function formatLineDeterministic(ctx: BiasSummaryMarketContext): string {
+  const rs = ctx.relativeStrength.headline ?? "Balanced";
+  const nq = symbolTone(ctx.nq);
+  const es = symbolTone(ctx.es);
 
-  let relativeStrength = "insufficient data";
-  if (rs.headline) {
-    relativeStrength =
-      rs.stronger && rs.stronger !== "neutral"
-        ? `${rs.headline} — ${rs.stronger} ahead`
-        : rs.headline;
-  }
-
-  const watch = ctx.smt.message ?? "No SMT divergence.";
-
-  let catalyst = "No red-folder event scheduled.";
-  if (ctx.nextRedFolderEvent) {
-    const e = ctx.nextRedFolderEvent;
-    catalyst = `${e.title}, ${e.dayEt} ${e.timeEt} ET`;
-  }
-
-  return {
-    context: `NQ ${fmtColors(ctx.nq)} · ES ${fmtColors(ctx.es)}`,
-    location: `${fmtLocationSymbol("NQ", ctx.nq)} · ${fmtLocationSymbol("ES", ctx.es)}`,
-    relativeStrength,
-    watch,
-    catalyst,
-  };
-}
-
-function rowsLookRedundant(rows: BiasSummaryRows): boolean {
-  const values = ROW_KEYS.map((k) => rows[k].toLowerCase());
-  for (let i = 0; i < values.length; i++) {
-    for (let j = i + 1; j < values.length; j++) {
-      if (values[i] === values[j]) return true;
-      if (values[i].length > 20 && values[j].includes(values[i].slice(0, 20))) {
-        return true;
-      }
+  let lean = "next hour may chop inside the current 1H range";
+  const nq1h = ctx.nq.oneHour;
+  if (nq1h.distToHighPts != null && nq1h.distToLowPts != null) {
+    if (nq1h.distToHighPts <= nq1h.distToLowPts && nq1h.distToHighPts < 20) {
+      lean = "next hour may test the 1H high if momentum holds";
+    } else if (nq1h.distToLowPts < 20) {
+      lean = "next hour may drift toward the 1H low";
     }
   }
-  return false;
+
+  let timing = "";
+  if (ctx.minutesTo1HClose != null) {
+    timing = `, ${ctx.minutesTo1HClose}m to 1H close`;
+  }
+  const event = ctx.nextRedFolderEvent;
+  if (event?.minutesUntil != null && event.minutesUntil <= 360) {
+    timing += `, ${event.title} in ${event.minutesUntil}m`;
+  }
+
+  return `NQ ${nq}; ES ${es}; ${rs}${timing} — ${lean}.`;
 }
 
 async function generateBiasSummary(): Promise<BiasSummaryPayload> {
   if (!isAiGatewayConfigured()) {
-    return { rows: null, configured: false };
+    return { line: null, configured: false };
   }
 
   const model = getBiasSummaryModel();
   if (!model) {
-    return { rows: null, configured: false };
+    return { line: null, configured: false };
   }
 
-  const marketContext = await buildBiasSummaryMarketContext();
-  const fallback = formatRowsDeterministic(marketContext);
+  const ctx = await buildBiasSummaryMarketContext();
+  const fallback = formatLineDeterministic(ctx);
 
   try {
     const { text } = await generateText({
       model,
-      prompt: buildPrompt(marketContext),
-      maxOutputTokens: 320,
+      prompt: buildPrompt(ctx),
+      maxOutputTokens: 120,
     });
 
-    const parsed = parseRows(text);
-    const rows =
-      parsed && !rowsLookRedundant(parsed) ? parsed : fallback;
+    const line = parseLine(text) ?? fallback;
 
     return {
-      rows,
+      line,
       generatedAt: new Date().toISOString(),
       configured: true,
     };
   } catch (error) {
-    console.error("[bias/summary] AI format failed, using deterministic rows", error);
+    console.error("[bias/summary] failed, using deterministic line", error);
     return {
-      rows: fallback,
+      line: fallback,
       generatedAt: new Date().toISOString(),
       configured: true,
     };
@@ -195,7 +134,7 @@ async function generateBiasSummary(): Promise<BiasSummaryPayload> {
 
 export const getCachedBiasSummary = unstable_cache(
   generateBiasSummary,
-  ["bias-ai-summary-v2"],
+  ["bias-ai-summary-v3"],
   {
     revalidate: BIAS_SUMMARY_REVALIDATE_SEC,
     tags: ["bias-summary"],

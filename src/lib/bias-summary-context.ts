@@ -1,4 +1,5 @@
 import { fetchCalendarMeta, pickNextHighImpact } from "@/lib/events";
+import { getNextCandleClose } from "@/lib/candle-timers";
 import { computeMarketContext, type SymbolContext } from "@/lib/htf-status";
 
 export type IntervalSnapshot = {
@@ -34,7 +35,9 @@ export type BiasSummaryMarketContext = {
     title: string;
     dayEt: string;
     timeEt: string;
+    minutesUntil: number | null;
   } | null;
+  minutesTo1HClose: number | null;
 };
 
 const EMPTY_INTERVAL: IntervalSnapshot = {
@@ -93,6 +96,7 @@ export async function buildBiasSummaryMarketContext(): Promise<BiasSummaryMarket
 
   const next = pickNextHighImpact(cal.events);
   const rs = markets.relativeStrength;
+  const oneH = getNextCandleClose("1H");
 
   return {
     timezone: "America/New_York",
@@ -112,8 +116,19 @@ export async function buildBiasSummaryMarketContext(): Promise<BiasSummaryMarket
       ? { type: markets.smt.type, message: markets.smt.message }
       : { type: null, message: null },
     nextRedFolderEvent: next
-      ? { title: next.title, dayEt: next.dayEt, timeEt: next.timeEt }
+      ? {
+          title: next.title,
+          dayEt: next.dayEt,
+          timeEt: next.timeEt,
+          minutesUntil: Math.max(
+            0,
+            Math.round(
+              (new Date(next.scheduledAt).getTime() - Date.now()) / 60_000
+            )
+          ),
+        }
       : null,
+    minutesTo1HClose: Math.round(oneH.remainingMs / 60_000),
   };
 }
 

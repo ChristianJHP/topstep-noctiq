@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
   if (!isAiGatewayConfigured()) {
     return NextResponse.json(
-      { rows: null, configured: false },
+      { line: null, configured: false },
       { headers: { "Cache-Control": "public, max-age=60" } }
     );
   }
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     console.error("[bias/summary]", error);
 
     return NextResponse.json(
-      { rows: null, error: "Summary unavailable" },
+      { line: null, error: "Summary unavailable" },
       {
         status: 503,
         headers: { "Cache-Control": "public, max-age=60" },
