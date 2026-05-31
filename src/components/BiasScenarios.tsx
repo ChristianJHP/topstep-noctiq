@@ -113,8 +113,6 @@ export function BiasScenarios() {
     if (data?.scenarios) writeStored(data);
   }, [data]);
 
-  if (data?.configured === false) return null;
-
   const refreshMeta = formatRefreshMeta(data?.generatedAt, now);
   const scenarios = data?.scenarios;
 

@@ -1,19 +1,15 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
-import { isAiGatewayConfigured } from "@/lib/ai-gateway";
 import { biasSummaryCacheControl } from "@/lib/bias-summary-config";
-import { getCachedBiasScenarios } from "@/lib/bias-scenarios";
+import {
+  formatScenariosDeterministic,
+  getCachedBiasScenarios,
+} from "@/lib/bias-scenarios";
+import { buildBiasScenariosContext } from "@/lib/bias-summary-context";
 
 export async function GET(request: Request) {
   const force = new URL(request.url).searchParams.get("refresh") === "true";
   const cacheControl = biasSummaryCacheControl();
-
-  if (!isAiGatewayConfigured()) {
-    return NextResponse.json(
-      { scenarios: null, configured: false },
-      { headers: { "Cache-Control": "public, max-age=60" } }
-    );
-  }
 
   try {
     if (force) {
@@ -29,12 +25,25 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("[bias/scenarios]", error);
 
-    return NextResponse.json(
-      { scenarios: null, error: "Scenarios unavailable" },
-      {
-        status: 503,
-        headers: { "Cache-Control": "public, max-age=60" },
-      }
-    );
+    try {
+      const ctx = await buildBiasScenariosContext();
+      return NextResponse.json(
+        {
+          scenarios: formatScenariosDeterministic(ctx),
+          generatedAt: new Date().toISOString(),
+          configured: true,
+          stale: true,
+        },
+        { headers: { "Cache-Control": "public, max-age=60" } }
+      );
+    } catch {
+      return NextResponse.json(
+        { scenarios: null, error: "Scenarios unavailable" },
+        {
+          status: 503,
+          headers: { "Cache-Control": "public, max-age=60" },
+        }
+      );
+    }
   }
 }

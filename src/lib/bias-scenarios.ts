@@ -139,17 +139,18 @@ export function formatScenariosDeterministic(
 }
 
 async function generateBiasScenarios(): Promise<BiasScenariosPayload> {
+  const ctx = await buildBiasScenariosContext();
+  const fallback = formatScenariosDeterministic(ctx);
+  const generatedAt = new Date().toISOString();
+
   if (!isAiGatewayConfigured()) {
-    return { scenarios: null, configured: false };
+    return { scenarios: fallback, generatedAt, configured: true };
   }
 
   const model = getBiasSummaryModel();
   if (!model) {
-    return { scenarios: null, configured: false };
+    return { scenarios: fallback, generatedAt, configured: true };
   }
-
-  const ctx = await buildBiasScenariosContext();
-  const fallback = formatScenariosDeterministic(ctx);
 
   try {
     const { text } = await generateText({
@@ -160,18 +161,10 @@ async function generateBiasScenarios(): Promise<BiasScenariosPayload> {
 
     const scenarios = parseScenarios(text) ?? fallback;
 
-    return {
-      scenarios,
-      generatedAt: new Date().toISOString(),
-      configured: true,
-    };
+    return { scenarios, generatedAt, configured: true };
   } catch (error) {
     console.error("[bias/scenarios] AI failed, using deterministic", error);
-    return {
-      scenarios: fallback,
-      generatedAt: new Date().toISOString(),
-      configured: true,
-    };
+    return { scenarios: fallback, generatedAt, configured: true };
   }
 }
 

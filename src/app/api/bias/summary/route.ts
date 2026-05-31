@@ -1,19 +1,15 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
-import { isAiGatewayConfigured } from "@/lib/ai-gateway";
 import { biasSummaryCacheControl } from "@/lib/bias-summary-config";
-import { getCachedBiasSummary } from "@/lib/bias-summary";
+import {
+  formatLineDeterministic,
+  getCachedBiasSummary,
+} from "@/lib/bias-summary";
+import { buildBiasSummaryMarketContext } from "@/lib/bias-summary-context";
 
 export async function GET(request: Request) {
   const force = new URL(request.url).searchParams.get("refresh") === "true";
   const cacheControl = biasSummaryCacheControl();
-
-  if (!isAiGatewayConfigured()) {
-    return NextResponse.json(
-      { line: null, configured: false },
-      { headers: { "Cache-Control": "public, max-age=60" } }
-    );
-  }
 
   try {
     if (force) {
@@ -29,12 +25,25 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("[bias/summary]", error);
 
-    return NextResponse.json(
-      { line: null, error: "Summary unavailable" },
-      {
-        status: 503,
-        headers: { "Cache-Control": "public, max-age=60" },
-      }
-    );
+    try {
+      const ctx = await buildBiasSummaryMarketContext();
+      return NextResponse.json(
+        {
+          line: formatLineDeterministic(ctx),
+          generatedAt: new Date().toISOString(),
+          configured: true,
+          stale: true,
+        },
+        { headers: { "Cache-Control": "public, max-age=60" } }
+      );
+    } catch {
+      return NextResponse.json(
+        { line: null, error: "Summary unavailable" },
+        {
+          status: 503,
+          headers: { "Cache-Control": "public, max-age=60" },
+        }
+      );
+    }
   }
 }

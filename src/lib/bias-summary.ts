@@ -96,17 +96,18 @@ export function formatLineDeterministic(ctx: BiasSummaryMarketContext): string {
 }
 
 async function generateBiasSummary(): Promise<BiasSummaryPayload> {
+  const ctx = await buildBiasSummaryMarketContext();
+  const fallback = formatLineDeterministic(ctx);
+  const generatedAt = new Date().toISOString();
+
   if (!isAiGatewayConfigured()) {
-    return { line: null, configured: false };
+    return { line: fallback, generatedAt, configured: true };
   }
 
   const model = getBiasSummaryModel();
   if (!model) {
-    return { line: null, configured: false };
+    return { line: fallback, generatedAt, configured: true };
   }
-
-  const ctx = await buildBiasSummaryMarketContext();
-  const fallback = formatLineDeterministic(ctx);
 
   try {
     const { text } = await generateText({
@@ -117,24 +118,16 @@ async function generateBiasSummary(): Promise<BiasSummaryPayload> {
 
     const line = parseLine(text) ?? fallback;
 
-    return {
-      line,
-      generatedAt: new Date().toISOString(),
-      configured: true,
-    };
+    return { line, generatedAt, configured: true };
   } catch (error) {
     console.error("[bias/summary] failed, using deterministic line", error);
-    return {
-      line: fallback,
-      generatedAt: new Date().toISOString(),
-      configured: true,
-    };
+    return { line: fallback, generatedAt, configured: true };
   }
 }
 
 export const getCachedBiasSummary = unstable_cache(
   generateBiasSummary,
-  ["bias-ai-summary-v3"],
+  ["bias-ai-summary-v4"],
   {
     revalidate: BIAS_SUMMARY_REVALIDATE_SEC,
     tags: ["bias-summary"],

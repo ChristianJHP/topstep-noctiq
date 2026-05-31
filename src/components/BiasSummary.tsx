@@ -6,7 +6,7 @@ import { useCountdownTick } from "@/hooks/use-countdown-tick";
 import { BIAS_SUMMARY_REVALIDATE_SEC } from "@/lib/bias-summary-config";
 
 const REVALIDATE_MS = BIAS_SUMMARY_REVALIDATE_SEC * 1000;
-const STORAGE_KEY = "jhp-bias-summary-v3";
+const STORAGE_KEY = "jhp-bias-summary-v4";
 
 type SummaryPayload = {
   line: string | null;
@@ -88,8 +88,6 @@ export function BiasSummary() {
     if (data?.line) writeStoredSummary(data);
   }, [data]);
 
-  if (data?.configured === false) return null;
-
   const refreshMeta = formatRefreshMeta(data?.generatedAt, now);
 
   return (
@@ -104,7 +102,11 @@ export function BiasSummary() {
         <p className="bias-summary-text bias-summary-text--muted">Loading…</p>
       ) : data?.line ? (
         <p className="bias-summary-text">{data.line}</p>
-      ) : null}
+      ) : (
+        <p className="bias-summary-text bias-summary-text--muted">
+          Summary unavailable.
+        </p>
+      )}
     </section>
   );
 }
