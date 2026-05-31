@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BiasSummary } from "@/components/BiasSummary";
 import { CalendarPanel } from "@/components/CalendarPanel";
 import { MarketMovingHeadlines } from "@/components/MarketMovingHeadlines";
 import { RawHeadlinesWidget } from "@/components/RawHeadlinesWidget";
@@ -16,6 +17,7 @@ export default function BiasPage() {
           ← jhptrades.com
         </Link>
       </div>
+      <BiasSummary />
       <RadarTopCard />
 
       <RadarAccordion title="Market-moving headlines" defaultOpen>

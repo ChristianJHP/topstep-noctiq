@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import './apply.css'
 
 const STEPS = [
   {
@@ -69,26 +70,26 @@ const STEPS = [
 
 function SuccessCard() {
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-6">
-      <div className="max-w-sm w-full text-center">
-        <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-6">
-          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="apply-page apply-success">
+      <div className="apply-success-inner">
+        <div className="apply-success-icon">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
           </svg>
         </div>
-        <h2 className="text-2xl font-black text-gray-900 mb-3">Got it.</h2>
-        <p className="text-gray-500 text-sm leading-relaxed mb-8 max-w-xs mx-auto">
-          Next step is booking a quick call so we can go over where you're at and see if this is a good fit.
+        <h2>Got it.</h2>
+        <p>
+          Next step is booking a quick call so we can go over where you&apos;re at and see if this is a good fit.
         </p>
         <a
           href="https://calendly.com/christian-park2002/1-on-1-introduction"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition-colors text-sm"
+          className="apply-success-cta"
         >
           Book a Call
         </a>
-        <Link href="/" className="block mt-4 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+        <Link href="/" className="apply-success-home">
           Back to home
         </Link>
       </div>
@@ -153,7 +154,6 @@ export default function ApplyPage() {
     transition(stepIndex - 1, 'back')
   }, [stepIndex, transition])
 
-  // keyboard: Enter advances text steps, option steps auto-advance on selection
   useEffect(() => {
     const handler = (e) => {
       if (e.key === 'Enter' && step.type !== 'textarea') {
@@ -168,41 +168,36 @@ export default function ApplyPage() {
   if (submitted) return <SuccessCard />
 
   return (
-    <div className="min-h-screen bg-white">
-
-      {/* top bar */}
-      <div className="max-w-lg mx-auto px-6 pt-8 flex items-center justify-between">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors">
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="apply-page">
+      <div className="apply-shell apply-top">
+        <Link href="/" className="apply-back">
+          <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12"/>
           </svg>
           Back
         </Link>
-        <span className="text-xs text-gray-400">{stepIndex + 1} / {STEPS.length}</span>
+        <span className="apply-step-count">{stepIndex + 1} / {STEPS.length}</span>
       </div>
 
-      {/* progress bar */}
-      <div className="max-w-lg mx-auto px-6 pt-4 pb-12">
-        <div className="h-0.5 bg-gray-100 rounded-full overflow-hidden">
+      <div className="apply-shell apply-progress-wrap">
+        <div className="apply-progress-track">
           <div
-            className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
+            className="apply-progress-fill"
             style={{ width: `${progressPct}%` }}
           />
         </div>
       </div>
 
-      {/* page title — only on step 0 */}
       {stepIndex === 0 && (
-        <div className="max-w-lg mx-auto px-6 mb-10">
-          <h1 className="text-3xl font-black text-gray-900 mb-2">Apply for 1-on-1s</h1>
-          <p className="text-sm text-gray-400 leading-relaxed">
-            A few quick questions so I can understand where you're at as a trader and whether this would be a good fit.
+        <div className="apply-shell apply-intro">
+          <h1>Apply for 1-on-1s</h1>
+          <p>
+            A few quick questions so I can understand where you&apos;re at as a trader and whether this would be a good fit.
           </p>
         </div>
       )}
 
-      {/* step card */}
-      <div className="max-w-lg mx-auto px-6">
+      <div className="apply-shell">
         <div
           style={{
             opacity: visible ? 1 : 0,
@@ -214,17 +209,12 @@ export default function ApplyPage() {
             transition: 'opacity 0.16s ease, transform 0.16s ease',
           }}
         >
-          {/* question */}
-          <h2 className="text-xl font-bold text-gray-900 mb-1">
-            {step.question}
-          </h2>
+          <h2 className="apply-question">{step.question}</h2>
           {step.optional && (
-            <p className="text-xs text-gray-400 mb-6">optional</p>
+            <p className="apply-optional">optional</p>
           )}
 
-          {/* inputs */}
-          <div className={step.optional ? '' : 'mt-6'}>
-
+          <div className={`apply-input-wrap${step.optional ? ' apply-input-wrap--optional' : ''}`}>
             {step.type === 'text' && (
               <input
                 key={step.id}
@@ -234,7 +224,7 @@ export default function ApplyPage() {
                 value={answers[step.id] || ''}
                 onChange={e => setAnswers(a => ({ ...a, [step.id]: e.target.value }))}
                 placeholder={step.placeholder}
-                className="w-full text-lg border-0 border-b-2 border-gray-200 focus:border-blue-600 focus:outline-none py-3 bg-transparent text-gray-900 placeholder:text-gray-300 transition-colors duration-200"
+                className="apply-text-input"
               />
             )}
 
@@ -246,36 +236,28 @@ export default function ApplyPage() {
                 onChange={e => setAnswers(a => ({ ...a, [step.id]: e.target.value }))}
                 placeholder={step.placeholder}
                 rows={4}
-                className="w-full border border-gray-200 rounded-2xl px-4 py-3.5 text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-blue-400 resize-none bg-gray-50/60 transition-colors duration-200"
+                className="apply-textarea"
               />
             )}
 
             {step.type === 'options' && (
-              <div className={`grid gap-2 ${step.options.length > 4 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              <div className={`apply-options${step.options.length > 4 ? ' apply-options--multi' : ''}`}>
                 {step.options.map(opt => {
                   const selected = answers[step.id] === opt
                   return (
                     <button
                       key={opt}
+                      type="button"
                       onClick={() => {
                         setAnswers(a => ({ ...a, [step.id]: opt }))
-                        // auto-advance after short delay so user sees selection
                         if (!isLast) {
                           setTimeout(() => transition(stepIndex + 1, 'forward'), 260)
                         }
                       }}
-                      className={`text-left px-4 py-3.5 rounded-xl border text-sm font-medium transition-all duration-150 flex items-center gap-3 ${
-                        selected
-                          ? 'border-blue-600 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-                      }`}
+                      className={`apply-option${selected ? ' apply-option--selected' : ''}`}
                     >
-                      <span className={`shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors duration-150 ${
-                        selected ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
-                      }`}>
-                        {selected && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-white block" />
-                        )}
+                      <span className="apply-option-radio">
+                        {selected && <span className="apply-option-dot" />}
                       </span>
                       {opt}
                     </button>
@@ -285,27 +267,26 @@ export default function ApplyPage() {
             )}
           </div>
 
-          {/* error */}
           {error && (
-            <p className="mt-4 text-sm text-red-500">{error}</p>
+            <p className="apply-error">{error}</p>
           )}
 
-          {/* controls */}
-          <div className="flex items-center justify-between mt-10">
+          <div className="apply-controls">
             <button
+              type="button"
               onClick={goBack}
               disabled={stepIndex === 0}
-              className="text-sm text-gray-400 hover:text-gray-600 transition-colors disabled:pointer-events-none disabled:opacity-0"
+              className="apply-btn-back"
             >
               ← Back
             </button>
 
-            {/* for option steps the card auto-advances — show Next only for text/textarea */}
             {(step.type !== 'options' || isLast) && (
               <button
+                type="button"
                 onClick={goNext}
                 disabled={!canProceed() || submitting}
-                className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-semibold px-6 py-2.5 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="apply-btn-next"
               >
                 {submitting ? 'Sending…' : 'Continue'}
               </button>
@@ -313,7 +294,6 @@ export default function ApplyPage() {
           </div>
         </div>
       </div>
-
     </div>
   )
 }

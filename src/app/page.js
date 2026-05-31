@@ -26,28 +26,28 @@ const OFFERS = [
     external: false,
     primary: true,
     title: '1-on-1 Help',
-    desc: 'Direct feedback on your execution and consistency. Not signals — limited spots.',
+    desc: 'We go through your trades and execution. Small cohort — you apply first.',
     tag: 'Apply',
     tagClass: 'home-card-tag--apply',
-    cta: 'Apply for 1-on-1',
+    cta: 'Apply',
   },
   {
     href: '/bias',
     external: false,
     title: 'Daily Bias',
-    desc: 'NQ & ES 4H/1H structure, key levels, news, and timers — updated live.',
+    desc: 'NQ and ES levels, 4H/1H color, headlines, and macro times. Updates through the session.',
     tag: 'Free',
     tagClass: 'home-card-tag--free',
-    cta: 'Open bias board',
+    cta: 'Daily bias',
   },
   {
     href: 'https://discord.gg/aCNadDMvmH',
     external: true,
     title: 'Discord',
-    desc: 'Live RTH sessions. Real fills, journaling, feedback — not alert calls.',
+    desc: 'I trade RTH live in the server. Journal, watch fills, ask questions.',
     tag: 'Free',
     tagClass: 'home-card-tag--free',
-    cta: 'Join server',
+    cta: 'Join Discord',
   },
 ]
 
@@ -108,11 +108,15 @@ export default function Page() {
         <section className="home-shell home-hero">
           <p className="home-live">
             <span className="home-live-dot" />
-            Live futures · RTH sessions
+            NQ & ES · RTH
           </p>
-          <h1>Structure first.<br />Execute second.</h1>
+          <h1>JHP Trades</h1>
           <p className="home-hero-lead">
-            Apply for 1-on-1 help, grab the free daily bias board, or join live Discord sessions.
+            Free daily bias, live Discord during the session, and a small 1-on-1 cohort.
+          </p>
+          <p className="home-contact">
+            Contact me at{' '}
+            <a href="mailto:christian@jhptrades.com">christian@jhptrades.com</a>
           </p>
         </section>
 
@@ -157,7 +161,7 @@ export default function Page() {
         <div className="home-shell home-footer-row">
           <span>jhptrades.com</span>
           <div className="home-footer-links">
-            <a href="mailto:christian.park2002@gmail.com">Email</a>
+            <a href="mailto:christian@jhptrades.com">Email</a>
             <Link href="/apply">1-on-1</Link>
             <Link href="/bias">Daily Bias</Link>
           </div>
