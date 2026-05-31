@@ -17,14 +17,14 @@ export function RadarAccordion({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className="radar-card overflow-hidden">
+    <div className="radar-card mr-accordion overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between px-3 py-2.5 text-left"
+        className="mr-accordion-btn flex w-full items-center justify-between px-4 py-3 text-left"
         aria-expanded={open}
       >
-        <span className="text-sm font-medium text-white">{title}</span>
+        <span className="text-sm font-semibold text-white/90">{title}</span>
         <span
           className={cn(
             "text-[var(--muted)] transition-transform",

@@ -4,33 +4,51 @@ import {
   pickNextHighImpact,
 } from "@/lib/events";
 import { computeMarketContext } from "@/lib/htf-status";
+import { loadAllChartCandles } from "@/lib/chart-candles-cache";
+import { chartCandlesCacheControl } from "@/lib/chart-cache-config";
+import { isFuturesSessionOpen } from "@/lib/futures-session";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  let markets = null;
+  const cacheControl = chartCandlesCacheControl(!isFuturesSessionOpen());
+
+  const [marketsResult, calResult, charts] = await Promise.allSettled([
+    computeMarketContext(),
+    fetchCalendarMeta(),
+    loadAllChartCandles(),
+  ]);
+
+  const markets =
+    marketsResult.status === "fulfilled" ? marketsResult.value : null;
+  if (marketsResult.status === "rejected") {
+    console.error("[radar] markets", marketsResult.reason);
+  }
+
   let redFolderWeek: Awaited<ReturnType<typeof fetchCalendarMeta>>["events"] =
     [];
   let calendarSource: string | null = null;
-
-  try {
-    markets = await computeMarketContext();
-  } catch (error) {
-    console.error("[radar] markets", error);
+  if (calResult.status === "fulfilled") {
+    redFolderWeek = calResult.value.events;
+    calendarSource = calResult.value.source;
+  } else {
+    console.error("[radar] calendar", calResult.reason);
   }
 
-  try {
-    const cal = await fetchCalendarMeta();
-    redFolderWeek = cal.events;
-    calendarSource = cal.source;
-  } catch (error) {
-    console.error("[radar] calendar", error);
+  const chartCandles =
+    charts.status === "fulfilled" ? charts.value : {};
+  if (charts.status === "rejected") {
+    console.error("[radar] charts", charts.reason);
   }
 
-  return NextResponse.json({
-    markets,
-    nextHighImpact: pickNextHighImpact(redFolderWeek),
-    redFolderWeek,
-    calendarSource,
-  });
+  return NextResponse.json(
+    {
+      markets,
+      nextHighImpact: pickNextHighImpact(redFolderWeek),
+      redFolderWeek,
+      calendarSource,
+      chartCandles,
+    },
+    { headers: { "Cache-Control": cacheControl } }
+  );
 }

@@ -108,7 +108,7 @@ function ScenarioList({
   );
 }
 
-export function BiasScenarios() {
+export function BiasScenarios({ embedded = false }: { embedded?: boolean }) {
   const [initial] = useState(readStored);
   const now = useCountdownTick(30_000);
 
@@ -134,13 +134,20 @@ export function BiasScenarios() {
 
   const refreshMeta = formatRefreshMeta(
     data?.generatedAt,
-    now,
+    now ?? Date.now(),
     revalidateMs(data)
   );
   const scenarios = data?.scenarios;
 
   return (
-    <section className="bias-scenarios radar-card" aria-live="polite">
+    <section
+      className={
+        embedded
+          ? "bias-scenarios bias-scenarios--embedded"
+          : "bias-scenarios radar-card"
+      }
+      aria-live="polite"
+    >
       <header className="bias-scenarios-head">
         <div>
           <span className="bias-scenarios-label">If / then scenarios</span>

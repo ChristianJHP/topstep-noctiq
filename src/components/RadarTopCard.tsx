@@ -34,12 +34,8 @@ function SymbolPanel({ s }: { s: SymbolContext }) {
       <div className="mini-chart-block">
         <MiniSymbolChart
           ticker={s.ticker}
-          levels={{
-            h4High: s.h4High,
-            h4Low: s.h4Low,
-            priorH4High: s.priorH4High,
-            priorH4Low: s.priorH4Low,
-          }}
+          plot={s.analysis.chartPlot}
+          timeframe="4H"
         />
         <div className="level-keys">
           <span>
@@ -85,9 +81,10 @@ export function RadarTopCard() {
     { refreshInterval: 60_000 }
   );
 
-  const fourH = getNextCandleClose("4H", new Date(now));
-  const oneH = getNextCandleClose("1H", new Date(now));
-  const session = getMarketSession(new Date(now));
+  const clock = now != null ? new Date(now) : new Date();
+  const fourH = getNextCandleClose("4H", clock);
+  const oneH = getNextCandleClose("1H", clock);
+  const session = getMarketSession(clock);
   const ctx = data?.markets;
   const nextNews =
     data?.redFolderWeek?.[0] ?? data?.nextHighImpact ?? null;
@@ -143,7 +140,7 @@ export function RadarTopCard() {
               <span className="radar-footer-news-title">{nextNews.title}</span>
               <span className="radar-footer-news-time">
                 {formatCountdownHuman(
-                  new Date(nextNews.scheduledAt).getTime() - now
+                  new Date(nextNews.scheduledAt).getTime() - (now ?? Date.now())
                 )}
               </span>
             </>

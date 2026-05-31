@@ -1,5 +1,7 @@
-import { fetchCandles, MARKET_TICKERS, type Candle } from "@/lib/chart-data";
+import { MARKET_TICKERS, type Candle } from "@/lib/chart-data";
+import { getCachedChartCandles } from "@/lib/chart-candles-cache";
 import { aggregate1h, aggregate4h, type OhlcBar } from "@/lib/ohlc-aggregate";
+import { analyzeSymbolMarket, type SymbolMarketAnalysis } from "@/lib/market-analysis";
 
 export type CandleBias = "bullish" | "bearish" | "neutral";
 
@@ -33,6 +35,7 @@ export interface SymbolContext {
   distances: SymbolDistances;
   pctInH4Range: number;
   pctInH1Range: number;
+  analysis: SymbolMarketAnalysis;
 }
 
 export interface RelativeStrength {
@@ -50,6 +53,7 @@ export interface SmtAlert {
 export interface MarketContext {
   nq: SymbolContext;
   es: SymbolContext;
+  gold: SymbolContext;
   relativeStrength: RelativeStrength;
   smt: SmtAlert | null;
 }
@@ -101,6 +105,17 @@ function buildSymbolContext(
   const h4Low = current4h?.low ?? current;
   const h1High = current1h?.high ?? current;
   const h1Low = current1h?.low ?? current;
+  const priorH4High = prior4h?.high ?? h4High;
+  const priorH4Low = prior4h?.low ?? h4Low;
+
+  const analysis = analyzeSymbolMarket(
+    candles,
+    h4High,
+    h4Low,
+    priorH4High,
+    priorH4Low,
+    current
+  );
 
   return {
     label,
@@ -117,8 +132,8 @@ function buildSymbolContext(
     h4Low: roundPts(h4Low),
     h1High: roundPts(h1High),
     h1Low: roundPts(h1Low),
-    priorH4High: roundPts(prior4h?.high ?? h4High),
-    priorH4Low: roundPts(prior4h?.low ?? h4Low),
+    priorH4High: roundPts(priorH4High),
+    priorH4Low: roundPts(priorH4Low),
     distances: {
       toH4High: roundPts(h4High - current),
       toH4Low: roundPts(current - h4Low),
@@ -127,53 +142,65 @@ function buildSymbolContext(
     },
     pctInH4Range: pctTowardHigh(current, h4Low, h4High),
     pctInH1Range: pctTowardHigh(current, h1Low, h1High),
+    analysis,
   };
 }
 
-function detectSmt(
-  nq: SymbolContext,
-  es: SymbolContext,
-  nq1h: OhlcBar[],
-  es1h: OhlcBar[]
+function detectIntervalSmt(
+  nqBars: OhlcBar[],
+  esBars: OhlcBar[],
+  interval: "4H" | "1H"
 ): SmtAlert | null {
-  if (nq1h.length < 2 || es1h.length < 2) return null;
+  if (nqBars.length < 2 || esBars.length < 2) return null;
 
-  const nqPrior = nq1h[nq1h.length - 2];
-  const esPrior = es1h[es1h.length - 2];
-  const nqCur = nq1h[nq1h.length - 1];
-  const esCur = es1h[es1h.length - 1];
+  const nqPrior = nqBars[nqBars.length - 2];
+  const esPrior = esBars[esBars.length - 2];
+  const nqCur = nqBars[nqBars.length - 1];
+  const esCur = esBars[esBars.length - 1];
 
   const nqNewHigh = nqCur.high > nqPrior.high;
   const esNewHigh = esCur.high > esPrior.high;
   const nqNewLow = nqCur.low < nqPrior.low;
   const esNewLow = esCur.low < esPrior.low;
 
-  if (esNewHigh && !nqNewHigh) {
-    return {
-      type: "bearish",
-      message: "ES new 1H high · NQ failed — bearish SMT",
-    };
-  }
   if (nqNewHigh && !esNewHigh) {
     return {
       type: "bearish",
-      message: "NQ new 1H high · ES failed — bearish SMT",
+      message: `NQ swept ${interval} high, ES failed`,
     };
   }
-  if (esNewLow && !nqNewLow) {
+  if (esNewHigh && !nqNewHigh) {
     return {
-      type: "bullish",
-      message: "ES new 1H low · NQ failed — bullish SMT",
+      type: "bearish",
+      message: `ES swept ${interval} high, NQ failed`,
     };
   }
   if (nqNewLow && !esNewLow) {
     return {
       type: "bullish",
-      message: "NQ new 1H low · ES failed — bullish SMT",
+      message: `NQ swept ${interval} low, ES failed`,
+    };
+  }
+  if (esNewLow && !nqNewLow) {
+    return {
+      type: "bullish",
+      message: `ES swept ${interval} low, NQ failed`,
     };
   }
 
   return null;
+}
+
+function detectSmt(
+  nq4h: OhlcBar[],
+  es4h: OhlcBar[],
+  nq1h: OhlcBar[],
+  es1h: OhlcBar[]
+): SmtAlert | null {
+  return (
+    detectIntervalSmt(nq4h, es4h, "4H") ??
+    detectIntervalSmt(nq1h, es1h, "1H")
+  );
 }
 
 function computeRelativeStrength(
@@ -206,21 +233,34 @@ function computeRelativeStrength(
 async function computeSymbol(
   label: string,
   ticker: string
-): Promise<{ context: SymbolContext; bars1h: OhlcBar[] }> {
-  const candles = await fetchCandles(ticker);
+): Promise<{ context: SymbolContext; bars1h: OhlcBar[]; bars4h: OhlcBar[] }> {
+  const { candles } = await getCachedChartCandles(ticker, "60m", "3mo");
   const bars4h = aggregate4h(candles);
   const bars1h = aggregate1h(candles);
 
   return {
     context: buildSymbolContext(label, ticker, candles, bars4h, bars1h),
     bars1h,
+    bars4h,
   };
 }
 
+export function candleSymbolBias(
+  symbol: SymbolContext
+): "bullish" | "bearish" | "mixed" {
+  const h4 = symbol.fourHour.bias;
+  const h1 = symbol.oneHour.bias;
+  if (h4 === h1 && h4 !== "neutral") return h4;
+  if (h4 !== "neutral" && h1 === "neutral") return h4;
+  if (h1 !== "neutral" && h4 === "neutral") return h1;
+  return "mixed";
+}
+
 export async function computeMarketContext(): Promise<MarketContext> {
-  const [nqResult, esResult] = await Promise.all([
+  const [nqResult, esResult, goldResult] = await Promise.all([
     computeSymbol("NQ", MARKET_TICKERS.NQ),
     computeSymbol("ES", MARKET_TICKERS.ES),
+    computeSymbol("GC", MARKET_TICKERS.GC),
   ]);
 
   const nq = nqResult.context;
@@ -229,8 +269,14 @@ export async function computeMarketContext(): Promise<MarketContext> {
   return {
     nq,
     es,
+    gold: goldResult.context,
     relativeStrength: computeRelativeStrength(nq, es),
-    smt: detectSmt(nq, es, nqResult.bars1h, esResult.bars1h),
+    smt: detectSmt(
+      nqResult.bars4h,
+      esResult.bars4h,
+      nqResult.bars1h,
+      esResult.bars1h
+    ),
   };
 }
 

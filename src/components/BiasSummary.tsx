@@ -83,7 +83,7 @@ function writeStoredSummary(data: SummaryPayload) {
   }
 }
 
-export function BiasSummary() {
+export function BiasSummary({ embedded = false }: { embedded?: boolean }) {
   const [initial] = useState(readStoredSummary);
   const now = useCountdownTick(30_000);
 
@@ -109,12 +109,19 @@ export function BiasSummary() {
 
   const refreshMeta = formatRefreshMeta(
     data?.generatedAt,
-    now,
+    now ?? Date.now(),
     revalidateMs(data)
   );
 
   return (
-    <section className="bias-summary radar-card" aria-live="polite">
+    <section
+      className={
+        embedded
+          ? "bias-summary bias-summary--embedded"
+          : "bias-summary radar-card"
+      }
+      aria-live="polite"
+    >
       <header className="bias-summary-head">
         <span className="bias-summary-label">
           {data?.marketOpen === false ? "When open" : "Next hour"}

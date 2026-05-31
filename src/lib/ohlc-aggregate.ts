@@ -52,7 +52,7 @@ export function aggregateBars(
   }
 
   return [...map.values()]
-    .sort((a, b) => a.bucketKey.localeCompare(b.bucketKey))
+    .sort((a, b) => a.firstTime - b.firstTime)
     .map(({ firstTime: _f, ...bar }) => bar);
 }
 

@@ -6,22 +6,29 @@ export type Candle = {
   close: number;
 };
 
-/** Yahoo Finance tickers for NQ / ES futures */
+/** Yahoo Finance tickers for futures */
 export const MARKET_TICKERS = {
   NQ: "NQ=F",
   ES: "ES=F",
+  GC: "GC=F",
 } as const;
 
-export async function fetchCandles(ticker: string): Promise<Candle[]> {
+export async function fetchCandles(
+  ticker: string,
+  options?: { interval?: string; range?: string }
+): Promise<Candle[]> {
+  const interval = options?.interval ?? "60m";
+  const range = options?.range ?? "5d";
+
   const url = new URL(
     `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}`
   );
-  url.searchParams.set("interval", "60m");
-  url.searchParams.set("range", "5d");
+  url.searchParams.set("interval", interval);
+  url.searchParams.set("range", range);
 
   const res = await fetch(url.toString(), {
     headers: { "User-Agent": "Mozilla/5.0" },
-    next: { revalidate: 60 },
+    cache: "no-store",
   });
 
   if (!res.ok) {

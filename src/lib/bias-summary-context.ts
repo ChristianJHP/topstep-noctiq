@@ -24,11 +24,19 @@ export type MarketSessionSnapshot = {
   minutesUntilClose: number | null;
 };
 
+export type SymbolWatchHints = {
+  drawLevel: number | null;
+  drawSide: "buy-side" | "sell-side" | null;
+  fvgNet: number | null;
+};
+
 export type BiasSummaryMarketContext = {
   timezone: "America/New_York";
   marketSession: MarketSessionSnapshot;
   nq: SymbolSnapshot;
   es: SymbolSnapshot;
+  nqWatch: SymbolWatchHints;
+  esWatch: SymbolWatchHints;
   relativeStrength: {
     stronger: "ES" | "NQ" | "neutral" | null;
     headline: string | null;
@@ -96,6 +104,14 @@ function symbolSnapshot(s: SymbolContext): SymbolSnapshot {
   };
 }
 
+function watchHints(s: SymbolContext): SymbolWatchHints {
+  return {
+    drawLevel: s.analysis.drawLevel ?? null,
+    drawSide: s.analysis.drawSide ?? null,
+    fvgNet: s.analysis.fvgScore.net ?? null,
+  };
+}
+
 export async function buildBiasSummaryMarketContext(): Promise<BiasSummaryMarketContext> {
   const [markets, cal] = await Promise.all([
     computeMarketContext(),
@@ -116,6 +132,8 @@ export async function buildBiasSummaryMarketContext(): Promise<BiasSummaryMarket
     },
     nq: symbolSnapshot(markets.nq),
     es: symbolSnapshot(markets.es),
+    nqWatch: watchHints(markets.nq),
+    esWatch: watchHints(markets.es),
     relativeStrength: {
       stronger: rs.stronger ?? null,
       headline: rs.headline || null,

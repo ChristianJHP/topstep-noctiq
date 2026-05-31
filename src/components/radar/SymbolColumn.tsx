@@ -1,0 +1,63 @@
+"use client";
+
+import { useState } from "react";
+import type { SymbolContext } from "@/lib/htf-status";
+import type { MarketContext } from "@/lib/htf-status";
+import { CHART_TIMEFRAMES, type ChartTimeframe } from "@/lib/chart-timeframe";
+import { allWatchChips, formatPrice, symbolWatchChips } from "@/lib/strategy-prep";
+import { CandleStateDots } from "@/components/radar/CandleStateDots";
+import { SymbolChartPane } from "@/components/radar/SymbolChartPane";
+import { SymbolWatch } from "@/components/radar/SymbolWatch";
+import { useIsWideDesktop } from "@/hooks/use-is-wide-desktop";
+
+export function SymbolColumn({
+  symbol,
+  markets,
+}: {
+  symbol: SymbolContext;
+  markets: MarketContext;
+}) {
+  const isWide = useIsWideDesktop();
+  const [timeframe, setTimeframe] = useState<ChartTimeframe>("4H");
+  const watchChips = isWide
+    ? allWatchChips(symbol, markets)
+    : symbolWatchChips(symbol, markets, timeframe);
+
+  return (
+    <div className={`sym-col sym-col--solo${isWide ? " sym-col--wide" : ""}`}>
+      <div className="sym-col-top">
+        <CandleStateDots fourHour={symbol.fourHour} oneHour={symbol.oneHour} />
+        <p className="sym-col-price">{formatPrice(symbol.current)}</p>
+      </div>
+
+      {isWide ? (
+        <div className="sym-col-charts-wide">
+          {CHART_TIMEFRAMES.map((tf) => (
+            <SymbolChartPane key={tf} symbol={symbol} timeframe={tf} />
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="mr-tf-tabs" role="tablist" aria-label="Chart timeframe">
+            {CHART_TIMEFRAMES.map((tf) => (
+              <button
+                key={tf}
+                type="button"
+                role="tab"
+                aria-selected={timeframe === tf}
+                className={`mr-tf-tab${timeframe === tf ? " mr-tf-tab--active" : ""}`}
+                onClick={() => setTimeframe(tf)}
+              >
+                {tf}
+              </button>
+            ))}
+          </div>
+
+          <SymbolChartPane symbol={symbol} timeframe={timeframe} />
+        </>
+      )}
+
+      <SymbolWatch chips={watchChips} />
+    </div>
+  );
+}
