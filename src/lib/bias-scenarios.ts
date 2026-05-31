@@ -5,7 +5,8 @@ import {
   buildBiasScenariosContext,
   type BiasScenariosContext,
 } from "@/lib/bias-summary-context";
-import { BIAS_SUMMARY_REVALIDATE_SEC } from "@/lib/bias-summary-config";
+import { BIAS_SUMMARY_REVALIDATE_SEC, BIAS_SUMMARY_CLOSED_REVALIDATE_SEC } from "@/lib/bias-summary-config";
+import { isFuturesSessionOpen } from "@/lib/futures-session";
 
 export type ScenarioItem = {
   if: string;
@@ -21,12 +22,16 @@ export type BiasScenariosPayload = {
   scenarios: BiasScenarios | null;
   generatedAt?: string;
   configured?: boolean;
+  marketOpen?: boolean;
+  revalidateSec?: number;
 };
 
 const MAX_EACH = 2;
 
 function buildPrompt(ctx: BiasScenariosContext): string {
-  return `You write SPECULATIVE if/then scenarios for NQ/ES futures traders.
+  const closed = !ctx.marketSession.isOpen;
+
+  return `You write SPECULATIVE if/then scenarios for NQ/ES futures traders${closed ? " while CME futures are CLOSED" : ""}.
 
 INPUT JSON:
 ${JSON.stringify(ctx)}
@@ -41,7 +46,7 @@ Rules:
 - Exactly ${MAX_EACH} bullish and ${MAX_EACH} bearish scenarios.
 - Each "if" is a condition (level break, red-folder outcome, headline theme). Each "then" is what could happen — speculative, not certain.
 - Use only prices/levels from JSON. Use red-folder events from upcomingRedFolderEvents or nextRedFolderEvent. Headlines may inform macro outcome wording only.
-- Frame as conditional: "If X … then Y could …" — never state direction as fact.
+${closed ? "- Markets are closed: frame scenarios for the next session open / upcoming events, not live intraday action.\n" : ""}- Frame as conditional: "If X … then Y could …" — never state direction as fact.
 - Max 22 words per "if" and per "then". Plain text. No markdown.
 - Do not repeat the same trigger on both sides.`;
 }
@@ -142,14 +147,19 @@ async function generateBiasScenarios(): Promise<BiasScenariosPayload> {
   const ctx = await buildBiasScenariosContext();
   const fallback = formatScenariosDeterministic(ctx);
   const generatedAt = new Date().toISOString();
+  const marketOpen = ctx.marketSession.isOpen;
+  const revalidateSec = marketOpen
+    ? BIAS_SUMMARY_REVALIDATE_SEC
+    : BIAS_SUMMARY_CLOSED_REVALIDATE_SEC;
+  const base = { generatedAt, configured: true, marketOpen, revalidateSec };
 
   if (!isAiGatewayConfigured()) {
-    return { scenarios: fallback, generatedAt, configured: true };
+    return { scenarios: fallback, ...base };
   }
 
   const model = getBiasSummaryModel();
   if (!model) {
-    return { scenarios: fallback, generatedAt, configured: true };
+    return { scenarios: fallback, ...base };
   }
 
   try {
@@ -161,18 +171,39 @@ async function generateBiasScenarios(): Promise<BiasScenariosPayload> {
 
     const scenarios = parseScenarios(text) ?? fallback;
 
-    return { scenarios, generatedAt, configured: true };
+    return { scenarios, ...base };
   } catch (error) {
     console.error("[bias/scenarios] AI failed, using deterministic", error);
-    return { scenarios: fallback, generatedAt, configured: true };
+    return { scenarios: fallback, ...base };
   }
 }
 
-export const getCachedBiasScenarios = unstable_cache(
+const getCachedBiasScenariosOpen = unstable_cache(
   generateBiasScenarios,
-  ["bias-ai-scenarios-v1"],
+  ["bias-ai-scenarios-v2-open"],
   {
     revalidate: BIAS_SUMMARY_REVALIDATE_SEC,
-    tags: ["bias-scenarios"],
+    tags: ["bias-scenarios", "bias-scenarios-open"],
   }
 );
+
+const getCachedBiasScenariosClosed = unstable_cache(
+  generateBiasScenarios,
+  ["bias-ai-scenarios-v2-closed"],
+  {
+    revalidate: BIAS_SUMMARY_CLOSED_REVALIDATE_SEC,
+    tags: ["bias-scenarios", "bias-scenarios-closed"],
+  }
+);
+
+export async function getCachedBiasScenarios(): Promise<BiasScenariosPayload> {
+  return isFuturesSessionOpen()
+    ? getCachedBiasScenariosOpen()
+    : getCachedBiasScenariosClosed();
+}
+
+export function getBiasScenariosRevalidateSec(): number {
+  return isFuturesSessionOpen()
+    ? BIAS_SUMMARY_REVALIDATE_SEC
+    : BIAS_SUMMARY_CLOSED_REVALIDATE_SEC;
+}

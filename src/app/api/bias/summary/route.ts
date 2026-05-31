@@ -1,6 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { biasSummaryCacheControl } from "@/lib/bias-summary-config";
+import { isFuturesSessionOpen } from "@/lib/futures-session";
 import {
   formatLineDeterministic,
   getCachedBiasSummary,
@@ -9,7 +10,8 @@ import { buildBiasSummaryMarketContext } from "@/lib/bias-summary-context";
 
 export async function GET(request: Request) {
   const force = new URL(request.url).searchParams.get("refresh") === "true";
-  const cacheControl = biasSummaryCacheControl();
+  const marketClosed = !isFuturesSessionOpen();
+  const cacheControl = biasSummaryCacheControl(marketClosed);
 
   try {
     if (force) {

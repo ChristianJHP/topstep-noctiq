@@ -5,6 +5,7 @@ import {
   formatCountdownHuman,
   getNextCandleClose,
 } from "@/lib/candle-timers";
+import { getMarketSession } from "@/lib/futures-session";
 import type { EconomicEvent } from "@/lib/events";
 import type { MarketContext, SymbolContext } from "@/lib/htf-status";
 import { useCountdownTick } from "@/hooks/use-countdown-tick";
@@ -86,6 +87,7 @@ export function RadarTopCard() {
 
   const fourH = getNextCandleClose("4H", new Date(now));
   const oneH = getNextCandleClose("1H", new Date(now));
+  const session = getMarketSession(new Date(now));
   const ctx = data?.markets;
   const nextNews =
     data?.redFolderWeek?.[0] ?? data?.nextHighImpact ?? null;
@@ -94,7 +96,9 @@ export function RadarTopCard() {
     <div className="radar-card">
       <header className="radar-header">
         <h1>Daily Bias</h1>
-        <span className="live-dot">Live</span>
+        <span className={session.isOpen ? "live-dot" : "live-dot live-dot--closed"}>
+          {session.isOpen ? "Live" : "Closed"}
+        </span>
       </header>
 
       {isLoading || !ctx ? (
@@ -151,13 +155,17 @@ export function RadarTopCard() {
           <div className="radar-footer-cell">
             <span className="radar-footer-label">1H close</span>
             <span className="radar-footer-value">
-              {formatCountdownHuman(oneH.remainingMs)}
+              {oneH.paused
+                ? "Closed"
+                : formatCountdownHuman(oneH.remainingMs)}
             </span>
           </div>
           <div className="radar-footer-cell">
             <span className="radar-footer-label">4H close</span>
             <span className="radar-footer-value">
-              {formatCountdownHuman(fourH.remainingMs)}
+              {fourH.paused
+                ? "Closed"
+                : formatCountdownHuman(fourH.remainingMs)}
             </span>
           </div>
         </div>

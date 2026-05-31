@@ -69,6 +69,15 @@
     background: var(--accent);
   }
 
+  .live-dot--closed {
+    color: var(--muted, #888);
+  }
+
+  .live-dot--closed::before {
+    background: var(--muted, #888);
+    animation: none;
+  }
+
   .radar-loading {
     padding: 1.5rem 0.875rem;
     font-size: 0.875rem;

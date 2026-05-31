@@ -1,5 +1,5 @@
 import { fetchCalendarMeta, pickNextHighImpact } from "@/lib/events";
-import { getNextCandleClose } from "@/lib/candle-timers";
+import { getMarketSession } from "@/lib/futures-session";
 import { computeMarketContext, type SymbolContext } from "@/lib/htf-status";
 
 export type IntervalSnapshot = {
@@ -17,8 +17,16 @@ export type SymbolSnapshot = {
   oneHour: IntervalSnapshot;
 };
 
+export type MarketSessionSnapshot = {
+  isOpen: boolean;
+  reason: string;
+  minutesUntilOpen: number | null;
+  minutesUntilClose: number | null;
+};
+
 export type BiasSummaryMarketContext = {
   timezone: "America/New_York";
+  marketSession: MarketSessionSnapshot;
   nq: SymbolSnapshot;
   es: SymbolSnapshot;
   relativeStrength: {
@@ -96,10 +104,16 @@ export async function buildBiasSummaryMarketContext(): Promise<BiasSummaryMarket
 
   const next = pickNextHighImpact(cal.events);
   const rs = markets.relativeStrength;
-  const oneH = getNextCandleClose("1H");
+  const session = getMarketSession();
 
   return {
     timezone: "America/New_York",
+    marketSession: {
+      isOpen: session.isOpen,
+      reason: session.reason,
+      minutesUntilOpen: session.minutesUntilOpen,
+      minutesUntilClose: session.minutesUntilClose,
+    },
     nq: symbolSnapshot(markets.nq),
     es: symbolSnapshot(markets.es),
     relativeStrength: {
@@ -128,7 +142,7 @@ export async function buildBiasSummaryMarketContext(): Promise<BiasSummaryMarket
           ),
         }
       : null,
-    minutesTo1HClose: Math.round(oneH.remainingMs / 60_000),
+    minutesTo1HClose: session.minutesTo1HClose,
   };
 }
 

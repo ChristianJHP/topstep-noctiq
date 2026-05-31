@@ -1,6 +1,12 @@
-/** Regenerate AI bias read at most once per this interval (seconds). */
+/** Regenerate AI bias read at most once per this interval while futures are open (seconds). */
 export const BIAS_SUMMARY_REVALIDATE_SEC = 20 * 60;
 
-export function biasSummaryCacheControl(): string {
-  return `public, s-maxage=${BIAS_SUMMARY_REVALIDATE_SEC}, max-age=${BIAS_SUMMARY_REVALIDATE_SEC}, stale-while-revalidate=300`;
+/** Longer cache while futures are closed (weekend, daily break, holidays). */
+export const BIAS_SUMMARY_CLOSED_REVALIDATE_SEC = 2 * 60 * 60;
+
+export function biasSummaryCacheControl(marketClosed = false): string {
+  const sec = marketClosed
+    ? BIAS_SUMMARY_CLOSED_REVALIDATE_SEC
+    : BIAS_SUMMARY_REVALIDATE_SEC;
+  return `public, s-maxage=${sec}, max-age=${sec}, stale-while-revalidate=300`;
 }

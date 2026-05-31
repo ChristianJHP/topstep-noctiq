@@ -7,16 +7,35 @@ import {
   type IntervalSnapshot,
   type SymbolSnapshot,
 } from "@/lib/bias-summary-context";
-import { BIAS_SUMMARY_REVALIDATE_SEC } from "@/lib/bias-summary-config";
+import { BIAS_SUMMARY_REVALIDATE_SEC, BIAS_SUMMARY_CLOSED_REVALIDATE_SEC } from "@/lib/bias-summary-config";
+import { isFuturesSessionOpen } from "@/lib/futures-session";
 
 export type BiasSummaryPayload = {
   line: string | null;
   generatedAt?: string;
   configured?: boolean;
+  marketOpen?: boolean;
+  revalidateSec?: number;
 };
 
+function formatMinutesUntilOpen(minutes: number | null): string {
+  if (minutes == null || minutes <= 0) return "reopens soon";
+  if (minutes >= 1440) {
+    const days = Math.round(minutes / 1440);
+    return `reopens in ${days}d`;
+  }
+  if (minutes >= 60) {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m > 0 ? `reopens in ${h}h ${m}m` : `reopens in ${h}h`;
+  }
+  return `reopens in ${minutes}m`;
+}
+
 function buildPrompt(ctx: BiasSummaryMarketContext): string {
-  return `You write ONE sentence on NQ/ES for the next hour.
+  const closed = !ctx.marketSession.isOpen;
+
+  return `You write ONE sentence on NQ/ES${closed ? " while CME futures are CLOSED" : " for the next hour"}.
 
 INPUT JSON:
 ${JSON.stringify(ctx)}
@@ -24,11 +43,15 @@ ${JSON.stringify(ctx)}
 Return ONLY valid JSON: {"line": ""}
 
 The sentence must:
-- State current 1H/4H color and where price sits vs the nearest 1H or 4H level (from JSON).
+${closed
+    ? `- State markets are closed (marketSession.reason) and when they reopen (minutesUntilOpen).
+- Summarize last known 1H/4H structure and ES vs NQ from JSON — no live "next hour" action.
+- Mention nextRedFolderEvent if relevant before reopen.`
+    : `- State current 1H/4H color and where price sits vs the nearest 1H or 4H level (from JSON).
 - Mention ES vs NQ strength if not balanced.
 - Note 1H candle close in minutesTo1HClose if relevant.
 - Note nextRedFolderEvent timing if within 6 hours (minutesUntil).
-- Give a brief next-hour lean (grind, chop, test high/low, vol into event) — speculative, not certain.
+- Give a brief next-hour lean (grind, chop, test high/low, vol into event) — speculative, not certain.`}
 
 Rules:
 - Exactly ONE sentence, max 40 words. Plain text.
@@ -69,6 +92,14 @@ function symbolTone(snap: SymbolSnapshot): string {
 }
 
 export function formatLineDeterministic(ctx: BiasSummaryMarketContext): string {
+  if (!ctx.marketSession.isOpen) {
+    const rs = ctx.relativeStrength.headline ?? "Balanced";
+    const nqPx = ctx.nq.price?.toLocaleString() ?? "?";
+    const esPx = ctx.es.price?.toLocaleString() ?? "?";
+    const openLabel = formatMinutesUntilOpen(ctx.marketSession.minutesUntilOpen);
+    return `Markets closed (${ctx.marketSession.reason}) — ${openLabel}; last NQ ${nqPx}, ES ${esPx}; ${rs}.`;
+  }
+
   const rs = ctx.relativeStrength.headline ?? "Balanced";
   const nq = symbolTone(ctx.nq);
   const es = symbolTone(ctx.es);
@@ -99,14 +130,19 @@ async function generateBiasSummary(): Promise<BiasSummaryPayload> {
   const ctx = await buildBiasSummaryMarketContext();
   const fallback = formatLineDeterministic(ctx);
   const generatedAt = new Date().toISOString();
+  const marketOpen = ctx.marketSession.isOpen;
+  const revalidateSec = marketOpen
+    ? BIAS_SUMMARY_REVALIDATE_SEC
+    : BIAS_SUMMARY_CLOSED_REVALIDATE_SEC;
+  const base = { generatedAt, configured: true, marketOpen, revalidateSec };
 
   if (!isAiGatewayConfigured()) {
-    return { line: fallback, generatedAt, configured: true };
+    return { line: fallback, ...base };
   }
 
   const model = getBiasSummaryModel();
   if (!model) {
-    return { line: fallback, generatedAt, configured: true };
+    return { line: fallback, ...base };
   }
 
   try {
@@ -118,20 +154,41 @@ async function generateBiasSummary(): Promise<BiasSummaryPayload> {
 
     const line = parseLine(text) ?? fallback;
 
-    return { line, generatedAt, configured: true };
+    return { line, ...base };
   } catch (error) {
     console.error("[bias/summary] failed, using deterministic line", error);
-    return { line: fallback, generatedAt, configured: true };
+    return { line: fallback, ...base };
   }
 }
 
-export const getCachedBiasSummary = unstable_cache(
+const getCachedBiasSummaryOpen = unstable_cache(
   generateBiasSummary,
-  ["bias-ai-summary-v4"],
+  ["bias-ai-summary-v5-open"],
   {
     revalidate: BIAS_SUMMARY_REVALIDATE_SEC,
-    tags: ["bias-summary"],
+    tags: ["bias-summary", "bias-summary-open"],
   }
 );
+
+const getCachedBiasSummaryClosed = unstable_cache(
+  generateBiasSummary,
+  ["bias-ai-summary-v5-closed"],
+  {
+    revalidate: BIAS_SUMMARY_CLOSED_REVALIDATE_SEC,
+    tags: ["bias-summary", "bias-summary-closed"],
+  }
+);
+
+export async function getCachedBiasSummary(): Promise<BiasSummaryPayload> {
+  return isFuturesSessionOpen()
+    ? getCachedBiasSummaryOpen()
+    : getCachedBiasSummaryClosed();
+}
+
+export function getBiasSummaryRevalidateSec(): number {
+  return isFuturesSessionOpen()
+    ? BIAS_SUMMARY_REVALIDATE_SEC
+    : BIAS_SUMMARY_CLOSED_REVALIDATE_SEC;
+}
 
 export { BIAS_SUMMARY_REVALIDATE_SEC } from "@/lib/bias-summary-config";
