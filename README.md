@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# JHP Trades (jhptrades.com)
 
-## Getting Started
+Unified site based on [topstep-noctiq@2ce016e](https://github.com/ChristianJHP/topstep-noctiq/commit/2ce016ea58247861593ec81d14f2f472dff802d0) with **Daily Bias** at `/bias`.
 
-First, run the development server:
+## Routes
+
+| Path | Description |
+|------|-------------|
+| `/` | JHP Trades landing page |
+| `/bias` | Daily Bias — NQ/ES structure & levels |
+| `/dashboard` | Live charts & trading dashboard |
+| `/apply` | 1-on-1 mentorship application |
+| `/api/trading/webhook` | TradingView → TopStepX webhook |
+| `/api/radar`, `/api/headlines`, `/api/chart` | Daily Bias data |
+
+## Daily Bias (`/bias`)
+
+Mobile-first futures radar. Glance and leave — no journaling, no uploads.
+
+| UI | Source | Refresh |
+|----|--------|---------|
+| 4H / 1H timers | Client-side ET clock | Every second |
+| Market status | NQ=F hourly → 4H aggregation (Yahoo Finance) | ~60s |
+| News + Calendar | USD macro events (ForexFactory) | ~60s |
+| NQ / ES charts | Yahoo Finance OHLC | ~60s |
+| Headlines | FinancialJuice RSS | ~90s |
+
+No env vars required for the radar.
+
+## Trading / Dashboard
+
+Copy `.env.example` to `.env.local` and configure:
+
+- `PROJECTX_USERNAME`, `PROJECTX_API_KEY`, `PROJECTX_ACCOUNT_ID`
+- `WEBHOOK_SECRET`
+- `AUTH_USERNAME`, `AUTH_PASSWORD` (dashboard)
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (daily briefings, optional)
+- `NEXT_PUBLIC_FINNHUB_API_KEY` (news/calendar, optional)
+
+## Run
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Home: http://localhost:3000
+- Daily Bias: http://localhost:3000/bias
+- Dashboard: http://localhost:3000/dashboard
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploy
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Deploy to Vercel. Set trading env vars in the project dashboard. The briefing cron is configured in `vercel.json`.
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/
+├── app/
+│   ├── page.js              # JHP Trades home
+│   ├── bias/                # Daily Bias
+│   ├── dashboard/           # Live charts
+│   ├── api/
+│   │   ├── trading/         # TopStepX webhooks & status
+│   │   ├── radar/           # Radar snapshot
+│   │   ├── headlines/       # RSS headlines
+│   │   └── chart/           # Chart OHLC
+│   └── …                    # apply, briefing, referrals, etc.
+├── components/              # Radar UI
+└── lib/                     # Radar + trading libs
+```
