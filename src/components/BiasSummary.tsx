@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import useSWR from "swr";
+import { useCountdownTick } from "@/hooks/use-countdown-tick";
 import { BIAS_SUMMARY_REVALIDATE_SEC } from "@/lib/bias-summary-config";
 import type { BiasSummaryRows } from "@/lib/bias-summary";
 
@@ -29,6 +30,30 @@ const ROW_LABELS: { key: keyof BiasSummaryRows; label: string }[] = [
   { key: "catalyst", label: "Catalyst" },
 ];
 
+function formatTimeEt(iso: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(iso));
+}
+
+function formatRefreshMeta(generatedAt: string | undefined, now: number) {
+  if (!generatedAt) return null;
+  const generatedMs = new Date(generatedAt).getTime();
+  if (Number.isNaN(generatedMs)) return null;
+
+  const nextMs = generatedMs + REVALIDATE_MS;
+  const at = formatTimeEt(generatedAt);
+
+  if (now >= nextMs) {
+    return `Done ${at} ET · updating…`;
+  }
+
+  const minsUntil = Math.max(1, Math.ceil((nextMs - now) / 60_000));
+  return `Done ${at} ET · next in ${minsUntil}m`;
+}
+
 function readStoredSummary(): SummaryPayload | undefined {
   if (typeof window === "undefined") return undefined;
   try {
@@ -54,6 +79,7 @@ function writeStoredSummary(data: SummaryPayload) {
 
 export function BiasSummary() {
   const [initial] = useState(readStoredSummary);
+  const now = useCountdownTick(30_000);
 
   const { data, isLoading } = useSWR<SummaryPayload>(
     "/api/bias/summary",
@@ -74,10 +100,15 @@ export function BiasSummary() {
 
   if (data?.configured === false) return null;
 
+  const refreshMeta = formatRefreshMeta(data?.generatedAt, now);
+
   return (
     <section className="bias-summary radar-card" aria-live="polite">
       <header className="bias-summary-head">
         <span className="bias-summary-label">Read</span>
+        {refreshMeta ? (
+          <span className="bias-summary-timing">{refreshMeta}</span>
+        ) : null}
       </header>
       {isLoading && !data?.rows ? (
         <p className="bias-summary-text bias-summary-text--muted">Loading…</p>

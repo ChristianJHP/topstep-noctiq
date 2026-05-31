@@ -530,10 +530,34 @@
 
   .bias-summary-head {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
+    gap: 0.75rem;
     padding: 0.625rem 0.875rem;
     border-bottom: 1px solid var(--border);
+  }
+
+  .bias-summary-timing {
+    flex-shrink: 0;
+    max-width: 55%;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  @media (max-width: 380px) {
+    .bias-summary-head {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
+    }
+
+    .bias-summary-timing {
+      max-width: none;
+      text-align: left;
+    }
   }
 
   .bias-summary-label {
