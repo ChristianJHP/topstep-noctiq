@@ -95,11 +95,17 @@ export function formatCountdown(ms: number): string {
   return [h, m, s].map((n) => String(n).padStart(2, "0")).join(":");
 }
 
-/** Human-readable countdown: `2h 48m`, `48m`, `13h 22m` */
+/** Human-readable countdown: `48m`, `13h 22m`, `2d 5h` */
 export function formatCountdownHuman(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
+
+  if (h >= 24) {
+    const days = Math.floor(h / 24);
+    const remH = h % 24;
+    return remH > 0 ? `${days}d ${remH}h` : `${days}d`;
+  }
 
   if (h > 0 && m > 0) return `${h}h ${m}m`;
   if (h > 0) return `${h}h`;
