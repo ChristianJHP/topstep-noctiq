@@ -40,7 +40,7 @@ export function RadarLoader() {
         </div>
 
         <div className="mr-loader-strip" aria-hidden>
-          {Array.from({ length: 5 }).map((_, i) => (
+          {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
               className="mr-loader-strip-cell"

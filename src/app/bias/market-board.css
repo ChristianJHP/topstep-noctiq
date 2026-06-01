@@ -130,11 +130,28 @@
 
   .mr-session {
     font-size: 0.6875rem;
-    font-weight: 500;
+    font-weight: 600;
     padding: 0.125rem 0.4375rem;
     border-radius: 4px;
     border: 1px solid var(--border);
     color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .mr-session-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.125rem;
+  }
+
+  .mr-session-countdown {
+    font-size: 0.5625rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    letter-spacing: 0.01em;
+    white-space: nowrap;
   }
 
   .mr-session--open {
@@ -375,7 +392,7 @@
 
   @media (min-width: 720px) {
     .mr-loader-strip {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 
@@ -715,7 +732,7 @@
 
   @media (min-width: 720px) {
     .bias-strip {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 
@@ -828,36 +845,6 @@
   .bias-strip-cell--live .confirm-pip {
     border-color: var(--green);
     background: var(--green);
-  }
-
-  .window-bar {
-    width: 100%;
-    max-width: 4.5rem;
-    height: 3px;
-    border-radius: 2px;
-    background: #1e2430;
-    overflow: hidden;
-    margin-top: 0.125rem;
-  }
-
-  .window-bar-fill {
-    height: 100%;
-    border-radius: 2px;
-    background: var(--green);
-    transition: width 0.4s ease;
-  }
-
-  .bias-strip-cell--golden-hour .window-bar-fill {
-    background: var(--green);
-  }
-
-  .bias-strip-cell--pre-golden .window-bar-fill {
-    background: var(--amber);
-  }
-
-  .bias-strip-cell--closed .bias-strip-val,
-  .bias-strip-cell--post-golden .bias-strip-val {
-    color: var(--muted);
   }
 
   /* FVG score meter */

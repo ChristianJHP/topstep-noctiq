@@ -9,36 +9,16 @@ type BiasStripProps = {
   candlesPaused: boolean;
 };
 
-function windowFill(
-  phase: SymbolPrep["execution"]["phase"],
-  mins: number | null
-): number {
-  if (phase === "golden-hour" && mins != null) {
-    return Math.max(8, Math.min(100, ((90 - mins) / 90) * 100));
-  }
-  if (phase === "pre-golden") return 0;
-  if (phase === "post-golden") return 100;
-  return 0;
-}
-
 export function BiasStrip({
   prep,
   oneHMs,
   fourHMs,
   candlesPaused,
 }: BiasStripProps) {
-  const { bias, draw, execution, label } = prep;
+  const { bias, draw, label } = prep;
   const biasLabel =
     bias === "bullish" ? "BULL" : bias === "bearish" ? "BEAR" : "MIX";
   const biasGlyph = bias === "bullish" ? "▲" : bias === "bearish" ? "▼" : "◆";
-  const windowLabel =
-    execution.phase === "golden-hour"
-      ? `${execution.minutesRemaining}m`
-      : execution.phase === "pre-golden"
-        ? `${execution.minutesRemaining}m`
-        : execution.phase === "closed"
-          ? "Closed"
-          : "Past 11";
 
   return (
     <div className="bias-strip">
@@ -73,19 +53,6 @@ export function BiasStrip({
         <span className="bias-strip-k">Confirm</span>
         <span className="confirm-pip" aria-hidden />
         <span className="bias-strip-val">{prep.confirmLabel}</span>
-      </div>
-
-      <div className={`bias-strip-cell bias-strip-cell--${execution.phase}`}>
-        <span className="bias-strip-k">Window</span>
-        <span className="bias-strip-val">{windowLabel}</span>
-        <div className="window-bar" aria-hidden>
-          <div
-            className="window-bar-fill"
-            style={{
-              width: `${windowFill(execution.phase, execution.minutesRemaining)}%`,
-            }}
-          />
-        </div>
       </div>
 
       <div className="bias-strip-cell bias-strip-cell--timers">

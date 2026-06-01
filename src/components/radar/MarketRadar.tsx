@@ -2,8 +2,8 @@
 
 import useSWR from "swr";
 import Link from "next/link";
-import { getMarketSession } from "@/lib/futures-session";
 import { getNextCandleClose } from "@/lib/candle-timers";
+import { getTradingSessionInfo } from "@/lib/trading-session";
 import type { MarketContext } from "@/lib/htf-status";
 import { useCountdownTick } from "@/hooks/use-countdown-tick";
 import { useBiasShiftAlerts } from "@/hooks/use-bias-shift-alerts";
@@ -43,7 +43,8 @@ export function MarketRadar() {
     { refreshInterval: 60_000 }
   );
 
-  const session = getMarketSession(now != null ? new Date(now) : undefined);
+  const tradingSession =
+    now != null ? getTradingSessionInfo(new Date(now)) : null;
   const oneH = getNextCandleClose("1H", now != null ? new Date(now) : undefined);
   const fourH = getNextCandleClose("4H", now != null ? new Date(now) : undefined);
   const ctx = data?.markets;
@@ -62,15 +63,24 @@ export function MarketRadar() {
           </Link>
           <div className="mr-header-row">
             <h1 className="mr-title">Market Radar</h1>
-            <span
-              className={
-                session.isOpen
-                  ? "mr-session mr-session--open"
-                  : "mr-session mr-session--closed"
-              }
-            >
-              {session.isOpen ? "Session open" : "Closed"}
-            </span>
+            {tradingSession ? (
+              <div className="mr-session-wrap">
+                <span
+                  className={
+                    tradingSession.isMarketOpen
+                      ? "mr-session mr-session--open"
+                      : "mr-session mr-session--closed"
+                  }
+                >
+                  {tradingSession.label}
+                </span>
+                <span className="mr-session-countdown" suppressHydrationWarning>
+                  {tradingSession.countdown}
+                </span>
+              </div>
+            ) : (
+              <span className="mr-session mr-session--closed">—</span>
+            )}
           </div>
         </div>
         <div className="mr-header-actions">
