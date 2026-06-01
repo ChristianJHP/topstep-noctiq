@@ -4,6 +4,7 @@ import {
   GEO_BRIEF_CLOSED_REVALIDATE_SEC,
   GEO_BRIEF_REVALIDATE_SEC,
   getCachedGeopoliticsBrief,
+  sanitizeGeoBrief,
 } from "@/lib/geopolitics-brief";
 import { gatherGeopoliticsSources, buildMarketNewsFeed } from "@/lib/geopolitics-sources";
 import { isFuturesSessionOpen } from "@/lib/futures-session";
@@ -25,7 +26,7 @@ export async function GET() {
     console.error("[bias/geopolitics]", error);
     try {
       const sources = await gatherGeopoliticsSources();
-      const fallback = formatGeopoliticsDeterministic(sources);
+      const fallback = sanitizeGeoBrief(formatGeopoliticsDeterministic(sources));
       return NextResponse.json(
         {
           ...fallback,

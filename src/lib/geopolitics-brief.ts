@@ -47,20 +47,47 @@ Return ONLY valid JSON:
 {"war":"","trump":"","expect":"","markets":""}
 
 Rules:
-- war: max 14 words — punchy headline-style, latest conflict fact only. No filler, no second clause with "as/citing/while".
-- trump: max 10 words — Trump's latest war/tariffs post, or empty string if none.
-- expect: max 12 words — one thing to watch in next 24h. No lists.
-- markets: max 18 words — NQ/ES/gold risk tone only.
+- war: ONE short sentence, max 10 words. Example: "US struck Iranian radar sites after drone downed." NEVER paste a full headline.
+- trump: max 8 words — or empty string if none.
+- expect: max 10 words — one watch item for next 24h.
+- markets: max 16 words — NQ/ES/gold risk tone only.
 - Telegraph style. No stock roundups. No trade calls. Plain text.`;
 }
 
-function clampBriefField(text: string, maxWords: number, maxChars: number): string {
+/** Cut filler clauses and enforce hard length — never show wire essay text. */
+export function firstShortClause(
+  text: string,
+  maxWords: number,
+  maxChars: number
+): string {
   let t = text.replace(/\s+/g, " ").trim();
+  if (!t) return t;
+
+  t = t.split(/\s*,?\s+(as|citing|while|after|because|following|amid|whereas)\s+/i)[0] ?? t;
+  t = (t.split(/[;,]/)[0] ?? t).trim();
+
   const words = t.split(" ").filter(Boolean);
   if (words.length > maxWords) {
     t = `${words.slice(0, maxWords).join(" ")}…`;
   }
   return truncate(t, maxChars);
+}
+
+function clampBriefField(text: string, maxWords: number, maxChars: number): string {
+  return firstShortClause(text, maxWords, maxChars);
+}
+
+export function sanitizeGeoBrief(brief: GeopoliticsBriefCore): GeopoliticsBriefCore {
+  const trumpRaw = brief.trump?.replace(/\s+/g, " ").trim();
+  return {
+    war: firstShortClause(brief.war, 10, 62),
+    trump:
+      trumpRaw && trumpRaw.length > 3
+        ? firstShortClause(trumpRaw, 8, 52)
+        : null,
+    expect: firstShortClause(brief.expect, 10, 58),
+    markets: firstShortClause(brief.markets, 16, 95),
+  };
 }
 
 function parseBrief(text: string): GeopoliticsBriefCore | null {
@@ -76,18 +103,18 @@ function parseBrief(text: string): GeopoliticsBriefCore | null {
       markets?: string;
     };
 
-    const war = clampBriefField(parsed.war?.trim() ?? "", 14, 95);
-    const expect = clampBriefField(parsed.expect?.trim() ?? "", 12, 85);
-    const markets = clampBriefField(parsed.markets?.trim() ?? "", 18, 120);
+    const war = clampBriefField(parsed.war?.trim() ?? "", 10, 62);
+    const expect = clampBriefField(parsed.expect?.trim() ?? "", 10, 58);
+    const markets = clampBriefField(parsed.markets?.trim() ?? "", 16, 95);
     if (!war || !expect || !markets) return null;
 
     const trumpRaw = parsed.trump?.replace(/\s+/g, " ").trim();
     const trump =
       trumpRaw && trumpRaw.length > 3
-        ? clampBriefField(trumpRaw, 10, 75)
+        ? clampBriefField(trumpRaw, 8, 52)
         : null;
 
-    return { war, trump, expect, markets };
+    return sanitizeGeoBrief({ war, trump, expect, markets });
   } catch {
     return null;
   }
@@ -104,24 +131,26 @@ export function formatGeopoliticsDeterministic(
 ): GeopoliticsBriefCore {
   const headline = sources.headlines[0];
   const war = headline
-    ? truncate(headline.title, 85)
-    : "No war headlines in feed right now.";
+    ? firstShortClause(headline.title, 10, 62)
+    : "No war headlines right now.";
 
   const trumpPost = sources.trumpGeoPosts[0] ?? null;
-  const trump = trumpPost ? truncate(trumpPost.text, 70) : null;
+  const trump = trumpPost
+    ? firstShortClause(trumpPost.text, 8, 52)
+    : null;
 
   const expect = headline
-    ? "Watch for retaliation or Hormuz spillover in next 24h."
-    : "Quiet on geo — trade levels unless breaking news hits.";
+    ? "Watch Hormuz retaliation or Kuwait spillover next 24h."
+    : "Quiet on geo unless breaking news hits.";
 
   const riskOff = riskOffHint(
     `${headline?.title ?? ""} ${trumpPost?.text ?? ""}`
   );
   const markets = riskOff
-    ? "Escalation headlines → risk-off NQ/ES, oil/gold bid possible on gaps."
-    : "Low geo noise — trade structure unless a new strike or sanction hits wire.";
+    ? "Risk-off tone — NQ/ES heavy, gold bid on gaps."
+    : "Low geo noise — trade structure and levels.";
 
-  return { war, trump, expect, markets };
+  return sanitizeGeoBrief({ war, trump, expect, markets });
 }
 
 function attachFeed(
@@ -129,6 +158,15 @@ function attachFeed(
   sources: GeopoliticsSources
 ): Omit<GeopoliticsBriefPayload, "generatedAt" | "configured" | "revalidateSec"> {
   return { ...brief, feed: buildMarketNewsFeed(sources) };
+}
+
+function finalizeBrief(
+  brief: Omit<GeopoliticsBriefPayload, "generatedAt" | "configured" | "revalidateSec">,
+  base: Pick<GeopoliticsBriefPayload, "generatedAt" | "configured" | "revalidateSec">
+): GeopoliticsBriefPayload {
+  const { feed, ...core } = brief;
+  const sanitized = sanitizeGeoBrief(core);
+  return { ...sanitized, feed, ...base };
 }
 
 async function generateGeopoliticsBrief(): Promise<GeopoliticsBriefPayload> {
@@ -145,40 +183,41 @@ async function generateGeopoliticsBrief(): Promise<GeopoliticsBriefPayload> {
   };
 
   if (!isAiGatewayConfigured()) {
-    return { ...fallback, ...base };
+    return finalizeBrief(fallback, base);
   }
 
   const model = getBiasSummaryModel();
   if (!model) {
-    return { ...fallback, ...base };
+    return finalizeBrief(fallback, base);
   }
 
   try {
     const { text } = await generateText({
       model,
       prompt: buildPrompt(sources),
-      maxOutputTokens: 220,
+      maxOutputTokens: 120,
     });
 
     const parsed = parseBrief(text);
-    return parsed
-      ? { ...attachFeed(parsed, sources), ...base }
-      : { ...fallback, ...base };
+    const brief = parsed
+      ? attachFeed(parsed, sources)
+      : fallback;
+    return finalizeBrief(brief, base);
   } catch (error) {
     console.error("[geopolitics-brief] AI failed, using fallback", error);
-    return { ...fallback, ...base };
+    return finalizeBrief(fallback, base);
   }
 }
 
 const getCachedGeoBriefOpen = unstable_cache(
   generateGeopoliticsBrief,
-  ["geopolitics-brief-v4-open"],
+  ["geopolitics-brief-v5-open"],
   { revalidate: GEO_BRIEF_REVALIDATE_SEC, tags: ["geopolitics-brief"] }
 );
 
 const getCachedGeoBriefClosed = unstable_cache(
   generateGeopoliticsBrief,
-  ["geopolitics-brief-v4-closed"],
+  ["geopolitics-brief-v5-closed"],
   { revalidate: GEO_BRIEF_CLOSED_REVALIDATE_SEC, tags: ["geopolitics-brief"] }
 );
 
