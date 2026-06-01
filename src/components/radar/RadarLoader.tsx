@@ -26,9 +26,9 @@ export function RadarLoader() {
   return (
     <div className="mr-loader" aria-busy="true" aria-label="Loading market radar">
       <div className="mr-loader-geo" aria-hidden>
-        {["War", "Trump", "Watch", "Mkts"].map((label) => (
-          <div key={label} className="mr-loader-geo-row">
-            <span className="mr-loader-shimmer mr-loader-shimmer--k">{label}</span>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="mr-loader-geo-row">
+            <span className="mr-loader-shimmer mr-loader-shimmer--k" />
             <span className="mr-loader-shimmer mr-loader-shimmer--line" />
           </div>
         ))}
@@ -100,7 +100,7 @@ export function RadarLoader() {
               </div>
             </div>
             <div className="mr-loader-levels">
-              <span className="mr-loader-shimmer mr-loader-shimmer--k">Brief</span>
+              <span className="mr-loader-shimmer mr-loader-shimmer--k" />
               <span className="mr-loader-shimmer mr-loader-shimmer--line" />
             </div>
           </div>

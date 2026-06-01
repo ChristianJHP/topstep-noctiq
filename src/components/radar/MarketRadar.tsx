@@ -49,7 +49,7 @@ export function MarketRadar() {
   const ctx = data?.markets;
 
   useSeedChartCandles(data?.chartCandles);
-  const { alerts, dismissAlert, notifyPermission, requestNotifyPermission } =
+  const { alerts, alertsEnabled, dismissAlert, notifyPermission, enableAlerts, disableAlerts } =
     useBiasShiftAlerts(ctx);
 
   return (
@@ -74,24 +74,25 @@ export function MarketRadar() {
           </div>
         </div>
         <div className="mr-header-actions">
-          {notifyPermission !== "unsupported" && notifyPermission !== "granted" ? (
+          {alertsEnabled ? (
+            <button
+              type="button"
+              className="mr-notify-on mr-notify-toggle"
+              onClick={disableAlerts}
+              title="Turn off bias alerts"
+            >
+              Alerts on
+            </button>
+          ) : (
             <button
               type="button"
               className="mr-notify-btn"
-              onClick={() => void requestNotifyPermission()}
-              title={
-                notifyPermission === "denied"
-                  ? "Enable alerts in browser settings"
-                  : "Enable desktop bias alerts"
-              }
+              onClick={() => void enableAlerts()}
+              title="Enable bias shift alerts"
             >
-              {notifyPermission === "denied" ? "Alerts blocked" : "Enable alerts"}
+              Enable alerts
             </button>
-          ) : notifyPermission === "granted" ? (
-            <span className="mr-notify-on" title="Desktop bias alerts on">
-              Alerts on
-            </span>
-          ) : null}
+          )}
           <EtClock now={now} />
         </div>
       </header>

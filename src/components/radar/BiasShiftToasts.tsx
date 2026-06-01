@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import {
+  alertTone,
   formatBiasShiftBody,
   formatBiasShiftTitle,
   type BiasShiftAlert,
@@ -14,7 +15,7 @@ type BiasShiftToastsProps = {
 
 const AUTO_DISMISS_MS = 12_000;
 
-function biasGlyph(b: BiasShiftAlert["to"]): string {
+function biasGlyph(b: ReturnType<typeof alertTone>): string {
   if (b === "bullish") return "▲";
   if (b === "bearish") return "▼";
   return "◆";
@@ -27,6 +28,8 @@ function BiasShiftToastItem({
   alert: BiasShiftAlert;
   onDismiss: (id: string) => void;
 }) {
+  const tone = alertTone(alert);
+
   useEffect(() => {
     const timer = window.setTimeout(() => onDismiss(alert.id), AUTO_DISMISS_MS);
     return () => window.clearTimeout(timer);
@@ -34,11 +37,11 @@ function BiasShiftToastItem({
 
   return (
     <div
-      className={`bias-shift-toast bias-shift-toast--${alert.to}`}
+      className={`bias-shift-toast bias-shift-toast--${tone}`}
       role="status"
     >
       <span className="bias-shift-glyph" aria-hidden>
-        {biasGlyph(alert.to)}
+        {biasGlyph(tone)}
       </span>
       <div className="bias-shift-copy">
         <p className="bias-shift-title">{formatBiasShiftTitle(alert)}</p>

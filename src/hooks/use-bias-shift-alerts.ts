@@ -4,15 +4,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { candleSymbolBias, type MarketContext } from "@/lib/htf-status";
 import type { HtfBias, SymbolLabel } from "@/lib/strategy-prep";
 
-export type BiasShiftAlert = {
-  id: string;
+export type BiasShiftItem = {
   symbol: SymbolLabel;
   from: HtfBias;
   to: HtfBias;
+};
+
+export type BiasShiftAlert = {
+  id: string;
+  shifts: BiasShiftItem[];
   at: number;
 };
 
-const STORAGE_KEY = "jhptrades-bias-snapshot";
+const BIAS_STORAGE_KEY = "jhptrades-bias-snapshot";
+const ALERTS_ENABLED_KEY = "jhptrades-bias-alerts-enabled";
 const SYMBOLS: SymbolLabel[] = ["NQ", "ES", "GC"];
 
 function biasLabel(b: HtfBias): string {
@@ -22,11 +27,30 @@ function biasLabel(b: HtfBias): string {
 }
 
 export function formatBiasShiftTitle(alert: BiasShiftAlert): string {
-  return `${alert.symbol} bias → ${biasLabel(alert.to)}`;
+  if (alert.shifts.length === 1) {
+    const s = alert.shifts[0];
+    return `${s.symbol} bias → ${biasLabel(s.to)}`;
+  }
+  return "Bias shifts";
 }
 
 export function formatBiasShiftBody(alert: BiasShiftAlert): string {
-  return `${biasLabel(alert.from)} shifted to ${biasLabel(alert.to)} (4H + 1H candles)`;
+  return alert.shifts
+    .map((s) => `${s.symbol} ${biasLabel(s.from)} → ${biasLabel(s.to)}`)
+    .join(" · ");
+}
+
+function dominantBias(shifts: BiasShiftItem[]): HtfBias {
+  if (shifts.length === 1) return shifts[0].to;
+  const bears = shifts.filter((s) => s.to === "bearish").length;
+  const bulls = shifts.filter((s) => s.to === "bullish").length;
+  if (bears > bulls) return "bearish";
+  if (bulls > bears) return "bullish";
+  return "mixed";
+}
+
+export function alertTone(alert: BiasShiftAlert): HtfBias {
+  return dominantBias(alert.shifts);
 }
 
 function extractBiases(
@@ -42,7 +66,7 @@ function extractBiases(
 function readStored(): Record<SymbolLabel, HtfBias> | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(BIAS_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Record<string, HtfBias>;
     if (!parsed.NQ || !parsed.ES || !parsed.GC) return null;
@@ -55,7 +79,25 @@ function readStored(): Record<SymbolLabel, HtfBias> | null {
 function writeStored(biases: Record<SymbolLabel, HtfBias>) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(biases));
+    window.localStorage.setItem(BIAS_STORAGE_KEY, JSON.stringify(biases));
+  } catch {
+    /* ignore quota */
+  }
+}
+
+function readAlertsEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(ALERTS_ENABLED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function writeAlertsEnabled(enabled: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(ALERTS_ENABLED_KEY, String(enabled));
   } catch {
     /* ignore quota */
   }
@@ -71,7 +113,7 @@ function fireBrowserNotification(alert: BiasShiftAlert) {
     new Notification(formatBiasShiftTitle(alert), {
       body: formatBiasShiftBody(alert),
       icon: "/icon.svg",
-      tag: `bias-${alert.symbol}-${alert.to}`,
+      tag: "bias-shift-batch",
     });
   } catch {
     /* Safari / restricted contexts */
@@ -80,6 +122,7 @@ function fireBrowserNotification(alert: BiasShiftAlert) {
 
 export function useBiasShiftAlerts(markets: MarketContext | null | undefined) {
   const [alerts, setAlerts] = useState<BiasShiftAlert[]>([]);
+  const [alertsEnabled, setAlertsEnabled] = useState(false);
   const [notifyPermission, setNotifyPermission] = useState<
     NotificationPermission | "unsupported"
   >("default");
@@ -88,6 +131,7 @@ export function useBiasShiftAlerts(markets: MarketContext | null | undefined) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    setAlertsEnabled(readAlertsEnabled());
     if (typeof Notification === "undefined") {
       setNotifyPermission("unsupported");
       return;
@@ -95,18 +139,21 @@ export function useBiasShiftAlerts(markets: MarketContext | null | undefined) {
     setNotifyPermission(Notification.permission);
   }, []);
 
-  const pushAlert = useCallback((symbol: SymbolLabel, from: HtfBias, to: HtfBias) => {
-    const alert: BiasShiftAlert = {
-      id: `${symbol}-${from}-${to}-${Date.now()}`,
-      symbol,
-      from,
-      to,
-      at: Date.now(),
-    };
+  const pushGroupedAlert = useCallback(
+    (shifts: BiasShiftItem[]) => {
+      if (shifts.length === 0 || !readAlertsEnabled()) return;
 
-    setAlerts((prev) => [...prev.slice(-4), alert]);
-    fireBrowserNotification(alert);
-  }, []);
+      const alert: BiasShiftAlert = {
+        id: `batch-${Date.now()}`,
+        shifts,
+        at: Date.now(),
+      };
+
+      setAlerts((prev) => [...prev.slice(-2), alert]);
+      fireBrowserNotification(alert);
+    },
+    []
+  );
 
   useEffect(() => {
     if (!markets) return;
@@ -115,25 +162,36 @@ export function useBiasShiftAlerts(markets: MarketContext | null | undefined) {
     const baseline = seededRef.current ? prevRef.current : readStored();
 
     if (baseline) {
+      const shifts: BiasShiftItem[] = [];
       for (const symbol of SYMBOLS) {
         if (baseline[symbol] !== current[symbol]) {
-          pushAlert(symbol, baseline[symbol], current[symbol]);
+          shifts.push({
+            symbol,
+            from: baseline[symbol],
+            to: current[symbol],
+          });
         }
+      }
+      if (shifts.length > 0) {
+        pushGroupedAlert(shifts);
       }
     }
 
     prevRef.current = current;
     writeStored(current);
     seededRef.current = true;
-  }, [markets, pushAlert]);
+  }, [markets, pushGroupedAlert]);
 
   const dismissAlert = useCallback((id: string) => {
     setAlerts((prev) => prev.filter((a) => a.id !== id));
   }, []);
 
-  const requestNotifyPermission = useCallback(async () => {
+  const enableAlerts = useCallback(async () => {
+    writeAlertsEnabled(true);
+    setAlertsEnabled(true);
+
     if (typeof window === "undefined" || typeof Notification === "undefined") {
-      return false;
+      return true;
     }
     if (Notification.permission === "granted") {
       setNotifyPermission("granted");
@@ -141,17 +199,25 @@ export function useBiasShiftAlerts(markets: MarketContext | null | undefined) {
     }
     if (Notification.permission === "denied") {
       setNotifyPermission("denied");
-      return false;
+      return true;
     }
     const result = await Notification.requestPermission();
     setNotifyPermission(result);
-    return result === "granted";
+    return true;
+  }, []);
+
+  const disableAlerts = useCallback(() => {
+    writeAlertsEnabled(false);
+    setAlertsEnabled(false);
+    setAlerts([]);
   }, []);
 
   return {
     alerts,
+    alertsEnabled,
     dismissAlert,
     notifyPermission,
-    requestNotifyPermission,
+    enableAlerts,
+    disableAlerts,
   };
 }
