@@ -13,15 +13,27 @@ import {
 export const GEO_BRIEF_REVALIDATE_SEC = 15 * 60;
 export const GEO_BRIEF_CLOSED_REVALIDATE_SEC = 45 * 60;
 
+export type GeoBriefField = {
+  text: string;
+  link: string | null;
+};
+
 export type GeopoliticsBriefPayload = {
-  war: string;
-  trump: string | null;
-  expect: string;
+  war: GeoBriefField;
+  trump: GeoBriefField | null;
+  expect: GeoBriefField;
   markets: string;
   feed: MarketNewsItem[];
   generatedAt: string;
   configured: boolean;
   revalidateSec: number;
+};
+
+type GeopoliticsBriefStrings = {
+  war: string;
+  trump: string | null;
+  expect: string;
+  markets: string;
 };
 
 type GeopoliticsBriefCore = Omit<
@@ -77,7 +89,9 @@ function clampBriefField(text: string, maxWords: number, maxChars: number): stri
   return firstShortClause(text, maxWords, maxChars);
 }
 
-export function sanitizeGeoBrief(brief: GeopoliticsBriefCore): GeopoliticsBriefCore {
+export function sanitizeGeoBrief(
+  brief: GeopoliticsBriefStrings
+): GeopoliticsBriefStrings {
   const trumpRaw = brief.trump?.replace(/\s+/g, " ").trim();
   return {
     war: firstShortClause(brief.war, 10, 62),
@@ -90,7 +104,35 @@ export function sanitizeGeoBrief(brief: GeopoliticsBriefCore): GeopoliticsBriefC
   };
 }
 
-function parseBrief(text: string): GeopoliticsBriefCore | null {
+export function attachSourceLinks(
+  brief: GeopoliticsBriefStrings,
+  sources: GeopoliticsSources
+): GeopoliticsBriefCore {
+  const sanitized = sanitizeGeoBrief(brief);
+  const warHeadline = sources.headlines[0];
+  const expectHeadline = sources.headlines[1] ?? warHeadline;
+  const trumpPost = sources.trumpGeoPosts[0] ?? null;
+
+  return {
+    war: {
+      text: sanitized.war,
+      link: warHeadline?.link || null,
+    },
+    trump: sanitized.trump
+      ? {
+          text: sanitized.trump,
+          link: trumpPost?.url || null,
+        }
+      : null,
+    expect: {
+      text: sanitized.expect,
+      link: expectHeadline?.link || warHeadline?.link || null,
+    },
+    markets: sanitized.markets,
+  };
+}
+
+function parseBrief(text: string): GeopoliticsBriefStrings | null {
   try {
     const cleaned = text
       .replace(/```json\n?/g, "")
@@ -128,7 +170,7 @@ function riskOffHint(text: string): boolean {
 
 export function formatGeopoliticsDeterministic(
   sources: GeopoliticsSources
-): GeopoliticsBriefCore {
+): GeopoliticsBriefStrings {
   const headline = sources.headlines[0];
   const war = headline
     ? firstShortClause(headline.title, 10, 62)
@@ -154,10 +196,10 @@ export function formatGeopoliticsDeterministic(
 }
 
 function attachFeed(
-  brief: GeopoliticsBriefCore,
+  brief: GeopoliticsBriefStrings,
   sources: GeopoliticsSources
 ): Omit<GeopoliticsBriefPayload, "generatedAt" | "configured" | "revalidateSec"> {
-  return { ...brief, feed: buildMarketNewsFeed(sources) };
+  return { ...attachSourceLinks(brief, sources), feed: buildMarketNewsFeed(sources) };
 }
 
 function finalizeBrief(
@@ -165,8 +207,23 @@ function finalizeBrief(
   base: Pick<GeopoliticsBriefPayload, "generatedAt" | "configured" | "revalidateSec">
 ): GeopoliticsBriefPayload {
   const { feed, ...core } = brief;
-  const sanitized = sanitizeGeoBrief(core);
-  return { ...sanitized, feed, ...base };
+  const clamped = sanitizeGeoBrief({
+    war: core.war.text,
+    trump: core.trump?.text ?? null,
+    expect: core.expect.text,
+    markets: core.markets,
+  });
+  return {
+    war: { text: clamped.war, link: core.war.link },
+    trump:
+      core.trump && clamped.trump
+        ? { text: clamped.trump, link: core.trump.link }
+        : null,
+    expect: { text: clamped.expect, link: core.expect.link },
+    markets: clamped.markets,
+    feed,
+    ...base,
+  };
 }
 
 async function generateGeopoliticsBrief(): Promise<GeopoliticsBriefPayload> {
@@ -211,13 +268,13 @@ async function generateGeopoliticsBrief(): Promise<GeopoliticsBriefPayload> {
 
 const getCachedGeoBriefOpen = unstable_cache(
   generateGeopoliticsBrief,
-  ["geopolitics-brief-v5-open"],
+  ["geopolitics-brief-v6-open"],
   { revalidate: GEO_BRIEF_REVALIDATE_SEC, tags: ["geopolitics-brief"] }
 );
 
 const getCachedGeoBriefClosed = unstable_cache(
   generateGeopoliticsBrief,
-  ["geopolitics-brief-v5-closed"],
+  ["geopolitics-brief-v6-closed"],
   { revalidate: GEO_BRIEF_CLOSED_REVALIDATE_SEC, tags: ["geopolitics-brief"] }
 );
 

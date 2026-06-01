@@ -79,10 +79,10 @@ export function buildLevelsContext(
     })),
     smt: symbol.label !== "GC" ? market.smt?.message ?? null : null,
     geo: {
-      war: geo.war,
-      trump: geo.trump,
-      expect: geo.expect,
-      riskOff: geoRiskOff(geo.war, geo.trump),
+      war: geo.war.text,
+      trump: geo.trump?.text ?? null,
+      expect: geo.expect.text,
+      riskOff: geoRiskOff(geo.war.text, geo.trump?.text ?? null),
     },
   };
 }

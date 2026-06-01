@@ -50,6 +50,22 @@
     color: var(--foreground);
   }
 
+  a.geo-v--link {
+    text-decoration: underline;
+    text-decoration-color: rgba(148, 163, 184, 0.45);
+    text-underline-offset: 2px;
+    transition: color 0.15s, text-decoration-color 0.15s;
+  }
+
+  a.geo-v--link:hover {
+    color: #e2e8f0;
+    text-decoration-color: rgba(148, 163, 184, 0.75);
+  }
+
+  a.geo-v--trump.geo-v--link:hover {
+    color: #eef2f7;
+  }
+
   .geo-v--trump {
     color: #d4dce8;
   }
@@ -732,7 +748,7 @@
 
   @media (min-width: 720px) {
     .bias-strip {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 
@@ -749,7 +765,6 @@
   }
 
   .bias-strip-cell--timers {
-    grid-column: 1 / -1;
     flex-direction: row;
     flex-wrap: wrap;
     gap: 0.5rem 1rem;
@@ -759,7 +774,6 @@
 
   @media (min-width: 720px) {
     .bias-strip-cell--timers {
-      grid-column: auto;
       flex-direction: column;
       gap: 0.125rem;
       min-height: 3.25rem;

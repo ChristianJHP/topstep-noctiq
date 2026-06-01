@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import {
+  attachSourceLinks,
   formatGeopoliticsDeterministic,
   GEO_BRIEF_CLOSED_REVALIDATE_SEC,
   GEO_BRIEF_REVALIDATE_SEC,
   getCachedGeopoliticsBrief,
-  sanitizeGeoBrief,
 } from "@/lib/geopolitics-brief";
 import { gatherGeopoliticsSources, buildMarketNewsFeed } from "@/lib/geopolitics-sources";
 import { isFuturesSessionOpen } from "@/lib/futures-session";
@@ -26,10 +26,10 @@ export async function GET() {
     console.error("[bias/geopolitics]", error);
     try {
       const sources = await gatherGeopoliticsSources();
-      const fallback = sanitizeGeoBrief(formatGeopoliticsDeterministic(sources));
+      const strings = formatGeopoliticsDeterministic(sources);
       return NextResponse.json(
         {
-          ...fallback,
+          ...attachSourceLinks(strings, sources),
           feed: buildMarketNewsFeed(sources),
           generatedAt: new Date().toISOString(),
           configured: false,
@@ -41,9 +41,15 @@ export async function GET() {
     } catch {
       return NextResponse.json(
         {
-          war: "Geopolitics feed unavailable.",
+          war: {
+            text: "Geopolitics feed unavailable.",
+            link: null,
+          },
           trump: null,
-          expect: "Check headlines manually before trading.",
+          expect: {
+            text: "Check headlines manually before trading.",
+            link: null,
+          },
           markets: "Unknown geo impact — size down until context clears.",
           feed: [],
           generatedAt: new Date().toISOString(),

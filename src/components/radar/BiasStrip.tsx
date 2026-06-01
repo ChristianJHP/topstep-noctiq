@@ -47,14 +47,6 @@ export function BiasStrip({
         <span className="bias-strip-pts">{Math.round(draw.pointsAway)}pt</span>
       </div>
 
-      <div
-        className={`bias-strip-cell${prep.nearKeyLevel || prep.smt ? " bias-strip-cell--live" : ""}`}
-      >
-        <span className="bias-strip-k">Confirm</span>
-        <span className="confirm-pip" aria-hidden />
-        <span className="bias-strip-val">{prep.confirmLabel}</span>
-      </div>
-
       <div className="bias-strip-cell bias-strip-cell--timers">
         <span className="bias-strip-k">Candles</span>
         <span className="bias-timer">

@@ -1,15 +1,35 @@
 "use client";
 
 import useSWR from "swr";
-import { GEO_BRIEF_REVALIDATE_SEC } from "@/lib/geopolitics-brief";
+import {
+  GEO_BRIEF_REVALIDATE_SEC,
+  type GeoBriefField,
+} from "@/lib/geopolitics-brief";
 
 type GeoBrief = {
-  war: string;
-  trump: string | null;
-  expect: string;
+  war: GeoBriefField;
+  trump: GeoBriefField | null;
+  expect: GeoBriefField;
   markets: string;
   revalidateSec?: number;
 };
+
+function GeoLink({ field, className }: { field: GeoBriefField; className: string }) {
+  if (field.link) {
+    return (
+      <a
+        href={field.link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${className} geo-v--link`}
+        title="Open source"
+      >
+        {field.text}
+      </a>
+    );
+  }
+  return <p className={className}>{field.text}</p>;
+}
 
 export function GeopoliticsStrip() {
   const { data, isLoading } = useSWR<GeoBrief>(
@@ -37,17 +57,17 @@ export function GeopoliticsStrip() {
     <section className="geo-strip" aria-label="Geopolitics brief">
       <div className="geo-strip-row">
         <span className="geo-k">War</span>
-        <p className="geo-v">{data.war}</p>
+        <GeoLink field={data.war} className="geo-v" />
       </div>
       {data.trump ? (
         <div className="geo-strip-row">
           <span className="geo-k">Trump</span>
-          <p className="geo-v geo-v--trump">{data.trump}</p>
+          <GeoLink field={data.trump} className="geo-v geo-v--trump" />
         </div>
       ) : null}
       <div className="geo-strip-row">
         <span className="geo-k">Watch</span>
-        <p className="geo-v">{data.expect}</p>
+        <GeoLink field={data.expect} className="geo-v" />
       </div>
     </section>
   );
