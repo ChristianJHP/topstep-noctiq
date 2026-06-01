@@ -149,6 +149,148 @@
     white-space: nowrap;
   }
 
+  .mr-header-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+  }
+
+  .mr-notify-btn {
+    font-size: 0.5625rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(107, 159, 212, 0.08);
+    border: 1px solid rgba(107, 159, 212, 0.28);
+    border-radius: 4px;
+    padding: 0.125rem 0.4375rem;
+    cursor: pointer;
+  }
+
+  .mr-notify-btn:hover {
+    background: rgba(107, 159, 212, 0.14);
+    color: var(--foreground);
+  }
+
+  .mr-notify-on {
+    font-size: 0.5625rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--green);
+  }
+
+  /* Bias shift alerts */
+  .bias-shift-stack {
+    position: fixed;
+    top: max(0.625rem, env(safe-area-inset-top));
+    right: max(0.875rem, env(safe-area-inset-right));
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    width: min(18rem, calc(100vw - 1.75rem));
+    pointer-events: none;
+  }
+
+  .bias-shift-toast {
+    pointer-events: auto;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: start;
+    padding: 0.5625rem 0.625rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #161920;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    animation: bias-shift-in 0.35s ease;
+  }
+
+  .bias-shift-toast--bullish {
+    border-color: rgba(61, 214, 140, 0.35);
+    background: linear-gradient(135deg, #141a18 0%, #161920 100%);
+  }
+
+  .bias-shift-toast--bearish {
+    border-color: rgba(242, 85, 90, 0.35);
+    background: linear-gradient(135deg, #1a1416 0%, #161920 100%);
+  }
+
+  .bias-shift-toast--mixed {
+    border-color: rgba(229, 160, 71, 0.35);
+  }
+
+  .bias-shift-glyph {
+    font-size: 0.875rem;
+    line-height: 1;
+    margin-top: 0.125rem;
+  }
+
+  .bias-shift-toast--bullish .bias-shift-glyph {
+    color: var(--green);
+  }
+
+  .bias-shift-toast--bearish .bias-shift-glyph {
+    color: var(--red);
+  }
+
+  .bias-shift-toast--mixed .bias-shift-glyph {
+    color: var(--amber);
+  }
+
+  .bias-shift-copy {
+    min-width: 0;
+  }
+
+  .bias-shift-title {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--foreground);
+    letter-spacing: -0.01em;
+  }
+
+  .bias-shift-body {
+    margin: 0.125rem 0 0;
+    font-size: 0.625rem;
+    line-height: 1.35;
+    color: var(--muted);
+  }
+
+  .bias-shift-close {
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--muted);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .bias-shift-close:hover {
+    color: var(--foreground);
+  }
+
+  @keyframes bias-shift-in {
+    from {
+      opacity: 0;
+      transform: translateX(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bias-shift-toast {
+      animation: none;
+    }
+  }
+
   /* Single board surface */
   .mr-board {
     border: 1px solid var(--border);
@@ -1345,6 +1487,122 @@
     font-size: 0.6875rem;
     line-height: 1.45;
     color: var(--foreground);
+  }
+
+  /* War / Trump news feed */
+  .news-feed {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #12151c;
+    overflow: hidden;
+  }
+
+  .news-feed--loading {
+    padding: 0.75rem 0.875rem;
+    min-height: 2.5rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .news-feed-muted {
+    margin: 0;
+    font-size: 0.6875rem;
+    color: var(--muted);
+  }
+
+  .news-feed-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    border-bottom: 1px solid var(--border);
+    background: #0f1216;
+  }
+
+  .news-feed-title {
+    margin: 0;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--foreground);
+  }
+
+  .news-feed-sub {
+    font-size: 0.5625rem;
+    font-weight: 500;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .news-feed-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .news-feed-row {
+    display: grid;
+    grid-template-columns: 2.75rem minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: start;
+    padding: 0.4375rem 0.875rem;
+    border-bottom: 1px solid rgba(38, 43, 54, 0.65);
+  }
+
+  .news-feed-row:last-child {
+    border-bottom: none;
+  }
+
+  .news-feed-tag {
+    font-size: 0.5rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.125rem 0.3125rem;
+    border-radius: 3px;
+    line-height: 1.3;
+    margin-top: 0.125rem;
+  }
+
+  .news-feed-tag--war {
+    color: #f0a868;
+    background: rgba(229, 160, 71, 0.12);
+    border: 1px solid rgba(229, 160, 71, 0.22);
+  }
+
+  .news-feed-tag--trump {
+    color: #c4b5fd;
+    background: rgba(167, 139, 250, 0.1);
+    border: 1px solid rgba(167, 139, 250, 0.2);
+  }
+
+  .news-feed-text {
+    margin: 0;
+    font-size: 0.6875rem;
+    line-height: 1.4;
+    color: var(--foreground);
+    text-decoration: none;
+  }
+
+  a.news-feed-text:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  .news-feed-time {
+    font-size: 0.5625rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    white-space: nowrap;
+    margin-top: 0.1875rem;
+  }
+
+  @media (min-width: 640px) {
+    .news-feed-row {
+      padding: 0.5rem 0.875rem;
+    }
   }
 
   .signal-chips {

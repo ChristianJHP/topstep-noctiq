@@ -16,6 +16,14 @@ export type GeopoliticsSources = {
   trumpGeoPosts: TrumpPost[];
 };
 
+export type MarketNewsItem = {
+  id: string;
+  kind: "headline" | "trump";
+  text: string;
+  link: string | null;
+  publishedAt: string;
+};
+
 /** Market-wrap slop — not war news. */
 const HEADLINE_JUNK: RegExp[] = [
   /dow jones/i,
@@ -44,6 +52,22 @@ const HEADLINE_JUNK: RegExp[] = [
   /bitcoin/i,
   /this move/i,
   /make this .* move/i,
+  /futures rise/i,
+  /futures fall/i,
+  /futures edge/i,
+  /futures slip/i,
+  /futures jump/i,
+  /market wrap/i,
+  /morning brief/i,
+  /what to watch/i,
+  /stocks to watch/i,
+  /premarket/i,
+  /after hours/i,
+  /sector rotation/i,
+  /chip stock/i,
+  /ai stock/i,
+  /mag 7/i,
+  /magnificent seven/i,
 ];
 
 /**
@@ -124,7 +148,7 @@ export function isGeoTopic(text: string): boolean {
   return isWarUpdateHeadline(text) || isWarUpdateTrumpPost(text);
 }
 
-function filterGeoHeadlines(raw: Headline[], limit = 6): GeoHeadline[] {
+function filterGeoHeadlines(raw: Headline[], limit = 10): GeoHeadline[] {
   return raw
     .filter((h) => isWarUpdateHeadline(h.title))
     .sort(
@@ -133,6 +157,35 @@ function filterGeoHeadlines(raw: Headline[], limit = 6): GeoHeadline[] {
     )
     .slice(0, limit)
     .map(({ title, link, publishedAt }) => ({ title, link, publishedAt }));
+}
+
+/** War + Trump headlines that can move NQ / ES / Gold — newest first. */
+export function buildMarketNewsFeed(
+  sources: GeopoliticsSources,
+  limit = 8
+): MarketNewsItem[] {
+  const headlineItems: MarketNewsItem[] = sources.headlines.map((h) => ({
+    id: `h:${h.link || h.title}`,
+    kind: "headline",
+    text: h.title,
+    link: h.link,
+    publishedAt: h.publishedAt,
+  }));
+
+  const trumpItems: MarketNewsItem[] = sources.trumpGeoPosts.map((p) => ({
+    id: `t:${p.id}`,
+    kind: "trump",
+    text: truncate(p.text, 220),
+    link: p.url || null,
+    publishedAt: p.publishedAt,
+  }));
+
+  return [...headlineItems, ...trumpItems]
+    .sort(
+      (a, b) =>
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+    )
+    .slice(0, limit);
 }
 
 export function truncate(text: string, max: number): string {

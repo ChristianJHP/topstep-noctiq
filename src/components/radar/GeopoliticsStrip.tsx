@@ -49,10 +49,6 @@ export function GeopoliticsStrip() {
         <span className="geo-k">Watch</span>
         <p className="geo-v">{data.expect}</p>
       </div>
-      <div className="geo-strip-row geo-strip-row--mkts">
-        <span className="geo-k">Mkts</span>
-        <p className="geo-v geo-v--mkts">{data.markets}</p>
-      </div>
     </section>
   );
 }

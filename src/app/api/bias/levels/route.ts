@@ -6,6 +6,7 @@ import {
   buildLevelsContext,
   getCachedLevelsBrief,
 } from "@/lib/levels-brief";
+import { getCachedGeopoliticsBrief } from "@/lib/geopolitics-brief";
 import { computeMarketContext } from "@/lib/htf-status";
 import type { SymbolLabel } from "@/lib/strategy-prep";
 
@@ -41,9 +42,10 @@ export async function GET(request: Request) {
     console.error("[bias/levels]", error);
     try {
       const market = await computeMarketContext();
+      const geo = await getCachedGeopoliticsBrief();
       const symbol =
         label === "ES" ? market.es : label === "GC" ? market.gold : market.nq;
-      const ctx = buildLevelsContext(symbol, market);
+      const ctx = buildLevelsContext(symbol, market, geo);
       return NextResponse.json(
         {
           line: formatLevelsDeterministic(ctx),

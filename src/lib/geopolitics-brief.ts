@@ -3,9 +3,11 @@ import { generateText } from "ai";
 import { getBiasSummaryModel, isAiGatewayConfigured } from "@/lib/ai-gateway";
 import { isFuturesSessionOpen } from "@/lib/futures-session";
 import {
+  buildMarketNewsFeed,
   gatherGeopoliticsSources,
   truncate,
   type GeopoliticsSources,
+  type MarketNewsItem,
 } from "@/lib/geopolitics-sources";
 
 export const GEO_BRIEF_REVALIDATE_SEC = 15 * 60;
@@ -16,10 +18,16 @@ export type GeopoliticsBriefPayload = {
   trump: string | null;
   expect: string;
   markets: string;
+  feed: MarketNewsItem[];
   generatedAt: string;
   configured: boolean;
   revalidateSec: number;
 };
+
+type GeopoliticsBriefCore = Omit<
+  GeopoliticsBriefPayload,
+  "generatedAt" | "configured" | "revalidateSec" | "feed"
+>;
 
 function buildPrompt(sources: GeopoliticsSources): string {
   return `You write a tight geopolitical brief for NQ/ES/Gold futures traders.
@@ -42,14 +50,11 @@ Rules:
 - war: ONE sentence — latest war/conflict/negotiation context from headlines only. NO stock market or earnings angles.
 - trump: ONE short sentence on Trump's latest war/tariffs/negotiation post — empty string if nothing relevant.
 - expect: ONE sentence — what to watch next on negotiations, strikes, sanctions, or ceasefire talks (next 24h).
-- markets: ONE sentence, max 22 words — how this may affect NQ, ES, oil, or gold (gap risk, vol, safe haven, etc.).
+- markets: ONE sentence, max 24 words — how THIS geo backdrop may affect NQ, ES, and gold together (risk-on/off, gap risk, safe-haven bid). Mention inverse gold vs index if risk-off.
 - Ignore stock roundup headlines (Dow Jones, Nvidia, buy points, etc.). Use ONLY source facts. No hype. No trade calls. Plain text.`;
 }
 
-function parseBrief(text: string): Omit<
-  GeopoliticsBriefPayload,
-  "generatedAt" | "configured" | "revalidateSec"
-> | null {
+function parseBrief(text: string): GeopoliticsBriefCore | null {
   try {
     const cleaned = text
       .replace(/```json\n?/g, "")
@@ -84,10 +89,7 @@ function riskOffHint(text: string): boolean {
 
 export function formatGeopoliticsDeterministic(
   sources: GeopoliticsSources
-): Omit<
-  GeopoliticsBriefPayload,
-  "generatedAt" | "configured" | "revalidateSec"
-> {
+): GeopoliticsBriefCore {
   const headline = sources.headlines[0];
   const war = headline
     ? truncate(headline.title, 140)
@@ -110,9 +112,16 @@ export function formatGeopoliticsDeterministic(
   return { war, trump, expect, markets };
 }
 
+function attachFeed(
+  brief: GeopoliticsBriefCore,
+  sources: GeopoliticsSources
+): Omit<GeopoliticsBriefPayload, "generatedAt" | "configured" | "revalidateSec"> {
+  return { ...brief, feed: buildMarketNewsFeed(sources) };
+}
+
 async function generateGeopoliticsBrief(): Promise<GeopoliticsBriefPayload> {
   const sources = await gatherGeopoliticsSources();
-  const fallback = formatGeopoliticsDeterministic(sources);
+  const fallback = attachFeed(formatGeopoliticsDeterministic(sources), sources);
   const generatedAt = new Date().toISOString();
   const revalidateSec = isFuturesSessionOpen()
     ? GEO_BRIEF_REVALIDATE_SEC
@@ -140,7 +149,9 @@ async function generateGeopoliticsBrief(): Promise<GeopoliticsBriefPayload> {
     });
 
     const parsed = parseBrief(text);
-    return parsed ? { ...parsed, ...base } : { ...fallback, ...base };
+    return parsed
+      ? { ...attachFeed(parsed, sources), ...base }
+      : { ...fallback, ...base };
   } catch (error) {
     console.error("[geopolitics-brief] AI failed, using fallback", error);
     return { ...fallback, ...base };
@@ -149,13 +160,13 @@ async function generateGeopoliticsBrief(): Promise<GeopoliticsBriefPayload> {
 
 const getCachedGeoBriefOpen = unstable_cache(
   generateGeopoliticsBrief,
-  ["geopolitics-brief-v2-open"],
+  ["geopolitics-brief-v3-open"],
   { revalidate: GEO_BRIEF_REVALIDATE_SEC, tags: ["geopolitics-brief"] }
 );
 
 const getCachedGeoBriefClosed = unstable_cache(
   generateGeopoliticsBrief,
-  ["geopolitics-brief-v2-closed"],
+  ["geopolitics-brief-v3-closed"],
   { revalidate: GEO_BRIEF_CLOSED_REVALIDATE_SEC, tags: ["geopolitics-brief"] }
 );
 

@@ -6,10 +6,13 @@ import { getMarketSession } from "@/lib/futures-session";
 import { getNextCandleClose } from "@/lib/candle-timers";
 import type { MarketContext } from "@/lib/htf-status";
 import { useCountdownTick } from "@/hooks/use-countdown-tick";
+import { useBiasShiftAlerts } from "@/hooks/use-bias-shift-alerts";
 import type { ChartCandlesPayload } from "@/lib/chart-candles-cache";
 import { useSeedChartCandles } from "@/hooks/use-seed-chart-candles";
+import { BiasShiftToasts } from "@/components/radar/BiasShiftToasts";
 import { MarketBoard } from "@/components/radar/MarketBoard";
 import { GeopoliticsStrip } from "@/components/radar/GeopoliticsStrip";
+import { MarketNewsFeed } from "@/components/radar/MarketNewsFeed";
 import { RadarLoader } from "@/components/radar/RadarLoader";
 
 type RadarData = {
@@ -46,9 +49,12 @@ export function MarketRadar() {
   const ctx = data?.markets;
 
   useSeedChartCandles(data?.chartCandles);
+  const { alerts, dismissAlert, notifyPermission, requestNotifyPermission } =
+    useBiasShiftAlerts(ctx);
 
   return (
     <div className="mr-page">
+      <BiasShiftToasts alerts={alerts} onDismiss={dismissAlert} />
       <header className="mr-header">
         <div className="mr-header-main">
           <Link href="/" className="mr-back">
@@ -67,7 +73,27 @@ export function MarketRadar() {
             </span>
           </div>
         </div>
-        <EtClock now={now} />
+        <div className="mr-header-actions">
+          {notifyPermission !== "unsupported" && notifyPermission !== "granted" ? (
+            <button
+              type="button"
+              className="mr-notify-btn"
+              onClick={() => void requestNotifyPermission()}
+              title={
+                notifyPermission === "denied"
+                  ? "Enable alerts in browser settings"
+                  : "Enable desktop bias alerts"
+              }
+            >
+              {notifyPermission === "denied" ? "Alerts blocked" : "Enable alerts"}
+            </button>
+          ) : notifyPermission === "granted" ? (
+            <span className="mr-notify-on" title="Desktop bias alerts on">
+              Alerts on
+            </span>
+          ) : null}
+          <EtClock now={now} />
+        </div>
       </header>
 
       {isLoading || !ctx || now == null ? (
@@ -83,6 +109,7 @@ export function MarketRadar() {
             candlesPaused={oneH.paused}
             chartCandles={data?.chartCandles}
           />
+          <MarketNewsFeed />
         </>
       )}
     </div>

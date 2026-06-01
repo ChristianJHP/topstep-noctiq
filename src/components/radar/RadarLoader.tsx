@@ -100,7 +100,7 @@ export function RadarLoader() {
               </div>
             </div>
             <div className="mr-loader-levels">
-              <span className="mr-loader-shimmer mr-loader-shimmer--k">Levels</span>
+              <span className="mr-loader-shimmer mr-loader-shimmer--k">Brief</span>
               <span className="mr-loader-shimmer mr-loader-shimmer--line" />
             </div>
           </div>

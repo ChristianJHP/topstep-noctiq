@@ -23,7 +23,7 @@ export function LevelsSummary({ symbol }: { symbol: SymbolLabel }) {
 
   return (
     <div className="levels-summary" aria-live="polite">
-      <span className="levels-summary-k">Levels</span>
+      <span className="levels-summary-k">Brief</span>
       <p className="levels-summary-v">
         {isLoading && !data?.line ? "…" : (data?.line ?? "—")}
       </p>

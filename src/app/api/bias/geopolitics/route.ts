@@ -5,7 +5,7 @@ import {
   GEO_BRIEF_REVALIDATE_SEC,
   getCachedGeopoliticsBrief,
 } from "@/lib/geopolitics-brief";
-import { gatherGeopoliticsSources } from "@/lib/geopolitics-sources";
+import { gatherGeopoliticsSources, buildMarketNewsFeed } from "@/lib/geopolitics-sources";
 import { isFuturesSessionOpen } from "@/lib/futures-session";
 
 export async function GET() {
@@ -29,6 +29,7 @@ export async function GET() {
       return NextResponse.json(
         {
           ...fallback,
+          feed: buildMarketNewsFeed(sources),
           generatedAt: new Date().toISOString(),
           configured: false,
           revalidateSec,
@@ -43,6 +44,7 @@ export async function GET() {
           trump: null,
           expect: "Check headlines manually before trading.",
           markets: "Unknown geo impact — size down until context clears.",
+          feed: [],
           generatedAt: new Date().toISOString(),
           configured: false,
           revalidateSec: 60,
