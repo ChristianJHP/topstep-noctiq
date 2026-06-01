@@ -13,7 +13,7 @@ type BiasShiftToastsProps = {
   onDismiss: (id: string) => void;
 };
 
-const AUTO_DISMISS_MS = 12_000;
+const AUTO_DISMISS_MS = 16_000;
 
 function biasGlyph(b: ReturnType<typeof alertTone>): string {
   if (b === "bullish") return "▲";
@@ -33,7 +33,7 @@ function BiasShiftToastItem({
   useEffect(() => {
     const timer = window.setTimeout(() => onDismiss(alert.id), AUTO_DISMISS_MS);
     return () => window.clearTimeout(timer);
-  }, [alert.id, onDismiss]);
+  }, [alert.id, alert.reason, alert.reasonLoading, onDismiss]);
 
   return (
     <div

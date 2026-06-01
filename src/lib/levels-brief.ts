@@ -21,7 +21,7 @@ export type LevelsBriefContext = {
   symbol: string;
   price: number;
   bias: string;
-  draw: { side: string; level: number; pts: number };
+  draw: { side: string; level: number; pts: number } | null;
   h4High: number;
   h4Low: number;
   h1High: number;
@@ -62,11 +62,13 @@ export function buildLevelsContext(
     symbol: symbol.label,
     price: symbol.current,
     bias: prep.bias,
-    draw: {
-      side: prep.draw.side,
-      level: prep.draw.level,
-      pts: Math.round(prep.draw.pointsAway),
-    },
+    draw: prep.draw
+      ? {
+          side: prep.draw.side,
+          level: prep.draw.level,
+          pts: Math.round(prep.draw.pointsAway),
+        }
+      : null,
     h4High: symbol.h4High,
     h4Low: symbol.h4Low,
     h1High: symbol.h1High,
@@ -138,8 +140,6 @@ function parseLine(text: string): string | null {
 
 export function formatLevelsDeterministic(ctx: LevelsBriefContext): string {
   const { price, symbol, draw, h4High, h4Low, bias, geo } = ctx;
-  const drawDir = draw.side === "buy-side" ? "↑" : "↓";
-  const roundedDraw = Math.round(draw.level);
 
   const geoBit =
     symbol === "GC" && geo.riskOff
@@ -150,12 +150,17 @@ export function formatLevelsDeterministic(ctx: LevelsBriefContext): string {
           ? "Trump headline in play; "
           : "";
 
-  const levelBit =
-    draw.level > price
-      ? `draw ${drawDir} ${roundedDraw} overhead, 4H high ${Math.round(h4High)}`
-      : draw.level < price
-        ? `draw ${drawDir} ${roundedDraw} below, 4H low ${Math.round(h4Low)}`
-        : `4H range ${Math.round(h4Low)}–${Math.round(h4High)}`;
+  const levelBit = draw
+    ? (() => {
+        const drawDir = draw.side === "buy-side" ? "↑" : "↓";
+        const roundedDraw = Math.round(draw.level);
+        return draw.level > price
+          ? `draw ${drawDir} ${roundedDraw} overhead, 4H high ${Math.round(h4High)}`
+          : draw.level < price
+            ? `draw ${drawDir} ${roundedDraw} below, 4H low ${Math.round(h4Low)}`
+            : `4H range ${Math.round(h4Low)}–${Math.round(h4High)}`;
+      })()
+    : `4H range ${Math.round(h4Low)}–${Math.round(h4High)}`;
 
   const watch =
     bias === "bullish"

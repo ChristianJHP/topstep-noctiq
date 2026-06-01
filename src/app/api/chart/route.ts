@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { chartCandlesCacheControl } from "@/lib/chart-cache-config";
-import { getCachedChartCandles } from "@/lib/chart-candles-cache";
+import {
+  getCachedChartCandles,
+  fetchFreshChartCandles,
+} from "@/lib/chart-candles-cache";
 import { isFuturesSessionOpen } from "@/lib/futures-session";
 
 export const dynamic = "force-dynamic";
@@ -13,10 +16,15 @@ export async function GET(request: NextRequest) {
 
   const interval = request.nextUrl.searchParams.get("interval") ?? "60m";
   const range = request.nextUrl.searchParams.get("range") ?? "5d";
-  const cacheControl = chartCandlesCacheControl(!isFuturesSessionOpen());
+  const fresh = request.nextUrl.searchParams.get("fresh") === "1";
+  const cacheControl = fresh
+    ? "no-store"
+    : chartCandlesCacheControl(!isFuturesSessionOpen());
 
   try {
-    const payload = await getCachedChartCandles(ticker, interval, range);
+    const payload = fresh
+      ? await fetchFreshChartCandles(ticker, interval, range)
+      : await getCachedChartCandles(ticker, interval, range);
     return NextResponse.json(payload, {
       headers: { "Cache-Control": cacheControl },
     });

@@ -1,6 +1,7 @@
 import { fetchCalendarMeta, pickNextHighImpact } from "@/lib/events";
 import { getMarketSession } from "@/lib/futures-session";
 import { computeMarketContext, type SymbolContext } from "@/lib/htf-status";
+import { shouldShowDrawOnLiquidity } from "@/lib/market-analysis";
 
 export type IntervalSnapshot = {
   candleColor: string | null;
@@ -105,9 +106,10 @@ function symbolSnapshot(s: SymbolContext): SymbolSnapshot {
 }
 
 function watchHints(s: SymbolContext): SymbolWatchHints {
+  const showDraw = shouldShowDrawOnLiquidity(s.analysis.fvgBias);
   return {
-    drawLevel: s.analysis.drawLevel ?? null,
-    drawSide: s.analysis.drawSide ?? null,
+    drawLevel: showDraw ? s.analysis.drawLevel : null,
+    drawSide: showDraw ? s.analysis.drawSide : null,
     fvgNet: s.analysis.fvgScore.net ?? null,
   };
 }

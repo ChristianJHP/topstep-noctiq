@@ -6,6 +6,7 @@ import {
   fvgToChartZone,
   rejectionToChartZone,
   resolveDraw,
+  shouldShowDrawOnLiquidity,
   type ChartPlotLine,
   type SymbolChartPlot,
 } from "@/lib/market-analysis";
@@ -125,10 +126,13 @@ export function plotForTimeframe(
     symbol.h4Low,
     symbol.current
   );
-  const draw = drawPlotLine(drawSide, drawLevel);
 
   const { zones: fvgZones } = buildFvgPlot(symbol, timeframe);
-  const lines: ChartPlotLine[] = [draw];
+  const lines: ChartPlotLine[] = [];
+
+  if (shouldShowDrawOnLiquidity(bias)) {
+    lines.push(drawPlotLine(drawSide, drawLevel));
+  }
 
   lines.push(
     {

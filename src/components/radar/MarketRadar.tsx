@@ -12,12 +12,18 @@ import { useSeedChartCandles } from "@/hooks/use-seed-chart-candles";
 import { BiasShiftToasts } from "@/components/radar/BiasShiftToasts";
 import { CandleAlertToggles } from "@/components/radar/CandleAlertToggles";
 import { CandleCloseToasts } from "@/components/radar/CandleCloseToasts";
+import { RedFolderMoveToasts } from "@/components/radar/RedFolderMoveToasts";
 import { MarketBoard } from "@/components/radar/MarketBoard";
+import { useRedFolderMoveAlerts } from "@/hooks/use-red-folder-move-alerts";
+import type { EconomicEvent } from "@/lib/events";
 import { GeopoliticsStrip } from "@/components/radar/GeopoliticsStrip";
 import { MarketNewsFeed } from "@/components/radar/MarketNewsFeed";
 import { RadarLoader } from "@/components/radar/RadarLoader";
 
-type RadarData = Pick<RadarPayload, "markets" | "chartCandles">;
+type RadarData = Pick<
+  RadarPayload,
+  "markets" | "chartCandles" | "redFolderWeek"
+>;
 
 type MarketRadarProps = {
   initialData?: RadarPayload | null;
@@ -63,6 +69,11 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
     dismissAlert: dismissCandleAlert,
   } = useCandleCloseAlerts(now);
 
+  const redFolderEvents: EconomicEvent[] =
+    data?.redFolderWeek ?? initialData?.redFolderWeek ?? [];
+  const { alerts: redFolderMoveAlerts, dismissAlert: dismissRedFolderMove } =
+    useRedFolderMoveAlerts(redFolderEvents);
+
   const showLoader = !ctx && isLoading;
 
   return (
@@ -71,6 +82,10 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
       <CandleCloseToasts
         alerts={candleCloseAlerts}
         onDismiss={dismissCandleAlert}
+      />
+      <RedFolderMoveToasts
+        alerts={redFolderMoveAlerts}
+        onDismiss={dismissRedFolderMove}
       />
       <header className="mr-header">
         <div className="mr-header-main">

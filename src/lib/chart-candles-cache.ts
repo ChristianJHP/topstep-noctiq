@@ -66,6 +66,15 @@ async function loadCandlesUncached(
   return fetchFromYahoo(ticker, interval, range);
 }
 
+/** Bypass Next/supabase cache — for live 1m polls during news release. */
+export async function fetchFreshChartCandles(
+  ticker: string,
+  interval: string,
+  range: string
+): Promise<ChartCandlesPayload> {
+  return fetchFromYahoo(ticker, interval, range);
+}
+
 export async function getCachedChartCandles(
   ticker: string,
   interval: string,

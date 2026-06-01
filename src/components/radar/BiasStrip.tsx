@@ -40,13 +40,21 @@ export function BiasStrip({
 
       <div className="bias-strip-cell">
         <span className="bias-strip-k">Draw</span>
-        <span className="bias-draw-glyph" aria-hidden>
-          {draw.side === "buy-side" ? "↑" : "↓"}
-        </span>
-        <span className="bias-strip-val bias-strip-val--num">
-          {formatPrice(draw.level)}
-        </span>
-        <span className="bias-strip-pts">{Math.round(draw.pointsAway)}pt</span>
+        {draw ? (
+          <>
+            <span className="bias-draw-glyph" aria-hidden>
+              {draw.side === "buy-side" ? "↑" : "↓"}
+            </span>
+            <span className="bias-strip-val bias-strip-val--num">
+              {formatPrice(draw.level)}
+            </span>
+            <span className="bias-strip-pts">
+              {Math.round(draw.pointsAway)}pt
+            </span>
+          </>
+        ) : (
+          <span className="bias-strip-val bias-strip-val--muted">—</span>
+        )}
       </div>
 
       <div className="bias-strip-cell bias-strip-cell--timers">

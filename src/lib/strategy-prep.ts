@@ -5,6 +5,7 @@ import { candleSymbolBias } from "@/lib/htf-status";
 import {
   keyLevelsFromAnalysis,
   resolveDraw,
+  shouldShowDrawOnLiquidity,
 } from "@/lib/market-analysis";
 import {
   plottedFvgsForTimeframe,
@@ -48,7 +49,7 @@ export type ExecutionWindow = {
 export type SymbolPrep = {
   label: SymbolLabel;
   bias: HtfBias;
-  draw: DrawOnLiquidity;
+  draw: DrawOnLiquidity | null;
   keyLevels: KeyLevel[];
   nearKeyLevel: boolean;
   fvgNarrative: string;
@@ -66,7 +67,7 @@ export type StrategyPrep = {
   narrative: string;
   fvgNarrative: { nq: string; es: string };
   esNqAligned: boolean;
-  draw: DrawOnLiquidity;
+  draw: DrawOnLiquidity | null;
   keyLevels: KeyLevel[];
   smt: SmtAlert | null;
   nearKeyLevel: boolean;
@@ -123,7 +124,9 @@ export function getExecutionWindow(now = new Date()): ExecutionWindow {
 function buildDraw(
   symbol: SymbolContext,
   bias: HtfBias
-): DrawOnLiquidity {
+): DrawOnLiquidity | null {
+  if (!shouldShowDrawOnLiquidity(bias)) return null;
+
   const { drawSide, drawLevel } = resolveDraw(
     bias,
     symbol.analysis.swingHigh,
@@ -230,13 +233,15 @@ export function symbolWatchChips(
 ): WatchChip[] {
   const prep = computeSymbolPrep(symbol, ctx);
   const chips: WatchChip[] = [];
-  const dir = prep.draw.side === "buy-side" ? "↑" : "↓";
 
-  chips.push({
-    id: "draw",
-    label: `Draw ${dir} ${prep.draw.level.toLocaleString()} · ${Math.round(prep.draw.pointsAway)} pts`,
-    tone: "draw",
-  });
+  if (prep.draw) {
+    const dir = prep.draw.side === "buy-side" ? "↑" : "↓";
+    chips.push({
+      id: "draw",
+      label: `Draw ${dir} ${prep.draw.level.toLocaleString()} · ${Math.round(prep.draw.pointsAway)} pts`,
+      tone: "draw",
+    });
+  }
 
   for (const { timeframe, fvg } of plottedFvgsForTimeframe(symbol, chartTf)) {
     chips.push({
@@ -360,10 +365,9 @@ function pickDrawSymbol(
   return ctx.relativeStrength.stronger === "NQ" ? ctx.nq : ctx.es;
 }
 
-function computeDraw(ctx: MarketContext, bias: HtfBias): DrawOnLiquidity {
-  const side: DrawOnLiquidity["side"] =
-    bias === "bearish" ? "sell-side" : "buy-side";
-  const sym = pickDrawSymbol(ctx, side);
+function computeDraw(ctx: MarketContext, bias: HtfBias): DrawOnLiquidity | null {
+  if (!shouldShowDrawOnLiquidity(bias)) return null;
+  const sym = pickDrawSymbol(ctx, "sell-side");
   return buildDraw(sym, bias);
 }
 
@@ -404,7 +408,10 @@ function confirmationCopy(
   }
   return {
     headline: "Waiting for tap",
-    detail: `Let price reach draw (${bias === "bullish" ? "swing high" : "swing low"}) or FVG/CISD, then IFVG.`,
+    detail:
+      bias === "bullish"
+        ? "Bullish HTF · watch FVG/CISD holds — no sell-side draw implied at highs."
+        : "Let price reach sell-side draw or FVG/CISD, then IFVG.",
   };
 }
 
@@ -445,8 +452,12 @@ export function computeStrategyPrep(
 
   const targetHint =
     bias === "mixed"
-      ? "No draw until FVG bias clears · target nearest obvious swing only."
-      : `Low-hanging fruit: ${draw.symbol} @ ${draw.level.toLocaleString()} (${Math.round(draw.pointsAway)}pt) · aim 1:1–1:3 R.`;
+      ? "Mixed · no draw until FVG bias clears."
+      : bias === "bullish"
+        ? "Bullish · no draw at ATH — watch FVG holds and continuation."
+        : draw
+          ? `Low-hanging fruit: ${draw.symbol} @ ${draw.level.toLocaleString()} (${Math.round(draw.pointsAway)}pt) · aim 1:1–1:3 R.`
+          : "Bearish · watch sell-side liquidity below.";
 
   return {
     bias,

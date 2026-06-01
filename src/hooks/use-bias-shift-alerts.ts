@@ -2,18 +2,21 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { candleSymbolBias, type MarketContext } from "@/lib/htf-status";
+import {
+  buildShiftSummaryContext,
+  formatShiftSummaryDeterministic,
+  type BiasShiftItem,
+} from "@/lib/bias-shift-summary";
 import type { HtfBias, SymbolLabel } from "@/lib/strategy-prep";
 
-export type BiasShiftItem = {
-  symbol: SymbolLabel;
-  from: HtfBias;
-  to: HtfBias;
-};
+export type { BiasShiftItem };
 
 export type BiasShiftAlert = {
   id: string;
   shifts: BiasShiftItem[];
   at: number;
+  reason: string | null;
+  reasonLoading: boolean;
 };
 
 const BIAS_STORAGE_KEY = "jhptrades-bias-snapshot";
@@ -35,6 +38,8 @@ export function formatBiasShiftTitle(alert: BiasShiftAlert): string {
 }
 
 export function formatBiasShiftBody(alert: BiasShiftAlert): string {
+  if (alert.reason) return alert.reason;
+  if (alert.reasonLoading) return "…";
   return alert.shifts
     .map((s) => `${s.symbol} ${biasLabel(s.from)} → ${biasLabel(s.to)}`)
     .join(" · ");
@@ -99,7 +104,7 @@ function writeAlertsEnabled(enabled: boolean) {
   try {
     window.localStorage.setItem(ALERTS_ENABLED_KEY, String(enabled));
   } catch {
-    /* ignore quota */
+    /* ignore */
   }
 }
 
@@ -120,6 +125,28 @@ function fireBrowserNotification(alert: BiasShiftAlert) {
   }
 }
 
+async function fetchShiftReason(
+  markets: MarketContext,
+  shifts: BiasShiftItem[]
+): Promise<string> {
+  const ctx = buildShiftSummaryContext(markets, shifts);
+  const fallback = formatShiftSummaryDeterministic(ctx);
+
+  try {
+    const res = await fetch("/api/bias/shift-summary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(ctx),
+      cache: "no-store",
+    });
+    if (!res.ok) return fallback;
+    const json = (await res.json()) as { line?: string | null };
+    return json.line?.trim() || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export function useBiasShiftAlerts(markets: MarketContext | null | undefined) {
   const [alerts, setAlerts] = useState<BiasShiftAlert[]>([]);
   const [alertsEnabled, setAlertsEnabled] = useState(false);
@@ -128,6 +155,8 @@ export function useBiasShiftAlerts(markets: MarketContext | null | undefined) {
   >("default");
   const prevRef = useRef<Record<SymbolLabel, HtfBias> | null>(null);
   const seededRef = useRef(false);
+  const marketsRef = useRef(markets);
+  marketsRef.current = markets;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -139,20 +168,54 @@ export function useBiasShiftAlerts(markets: MarketContext | null | undefined) {
     setNotifyPermission(Notification.permission);
   }, []);
 
+  const attachReason = useCallback(
+    (alertId: string, shifts: BiasShiftItem[]) => {
+      const m = marketsRef.current;
+      if (!m) {
+        setAlerts((prev) =>
+          prev.map((a) =>
+            a.id === alertId ? { ...a, reasonLoading: false } : a
+          )
+        );
+        return;
+      }
+
+      void fetchShiftReason(m, shifts).then((reason) => {
+        setAlerts((prev) =>
+          prev.map((a) =>
+            a.id === alertId ? { ...a, reason, reasonLoading: false } : a
+          )
+        );
+        if (readAlertsEnabled()) {
+          fireBrowserNotification({
+            id: alertId,
+            shifts,
+            at: Date.now(),
+            reason,
+            reasonLoading: false,
+          });
+        }
+      });
+    },
+    []
+  );
+
   const pushGroupedAlert = useCallback(
     (shifts: BiasShiftItem[]) => {
-      if (shifts.length === 0 || !readAlertsEnabled()) return;
+      if (shifts.length === 0) return;
 
       const alert: BiasShiftAlert = {
         id: `batch-${Date.now()}`,
         shifts,
         at: Date.now(),
+        reason: null,
+        reasonLoading: true,
       };
 
       setAlerts((prev) => [...prev.slice(-2), alert]);
-      fireBrowserNotification(alert);
+      attachReason(alert.id, shifts);
     },
-    []
+    [attachReason]
   );
 
   useEffect(() => {

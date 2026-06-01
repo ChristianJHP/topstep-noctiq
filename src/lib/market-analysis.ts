@@ -87,7 +87,12 @@ function fvgNarrative(score: FvgBiasScore): string {
   return parts.length ? parts.join(" · ") : "No clear FVG read yet";
 }
 
-/** Draw on liquidity from FVG bias — bearish targets sell-side below, bullish buy-side above. */
+/** Only bearish bias gets a draw — bullish/mixed at highs has no clean DOL and sell-side below reads bearish. */
+export function shouldShowDrawOnLiquidity(fvgBias: MarketBias): boolean {
+  return fvgBias === "bearish";
+}
+
+/** Draw on liquidity from FVG bias — bearish targets sell-side below. */
 export function resolveDraw(
   fvgBias: MarketBias,
   swingHigh: number,
@@ -221,6 +226,7 @@ export function fvgBoundaryLines(fvg: FairValueGap): ChartPlotLine[] {
 function buildChartPlot(
   fvgs4h: FairValueGap[],
   fvgs1h: FairValueGap[],
+  fvgBias: MarketBias,
   drawLevel: number,
   drawSide: "buy-side" | "sell-side",
   cisd: CisdLevel | null,
@@ -246,8 +252,11 @@ function buildChartPlot(
       label: "4H L",
       role: "level",
     },
-    drawPlotLine(drawSide, drawLevel),
   ];
+
+  if (shouldShowDrawOnLiquidity(fvgBias)) {
+    lines.push(drawPlotLine(drawSide, drawLevel));
+  }
 
   if (Math.abs(priorH4High - h4High) >= 8) {
     lines.push({
@@ -325,6 +334,7 @@ export function analyzeSymbolMarket(
   const chartPlot = buildChartPlot(
     fvgs4h,
     fvgs1h,
+    fvgBias,
     drawLevel,
     drawSide,
     cisd,
@@ -365,16 +375,15 @@ export function keyLevelsFromAnalysis(
     pointsAway: number;
   }[] = [];
 
-  levels.push({
-    symbol: label,
-    label:
-      analysis.drawSide === "buy-side"
-        ? "Swing high · draw"
-        : "Swing low · draw",
-    price: analysis.drawLevel,
-    role: "draw",
-    pointsAway: Math.abs(current - analysis.drawLevel),
-  });
+  if (shouldShowDrawOnLiquidity(analysis.fvgBias)) {
+    levels.push({
+      symbol: label,
+      label: "Swing low · draw",
+      price: analysis.drawLevel,
+      role: "draw",
+      pointsAway: Math.abs(current - analysis.drawLevel),
+    });
+  }
 
   for (const fvg of relevantFvgsForChart(analysis.fvgs4h, current, 2)) {
     levels.push({

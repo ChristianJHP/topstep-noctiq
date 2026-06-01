@@ -423,6 +423,59 @@
     color: var(--foreground);
   }
 
+  .red-folder-move-stack {
+    position: fixed;
+    top: max(0.625rem, env(safe-area-inset-top));
+    left: max(0.875rem, env(safe-area-inset-left));
+    z-index: 55;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: min(20rem, calc(100vw - 1.75rem));
+    pointer-events: none;
+  }
+
+  .red-folder-move-toast {
+    pointer-events: auto;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: start;
+    padding: 0.625rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(242, 85, 90, 0.55);
+    background: linear-gradient(135deg, #1f1418 0%, #161920 100%);
+    box-shadow: 0 10px 32px rgba(242, 85, 90, 0.2);
+    animation: bias-shift-in 0.35s ease;
+  }
+
+  .red-folder-move-glyph {
+    font-size: 0.75rem;
+    line-height: 1;
+    margin-top: 0.1875rem;
+    color: var(--red);
+  }
+
+  .red-folder-move-copy {
+    min-width: 0;
+  }
+
+  .red-folder-move-title {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 800;
+    color: var(--foreground);
+    letter-spacing: -0.01em;
+  }
+
+  .red-folder-move-body {
+    margin: 0.1875rem 0 0;
+    font-size: 0.6875rem;
+    line-height: 1.35;
+    color: var(--red);
+    font-variant-numeric: tabular-nums;
+  }
+
   /* Single board surface */
   .mr-board {
     border: 1px solid var(--border);
@@ -885,6 +938,12 @@
   .bias-strip-val--num {
     font-variant-numeric: tabular-nums;
     font-size: 0.6875rem;
+  }
+
+  .bias-strip-val--muted {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
   }
 
   .bias-strip-pts,
