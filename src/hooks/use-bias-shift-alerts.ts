@@ -37,6 +37,20 @@ export function formatBiasShiftTitle(alert: BiasShiftAlert): string {
   return "Bias shifts";
 }
 
+export function formatBiasShiftTimestamp(at: number): string {
+  return (
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    }).format(new Date(at)) + " ET"
+  );
+}
+
 export function formatBiasShiftBody(alert: BiasShiftAlert): string {
   if (alert.reason) return alert.reason;
   if (alert.reasonLoading) return "…";
@@ -116,7 +130,7 @@ function fireBrowserNotification(alert: BiasShiftAlert) {
 
   try {
     new Notification(formatBiasShiftTitle(alert), {
-      body: formatBiasShiftBody(alert),
+      body: `${formatBiasShiftTimestamp(alert.at)} · ${formatBiasShiftBody(alert)}`,
       icon: "/icon.svg",
       tag: "bias-shift-batch",
     });

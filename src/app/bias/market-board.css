@@ -345,8 +345,18 @@
     letter-spacing: -0.01em;
   }
 
-  .bias-shift-body {
+  .bias-shift-time {
+    display: block;
     margin: 0.125rem 0 0;
+    font-size: 0.5625rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+  }
+
+  .bias-shift-body {
+    margin: 0.1875rem 0 0;
     font-size: 0.625rem;
     line-height: 1.35;
     color: var(--muted);

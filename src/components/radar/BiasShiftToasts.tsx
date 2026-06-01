@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import {
   alertTone,
   formatBiasShiftBody,
+  formatBiasShiftTimestamp,
   formatBiasShiftTitle,
   type BiasShiftAlert,
 } from "@/hooks/use-bias-shift-alerts";
@@ -45,6 +46,13 @@ function BiasShiftToastItem({
       </span>
       <div className="bias-shift-copy">
         <p className="bias-shift-title">{formatBiasShiftTitle(alert)}</p>
+        <time
+          className="bias-shift-time"
+          dateTime={new Date(alert.at).toISOString()}
+          suppressHydrationWarning
+        >
+          {formatBiasShiftTimestamp(alert.at)}
+        </time>
         <p className="bias-shift-body">{formatBiasShiftBody(alert)}</p>
       </div>
       <button
