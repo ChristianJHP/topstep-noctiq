@@ -14,6 +14,7 @@ import {
   detectRejectionBlocks,
   relevantRejectionBlocksForChart,
 } from "@/lib/rejection-block-detect";
+import { sessionLinesForBars } from "@/lib/session-chart-lines";
 
 export type ChartTimeframe = "15m" | "1H" | "4H";
 
@@ -193,6 +194,8 @@ export function rejectionZonesForBars(
   const picked = relevantRejectionBlocksForChart(blocks, current, max);
   return picked.map((block) => rejectionToChartZone(block, chartTf));
 }
+
+export { sessionLinesForBars } from "@/lib/session-chart-lines";
 
 export function fitBarSpacing(
   containerWidth: number,

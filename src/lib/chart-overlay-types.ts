@@ -3,6 +3,7 @@ export type ChartOverlayKey =
   | "fvg"
   | "rejection"
   | "cisd"
+  | "session"
   | "levels";
 
 export type ChartOverlaySettings = Record<ChartOverlayKey, boolean>;
@@ -15,6 +16,7 @@ export const CHART_OVERLAY_LABELS: Record<
   fvg: { label: "Fair value gaps", short: "FVG" },
   rejection: { label: "Rejection blocks", short: "RB" },
   cisd: { label: "CISD level", short: "CISD" },
+  session: { label: "Current session high & low", short: "Session" },
   levels: { label: "4H / prior highs & lows", short: "Levels" },
 };
 
@@ -23,5 +25,6 @@ export const DEFAULT_CHART_OVERLAYS: ChartOverlaySettings = {
   fvg: true,
   rejection: true,
   cisd: false,
+  session: true,
   levels: false,
 };

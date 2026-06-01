@@ -27,8 +27,10 @@ type SessionBlock = {
   wrap?: boolean;
 };
 
+export type { SessionBlock };
+
 /** Futures session windows in ET — aligned with briefing / ICT-style splits. */
-const SESSION_BLOCKS: SessionBlock[] = [
+export const SESSION_BLOCKS: SessionBlock[] = [
   { label: "Asia", start: 18 * 60, end: 3 * 60, wrap: true },
   { label: "London", start: 3 * 60, end: 9 * 60 + 30 },
   { label: "NY AM", start: 9 * 60 + 30, end: 12 * 60 },
@@ -48,6 +50,13 @@ function minsInBlock(mins: number, block: SessionBlock): boolean {
   return mins >= block.start && mins < block.end;
 }
 
+export function isMinuteInSessionBlock(
+  mins: number,
+  block: SessionBlock
+): boolean {
+  return minsInBlock(mins, block);
+}
+
 function minutesUntilMinute(target: number, from: number): number {
   if (target > from) return target - from;
   return 24 * 60 - from + target;
@@ -57,6 +66,13 @@ function currentBlock(mins: number): SessionBlock {
   return (
     SESSION_BLOCKS.find((b) => minsInBlock(mins, b)) ?? SESSION_BLOCKS[0]
   );
+}
+
+/** Active ICT session block while futures are open; null when closed. */
+export function getActiveSessionBlock(now = new Date()): SessionBlock | null {
+  const market = getMarketSession(now);
+  if (!market.isOpen) return null;
+  return currentBlock(etMinutes(now));
 }
 
 function nextBlockLabel(current: SessionBlock): string {

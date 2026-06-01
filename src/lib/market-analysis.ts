@@ -16,7 +16,7 @@ import {
 
 export type MarketBias = "bullish" | "bearish" | "mixed";
 
-export type ChartPlotLineRole = "draw" | "cisd" | "level";
+export type ChartPlotLineRole = "draw" | "cisd" | "level" | "session";
 
 export type ChartPlotLine = {
   price: number;
@@ -177,6 +177,7 @@ export function filterChartPlot(
     lines: plot.lines.filter((line) => {
       if (line.role === "draw") return overlays.draw;
       if (line.role === "cisd") return overlays.cisd;
+      if (line.role === "session") return overlays.session;
       if (line.role === "level") return overlays.levels;
       return false;
     }),

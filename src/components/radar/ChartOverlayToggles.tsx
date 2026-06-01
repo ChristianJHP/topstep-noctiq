@@ -15,6 +15,7 @@ const OVERLAY_ORDER: ChartOverlayKey[] = [
   "draw",
   "fvg",
   "rejection",
+  "session",
   "cisd",
   "levels",
 ];

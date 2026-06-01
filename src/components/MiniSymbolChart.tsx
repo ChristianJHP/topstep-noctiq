@@ -13,6 +13,7 @@ import {
 } from "lightweight-charts";
 import {
   filterChartPlot,
+  type ChartPlotLine,
   type ChartPlotZone,
   type SymbolChartPlot,
 } from "@/lib/market-analysis";
@@ -22,6 +23,7 @@ import {
   CHART_TF_CONFIG,
   fitChartTimeScale,
   rejectionZonesForBars,
+  sessionLinesForBars,
   type ChartTimeframe,
 } from "@/lib/chart-timeframe";
 import { useChartCandles } from "@/hooks/use-chart-candles";
@@ -110,6 +112,7 @@ function lineStyleForRole(
   style: "solid" | "dashed"
 ): LineStyle {
   if (role === "draw") return LineStyle.Dashed;
+  if (role === "session") return LineStyle.Dotted;
   if (role === "cisd") return LineStyle.Solid;
   return style === "dashed" ? LineStyle.Dashed : LineStyle.Solid;
 }
@@ -131,6 +134,7 @@ export function MiniSymbolChart({
   const plotRef = useRef(plot);
   const barCountRef = useRef(0);
   const [rbZones, setRbZones] = useState<ChartPlotZone[]>([]);
+  const [sessionLines, setSessionLines] = useState<ChartPlotLine[]>([]);
   const [mounted, setMounted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -146,13 +150,15 @@ export function MiniSymbolChart({
     tfConfig.range
   );
 
+  const { candles: candles15m } = useChartCandles(ticker, "15m", "7d");
+
   const mergedPlot = useMemo(() => {
-    const withRb: SymbolChartPlot = {
-      lines: plot.lines,
+    const combined: SymbolChartPlot = {
+      lines: [...plot.lines, ...sessionLines],
       zones: [...plot.zones, ...rbZones],
     };
-    return overlays ? filterChartPlot(withRb, overlays) : withRb;
-  }, [plot, overlays, rbZones]);
+    return overlays ? filterChartPlot(combined, overlays) : combined;
+  }, [plot, overlays, rbZones, sessionLines]);
 
   const fitToContainer = useCallback(() => {
     const chart = chartRef.current;
@@ -172,11 +178,11 @@ export function MiniSymbolChart({
     const overlay = overlayRef.current;
     if (!chart || !series || !overlay || !lastBarTimeRef.current) return;
 
-    const withRb: SymbolChartPlot = {
-      lines: plotRef.current.lines,
+    const combined: SymbolChartPlot = {
+      lines: [...plotRef.current.lines, ...sessionLines],
       zones: [...plotRef.current.zones, ...rbZones],
     };
-    const visible = overlays ? filterChartPlot(withRb, overlays) : withRb;
+    const visible = overlays ? filterChartPlot(combined, overlays) : combined;
 
     syncZoneOverlay(
       chart,
@@ -185,7 +191,7 @@ export function MiniSymbolChart({
       visible.zones,
       lastBarTimeRef.current
     );
-  }, [overlays, rbZones]);
+  }, [overlays, rbZones, sessionLines]);
 
   useEffect(() => {
     setMounted(true);
@@ -311,10 +317,11 @@ export function MiniSymbolChart({
         series.createPriceLine({
           price: line.price,
           color: line.color,
-          lineWidth: line.role === "draw" ? 2 : 1,
+          lineWidth:
+            line.role === "draw" ? 2 : line.role === "session" ? 1 : 1,
           lineStyle: lineStyleForRole(line.role, line.style),
           axisLabelVisible: line.role === "draw" || line.role === "cisd",
-          title: line.label ?? "",
+          title: line.role === "session" ? "" : (line.label ?? ""),
         })
       );
     }
@@ -335,6 +342,13 @@ export function MiniSymbolChart({
     const price = currentPrice ?? bars[bars.length - 1].close;
     setRbZones(rejectionZonesForBars(bars, timeframe, price, 2));
 
+    if (candles15m.length) {
+      const sessBars = barsForTimeframe(candles15m, "15m", barLimit);
+      setSessionLines(sessionLinesForBars(sessBars));
+    } else {
+      setSessionLines([]);
+    }
+
     seriesRef.current.setData(
       bars.map((b) => ({
         time: b.time as UTCTimestamp,
@@ -349,6 +363,7 @@ export function MiniSymbolChart({
     setError(null);
   }, [
     candles,
+    candles15m,
     timeframe,
     barLimit,
     mounted,
