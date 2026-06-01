@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 
-const MAX_LEN = 500;
+const MAX_LEN = 280;
+
+function feedbackWebhookUrl(): string | null {
+  const fromEnv = process.env.DISCORD_FEEDBACK_WEBHOOK_URL?.trim();
+  if (fromEnv) return fromEnv;
+  // Fallback for deploy — override via DISCORD_FEEDBACK_WEBHOOK_URL in Vercel to rotate
+  return "https://discord.com/api/webhooks/1510885593469550724/o1fzs5w36JGW2v4Y1z125nudxAm5Tu_axsqoES4da7YcMBYWgSc7Wu8KcfEELoEoyLr0";
+}
 
 export async function POST(request: Request) {
-  const webhookUrl = process.env.DISCORD_FEEDBACK_WEBHOOK_URL;
+  const webhookUrl = feedbackWebhookUrl();
   if (!webhookUrl) {
     return NextResponse.json(
       { error: "Feedback is not configured." },

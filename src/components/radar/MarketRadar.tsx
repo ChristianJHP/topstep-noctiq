@@ -12,7 +12,6 @@ import { useSeedChartCandles } from "@/hooks/use-seed-chart-candles";
 import { BiasShiftToasts } from "@/components/radar/BiasShiftToasts";
 import { MarketBoard } from "@/components/radar/MarketBoard";
 import { GeopoliticsStrip } from "@/components/radar/GeopoliticsStrip";
-import { FeedbackBox } from "@/components/radar/FeedbackBox";
 import { MarketNewsFeed } from "@/components/radar/MarketNewsFeed";
 import { RadarLoader } from "@/components/radar/RadarLoader";
 
@@ -124,7 +123,6 @@ export function MarketRadar() {
           <MarketNewsFeed />
         </>
       )}
-      <FeedbackBox />
     </div>
   );
 }
