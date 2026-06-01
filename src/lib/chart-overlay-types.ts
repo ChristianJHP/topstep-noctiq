@@ -1,0 +1,27 @@
+export type ChartOverlayKey =
+  | "draw"
+  | "fvg"
+  | "rejection"
+  | "cisd"
+  | "levels";
+
+export type ChartOverlaySettings = Record<ChartOverlayKey, boolean>;
+
+export const CHART_OVERLAY_LABELS: Record<
+  ChartOverlayKey,
+  { label: string; short: string }
+> = {
+  draw: { label: "Draw on liquidity", short: "Draw" },
+  fvg: { label: "Fair value gaps", short: "FVG" },
+  rejection: { label: "Rejection blocks", short: "RB" },
+  cisd: { label: "CISD level", short: "CISD" },
+  levels: { label: "4H / prior highs & lows", short: "Levels" },
+};
+
+export const DEFAULT_CHART_OVERLAYS: ChartOverlaySettings = {
+  draw: true,
+  fvg: true,
+  rejection: true,
+  cisd: false,
+  levels: false,
+};

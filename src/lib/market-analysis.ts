@@ -1,6 +1,7 @@
 import type { OhlcBar } from "@/lib/ohlc-aggregate";
 import { aggregate1h, aggregate4h } from "@/lib/ohlc-aggregate";
 import type { Candle } from "@/lib/chart-data";
+import type { ChartOverlaySettings } from "@/lib/chart-overlay-types";
 import {
   detectCisd,
   detectFairValueGaps,
@@ -15,20 +16,26 @@ import {
 
 export type MarketBias = "bullish" | "bearish" | "mixed";
 
+export type ChartPlotLineRole = "draw" | "cisd" | "level";
+
 export type ChartPlotLine = {
   price: number;
   color: string;
   style: "solid" | "dashed";
   label?: string;
+  role: ChartPlotLineRole;
 };
+
+export type ChartPlotZoneKind = "fvg" | "rejection";
 
 export type ChartPlotZone = {
   top: number;
   bottom: number;
   type: "bullish" | "bearish";
-  timeframe: "4H" | "1H";
+  timeframe: "4H" | "1H" | "15m";
+  kind: ChartPlotZoneKind;
   label: string;
-  /** Unix seconds — where the FVG formed */
+  /** Unix seconds — where the zone formed */
   startTime: number;
 };
 
@@ -126,6 +133,7 @@ export function drawPlotLine(
         : "rgba(251, 146, 60, 0.85)",
     style: "dashed",
     label: drawSide === "buy-side" ? "Draw ↑" : "Draw ↓",
+    role: "draw",
   };
 }
 
@@ -135,8 +143,48 @@ export function fvgToChartZone(fvg: FairValueGap): ChartPlotZone {
     bottom: fvg.bottom,
     type: fvg.type,
     timeframe: fvg.timeframe,
+    kind: "fvg",
     label: `${fvg.timeframe} ${fvg.type === "bullish" ? "Bull" : "Bear"} · ${fvg.respect}`,
     startTime: fvg.formedAt,
+  };
+}
+
+export function rejectionToChartZone(
+  block: {
+    type: "bullish" | "bearish";
+    top: number;
+    bottom: number;
+    formedAt: number;
+  },
+  timeframe: ChartPlotZone["timeframe"]
+): ChartPlotZone {
+  return {
+    top: block.top,
+    bottom: block.bottom,
+    type: block.type,
+    timeframe,
+    kind: "rejection",
+    label: `${timeframe} ${block.type === "bullish" ? "Bull" : "Bear"} RB`,
+    startTime: block.formedAt,
+  };
+}
+
+export function filterChartPlot(
+  plot: SymbolChartPlot,
+  overlays: ChartOverlaySettings
+): SymbolChartPlot {
+  return {
+    lines: plot.lines.filter((line) => {
+      if (line.role === "draw") return overlays.draw;
+      if (line.role === "cisd") return overlays.cisd;
+      if (line.role === "level") return overlays.levels;
+      return false;
+    }),
+    zones: plot.zones.filter((zone) => {
+      if (zone.kind === "fvg") return overlays.fvg;
+      if (zone.kind === "rejection") return overlays.rejection;
+      return true;
+    }),
   };
 }
 
@@ -157,12 +205,14 @@ export function fvgBoundaryLines(fvg: FairValueGap): ChartPlotLine[] {
       color,
       style: "dashed",
       label: `${fvg.timeframe} ${kind} FVG top`,
+      role: "level",
     },
     {
       price: fvg.bottom,
       color,
       style: "dashed",
       label: `${fvg.timeframe} ${kind} FVG bot`,
+      role: "level",
     },
   ];
 }
@@ -186,12 +236,14 @@ function buildChartPlot(
       color: "rgba(61, 214, 140, 0.55)",
       style: "solid",
       label: "4H H",
+      role: "level",
     },
     {
       price: h4Low,
       color: "rgba(242, 85, 90, 0.55)",
       style: "solid",
       label: "4H L",
+      role: "level",
     },
     drawPlotLine(drawSide, drawLevel),
   ];
@@ -202,6 +254,7 @@ function buildChartPlot(
       color: "rgba(122, 132, 148, 0.45)",
       style: "dashed",
       label: "Pr H",
+      role: "level",
     });
   }
   if (Math.abs(priorH4Low - h4Low) >= 8) {
@@ -210,6 +263,7 @@ function buildChartPlot(
       color: "rgba(122, 132, 148, 0.45)",
       style: "dashed",
       label: "Pr L",
+      role: "level",
     });
   }
 
@@ -222,16 +276,15 @@ function buildChartPlot(
           : "rgba(242, 85, 90, 0.75)",
       style: "solid",
       label: "CISD",
+      role: "cisd",
     });
   }
 
-  for (const fvg of relevantFvgsForChart(fvgs4h, current, 4)) {
+  for (const fvg of relevantFvgsForChart(fvgs4h, current, 2)) {
     zones.push(fvgToChartZone(fvg));
-    lines.push(...fvgBoundaryLines(fvg));
   }
-  for (const fvg of relevantFvgsForChart(fvgs1h, current, 4)) {
+  for (const fvg of relevantFvgsForChart(fvgs1h, current, 2)) {
     zones.push(fvgToChartZone(fvg));
-    lines.push(...fvgBoundaryLines(fvg));
   }
 
   return { lines, zones };

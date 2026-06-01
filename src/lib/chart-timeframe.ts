@@ -3,13 +3,17 @@ import { aggregate1h, aggregate4h, type OhlcBar } from "@/lib/ohlc-aggregate";
 import { candleSymbolBias, type SymbolContext } from "@/lib/htf-status";
 import {
   drawPlotLine,
-  fvgBoundaryLines,
   fvgToChartZone,
+  rejectionToChartZone,
   resolveDraw,
   type ChartPlotLine,
   type SymbolChartPlot,
 } from "@/lib/market-analysis";
 import { relevantFvgsForChart, type FairValueGap } from "@/lib/fvg-detect";
+import {
+  detectRejectionBlocks,
+  relevantRejectionBlocksForChart,
+} from "@/lib/rejection-block-detect";
 
 export type ChartTimeframe = "15m" | "1H" | "4H";
 
@@ -66,9 +70,6 @@ export function barsForTimeframe(
   return bars.slice(-limit);
 }
 
-const H1H = "rgba(61, 214, 140, 0.4)";
-const H1L = "rgba(242, 85, 90, 0.4)";
-
 export type PlottedFvg = {
   timeframe: "4H" | "1H";
   fvg: FairValueGap;
@@ -79,9 +80,7 @@ function plotTimeframeForChart(chartTf: ChartTimeframe): "4H" | "1H" {
 }
 
 function fvgLimit(chartTf: ChartTimeframe): number {
-  if (chartTf === "4H") return 4;
-  if (chartTf === "1H") return 4;
-  return 3;
+  return 2;
 }
 
 export function plottedFvgsForTimeframe(
@@ -107,7 +106,6 @@ function buildFvgPlot(
 
   for (const { fvg } of plotted) {
     zones.push(fvgToChartZone(fvg));
-    lines.push(...fvgBoundaryLines(fvg));
   }
 
   return { lines, zones };
@@ -128,44 +126,72 @@ export function plotForTimeframe(
   );
   const draw = drawPlotLine(drawSide, drawLevel);
 
-  const { lines: fvgLines, zones } = buildFvgPlot(symbol, timeframe);
-  const lines: ChartPlotLine[] = [...fvgLines, draw];
+  const { zones: fvgZones } = buildFvgPlot(symbol, timeframe);
+  const lines: ChartPlotLine[] = [draw];
 
-  if (timeframe === "4H") {
-    lines.unshift(
-      {
-        price: symbol.h4High,
-        color: "rgba(61, 214, 140, 0.55)",
-        style: "solid",
-        label: "4H H",
-      },
-      {
-        price: symbol.h4Low,
-        color: "rgba(242, 85, 90, 0.55)",
-        style: "solid",
-        label: "4H L",
-      }
-    );
+  lines.push(
+    {
+      price: symbol.h4High,
+      color: "rgba(61, 214, 140, 0.55)",
+      style: "solid",
+      label: "4H H",
+      role: "level",
+    },
+    {
+      price: symbol.h4Low,
+      color: "rgba(242, 85, 90, 0.55)",
+      style: "solid",
+      label: "4H L",
+      role: "level",
+    }
+  );
+
+  if (Math.abs(symbol.priorH4High - symbol.h4High) >= 8) {
+    lines.push({
+      price: symbol.priorH4High,
+      color: "rgba(122, 132, 148, 0.45)",
+      style: "dashed",
+      label: "Pr H",
+      role: "level",
+    });
+  }
+  if (Math.abs(symbol.priorH4Low - symbol.h4Low) >= 8) {
+    lines.push({
+      price: symbol.priorH4Low,
+      color: "rgba(122, 132, 148, 0.45)",
+      style: "dashed",
+      label: "Pr L",
+      role: "level",
+    });
   }
 
-  if (timeframe === "1H") {
-    lines.unshift(
-      {
-        price: symbol.h1High,
-        color: H1H,
-        style: "solid",
-        label: "1H H",
-      },
-      {
-        price: symbol.h1Low,
-        color: H1L,
-        style: "solid",
-        label: "1H L",
-      }
-    );
+  const cisd = symbol.analysis.cisd;
+  if (cisd) {
+    lines.push({
+      price: cisd.price,
+      color:
+        cisd.type === "bullish"
+          ? "rgba(61, 214, 140, 0.75)"
+          : "rgba(242, 85, 90, 0.75)",
+      style: "solid",
+      label: "CISD",
+      role: "cisd",
+    });
   }
 
-  return { lines, zones };
+  return { lines, zones: fvgZones };
+}
+
+export function rejectionZonesForBars(
+  bars: OhlcBar[],
+  chartTf: ChartTimeframe,
+  current: number,
+  max = 2
+): SymbolChartPlot["zones"] {
+  if (!bars.length || current <= 0) return [];
+  const blocks = detectRejectionBlocks(bars);
+  const picked = relevantRejectionBlocksForChart(blocks, current, max);
+  return picked.map((block) => rejectionToChartZone(block, chartTf));
 }
 
 export function fitBarSpacing(

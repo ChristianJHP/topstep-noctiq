@@ -202,7 +202,7 @@ export function relevantFvgsForChart(
   const pool = fvgs.filter(
     (f) => !f.mitigated && f.respect !== "disrespected"
   );
-  const maxDist = Math.max(current * 0.02, 100);
+  const maxDist = Math.max(current * 0.015, 50);
 
   const scored = pool
     .map((fvg) => {
@@ -213,19 +213,17 @@ export function relevantFvgsForChart(
       );
       const inside = current >= fvg.bottom && current <= fvg.top;
       const priority =
-        (inside ? 0 : dist) +
-        (fvg.respect === "untested" ? -500 : 0) +
-        (dist > maxDist * 2 ? maxDist * 4 : 0);
-      return { fvg, dist, priority };
+        (inside ? 0 : dist) + (fvg.respect === "untested" ? -500 : 0);
+      return { fvg, dist, inside, priority };
     })
     .sort((a, b) => a.priority - b.priority || a.dist - b.dist);
 
   const out: FairValueGap[] = [];
   const seen = new Set<string>();
 
-  for (const { fvg, dist } of scored) {
+  for (const { fvg, dist, inside } of scored) {
     if (out.length >= max) break;
-    if (dist > maxDist * 2 && fvg.respect !== "untested") continue;
+    if (!inside && dist > maxDist) continue;
     const key = `${Math.round(fvg.bottom)}-${Math.round(fvg.top)}`;
     if (seen.has(key)) continue;
     seen.add(key);

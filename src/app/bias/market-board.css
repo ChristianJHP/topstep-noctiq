@@ -1281,6 +1281,77 @@
     z-index: 1;
   }
 
+  .chart-zone--rejection {
+    z-index: 3;
+  }
+
+  .chart-zone--rejection.chart-zone--bullish {
+    background: rgba(52, 211, 153, 0.18);
+    border: 1px dashed rgba(52, 211, 153, 0.75);
+  }
+
+  .chart-zone--rejection.chart-zone--bearish {
+    background: rgba(251, 146, 60, 0.16);
+    border: 1px dashed rgba(251, 146, 60, 0.72);
+  }
+
+  .chart-overlay-toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3125rem;
+    padding: 0 0 0.5rem;
+  }
+
+  .chart-overlay-toggle {
+    font-size: 0.5625rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.1875rem 0.4375rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: #0f1216;
+    color: var(--muted);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+
+  .chart-overlay-toggle:hover {
+    color: #cbd5e1;
+    border-color: rgba(148, 163, 184, 0.35);
+  }
+
+  .chart-overlay-toggle--on {
+    color: #e2e8f0;
+    border-color: rgba(148, 163, 184, 0.45);
+    background: rgba(148, 163, 184, 0.08);
+  }
+
+  .chart-overlay-toggle--on.chart-overlay-toggle--draw {
+    border-color: rgba(96, 165, 250, 0.55);
+    color: rgba(147, 197, 253, 0.95);
+  }
+
+  .chart-overlay-toggle--on.chart-overlay-toggle--fvg {
+    border-color: rgba(61, 214, 140, 0.45);
+    color: rgba(134, 239, 172, 0.95);
+  }
+
+  .chart-overlay-toggle--on.chart-overlay-toggle--rejection {
+    border-color: rgba(251, 146, 60, 0.5);
+    color: rgba(253, 186, 116, 0.95);
+  }
+
+  .chart-overlay-toggle--on.chart-overlay-toggle--cisd {
+    border-color: rgba(168, 85, 247, 0.5);
+    color: rgba(216, 180, 254, 0.95);
+  }
+
+  .chart-overlay-toggle--on.chart-overlay-toggle--levels {
+    border-color: rgba(122, 132, 148, 0.55);
+    color: rgba(203, 213, 225, 0.95);
+  }
+
   .chart-plot-legend {
     display: flex;
     flex-wrap: wrap;

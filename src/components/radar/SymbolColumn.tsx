@@ -5,7 +5,9 @@ import type { SymbolContext } from "@/lib/htf-status";
 import { CHART_TIMEFRAMES, type ChartTimeframe } from "@/lib/chart-timeframe";
 import type { SymbolLabel } from "@/lib/strategy-prep";
 import { formatPrice } from "@/lib/strategy-prep";
+import { useChartOverlaySettings } from "@/lib/chart-overlay-settings";
 import { CandleStateDots } from "@/components/radar/CandleStateDots";
+import { ChartOverlayToggles } from "@/components/radar/ChartOverlayToggles";
 import { LevelsSummary } from "@/components/radar/LevelsSummary";
 import { SymbolChartPane } from "@/components/radar/SymbolChartPane";
 import { useIsWideDesktop } from "@/hooks/use-is-wide-desktop";
@@ -13,6 +15,7 @@ import { useIsWideDesktop } from "@/hooks/use-is-wide-desktop";
 export function SymbolColumn({ symbol }: { symbol: SymbolContext }) {
   const isWide = useIsWideDesktop();
   const [timeframe, setTimeframe] = useState<ChartTimeframe>("4H");
+  const { settings: overlays, toggle } = useChartOverlaySettings();
   const label = symbol.label as SymbolLabel;
 
   return (
@@ -22,10 +25,17 @@ export function SymbolColumn({ symbol }: { symbol: SymbolContext }) {
         <p className="sym-col-price">{formatPrice(symbol.current)}</p>
       </div>
 
+      <ChartOverlayToggles settings={overlays} onToggle={toggle} />
+
       {isWide ? (
         <div className="sym-col-charts-wide">
           {CHART_TIMEFRAMES.map((tf) => (
-            <SymbolChartPane key={tf} symbol={symbol} timeframe={tf} />
+            <SymbolChartPane
+              key={tf}
+              symbol={symbol}
+              timeframe={tf}
+              overlays={overlays}
+            />
           ))}
         </div>
       ) : (
@@ -45,7 +55,11 @@ export function SymbolColumn({ symbol }: { symbol: SymbolContext }) {
             ))}
           </div>
 
-          <SymbolChartPane symbol={symbol} timeframe={timeframe} />
+          <SymbolChartPane
+            symbol={symbol}
+            timeframe={timeframe}
+            overlays={overlays}
+          />
         </>
       )}
 

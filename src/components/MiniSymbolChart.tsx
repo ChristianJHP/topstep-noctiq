@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CandlestickSeries,
   ColorType,
@@ -11,11 +11,17 @@ import {
   type ISeriesApi,
   type UTCTimestamp,
 } from "lightweight-charts";
-import type { ChartPlotZone, SymbolChartPlot } from "@/lib/market-analysis";
+import {
+  filterChartPlot,
+  type ChartPlotZone,
+  type SymbolChartPlot,
+} from "@/lib/market-analysis";
+import type { ChartOverlaySettings } from "@/lib/chart-overlay-types";
 import {
   barsForTimeframe,
   CHART_TF_CONFIG,
   fitChartTimeScale,
+  rejectionZonesForBars,
   type ChartTimeframe,
 } from "@/lib/chart-timeframe";
 import { useChartCandles } from "@/hooks/use-chart-candles";
@@ -31,6 +37,8 @@ type MiniSymbolChartProps = {
   ticker: string;
   plot: SymbolChartPlot;
   timeframe: ChartTimeframe;
+  overlays?: ChartOverlaySettings;
+  currentPrice?: number;
 };
 
 function makeAutoscale(plot: SymbolChartPlot) {
@@ -86,7 +94,8 @@ function syncZoneOverlay(
     if (x1 == null || x2 == null || yTop == null || yBottom == null) continue;
 
     const band = document.createElement("div");
-    band.className = `chart-zone chart-zone--${zone.type} chart-zone--${zone.timeframe.toLowerCase()}`;
+    const tfClass = zone.timeframe.toLowerCase();
+    band.className = `chart-zone chart-zone--${zone.type} chart-zone--${zone.kind} chart-zone--${tfClass}`;
     band.style.left = `${Math.min(x1, x2)}px`;
     band.style.width = `${Math.max(Math.abs(x2 - x1), 4)}px`;
     band.style.top = `${Math.min(yTop, yBottom)}px`;
@@ -96,10 +105,21 @@ function syncZoneOverlay(
   }
 }
 
+function lineStyleForRole(
+  role: SymbolChartPlot["lines"][number]["role"],
+  style: "solid" | "dashed"
+): LineStyle {
+  if (role === "draw") return LineStyle.Dashed;
+  if (role === "cisd") return LineStyle.Solid;
+  return style === "dashed" ? LineStyle.Dashed : LineStyle.Solid;
+}
+
 export function MiniSymbolChart({
   ticker,
   plot,
   timeframe,
+  overlays,
+  currentPrice,
 }: MiniSymbolChartProps) {
   const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -110,6 +130,7 @@ export function MiniSymbolChart({
   const lastBarTimeRef = useRef<number>(0);
   const plotRef = useRef(plot);
   const barCountRef = useRef(0);
+  const [rbZones, setRbZones] = useState<ChartPlotZone[]>([]);
   const [mounted, setMounted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -124,6 +145,14 @@ export function MiniSymbolChart({
     tfConfig.interval,
     tfConfig.range
   );
+
+  const mergedPlot = useMemo(() => {
+    const withRb: SymbolChartPlot = {
+      lines: plot.lines,
+      zones: [...plot.zones, ...rbZones],
+    };
+    return overlays ? filterChartPlot(withRb, overlays) : withRb;
+  }, [plot, overlays, rbZones]);
 
   const fitToContainer = useCallback(() => {
     const chart = chartRef.current;
@@ -142,14 +171,21 @@ export function MiniSymbolChart({
     const series = seriesRef.current;
     const overlay = overlayRef.current;
     if (!chart || !series || !overlay || !lastBarTimeRef.current) return;
+
+    const withRb: SymbolChartPlot = {
+      lines: plotRef.current.lines,
+      zones: [...plotRef.current.zones, ...rbZones],
+    };
+    const visible = overlays ? filterChartPlot(withRb, overlays) : withRb;
+
     syncZoneOverlay(
       chart,
       series,
       overlay,
-      plotRef.current.zones,
+      visible.zones,
       lastBarTimeRef.current
     );
-  }, []);
+  }, [overlays, rbZones]);
 
   useEffect(() => {
     setMounted(true);
@@ -261,40 +297,31 @@ export function MiniSymbolChart({
     const series = seriesRef.current;
     if (!series) return;
 
-    series.applyOptions({ autoscaleInfoProvider: makeAutoscale(plot) });
+    series.applyOptions({ autoscaleInfoProvider: makeAutoscale(mergedPlot) });
 
     for (const line of linesRef.current) {
       series.removePriceLine(line);
     }
     linesRef.current = [];
 
-    for (const line of plot.lines) {
+    for (const line of mergedPlot.lines) {
       if (!Number.isFinite(line.price)) continue;
-      const isDraw = line.label?.startsWith("Draw");
-      const isFvg = line.label?.includes("FVG");
-      const isStructural =
-        line.label === "4H H" ||
-        line.label === "4H L" ||
-        line.label === "1H H" ||
-        line.label === "1H L";
-      if (!isDraw && !isFvg && !isStructural) continue;
 
       linesRef.current.push(
         series.createPriceLine({
           price: line.price,
           color: line.color,
-          lineWidth: isDraw ? 2 : 1,
-          lineStyle:
-            line.style === "dashed" ? LineStyle.Dashed : LineStyle.Solid,
-          axisLabelVisible: isDraw,
-          title: isDraw ? (line.label ?? "") : "",
+          lineWidth: line.role === "draw" ? 2 : 1,
+          lineStyle: lineStyleForRole(line.role, line.style),
+          axisLabelVisible: line.role === "draw" || line.role === "cisd",
+          title: line.label ?? "",
         })
       );
     }
 
     fitToContainer();
     refreshOverlay();
-  }, [plot, fitToContainer, refreshOverlay]);
+  }, [mergedPlot, fitToContainer, refreshOverlay]);
 
   useEffect(() => {
     if (!mounted || !seriesRef.current || !candles.length) return;
@@ -304,6 +331,10 @@ export function MiniSymbolChart({
 
     barCountRef.current = bars.length;
     lastBarTimeRef.current = bars[bars.length - 1].time;
+
+    const price = currentPrice ?? bars[bars.length - 1].close;
+    setRbZones(rejectionZonesForBars(bars, timeframe, price, 2));
+
     seriesRef.current.setData(
       bars.map((b) => ({
         time: b.time as UTCTimestamp,
@@ -316,7 +347,15 @@ export function MiniSymbolChart({
     fitToContainer();
     refreshOverlay();
     setError(null);
-  }, [candles, timeframe, barLimit, mounted, fitToContainer, refreshOverlay]);
+  }, [
+    candles,
+    timeframe,
+    barLimit,
+    mounted,
+    currentPrice,
+    fitToContainer,
+    refreshOverlay,
+  ]);
 
   useEffect(() => {
     if (fetchError && !candles.length) setError("unavailable");

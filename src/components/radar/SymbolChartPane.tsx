@@ -1,15 +1,24 @@
+"use client";
+
+import { useMemo } from "react";
 import type { SymbolContext } from "@/lib/htf-status";
 import { plotForTimeframe, type ChartTimeframe } from "@/lib/chart-timeframe";
+import type { ChartOverlaySettings } from "@/lib/chart-overlay-types";
 import { MiniSymbolChart } from "@/components/MiniSymbolChart";
 
 export function SymbolChartPane({
   symbol,
   timeframe,
+  overlays,
 }: {
   symbol: SymbolContext;
   timeframe: ChartTimeframe;
+  overlays: ChartOverlaySettings;
 }) {
-  const plot = plotForTimeframe(symbol, timeframe);
+  const plot = useMemo(
+    () => plotForTimeframe(symbol, timeframe),
+    [symbol, timeframe]
+  );
 
   return (
     <div className="sym-chart-pane">
@@ -21,6 +30,8 @@ export function SymbolChartPane({
           ticker={symbol.ticker}
           plot={plot}
           timeframe={timeframe}
+          overlays={overlays}
+          currentPrice={symbol.current}
         />
       </div>
     </div>
