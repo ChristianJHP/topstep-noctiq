@@ -103,11 +103,23 @@ ${JSON.stringify(ctx)}
 Return ONLY valid JSON: {"line": ""}
 
 Rules:
-- Exactly ONE sentence, max 42 words. No bullet lists. No raw ranges.
-- Start with symbol bias tone if clear (bullish/bearish/mixed) and why — include geo if relevant.
+- Exactly ONE sentence, max 28 words. No bullet lists. No raw ranges.
+- One geo hook max (3–5 words), then bias + nearest level + watch.
 - Mention draw on liquidity and nearest 4H/1H or FVG level with rounded prices.
 ${symbolRules}
 - Use ONLY JSON facts + geo fields. No trade calls. Trader shorthand OK ("cuz", "rn").`;
+}
+
+function clampLine(text: string, maxWords = 28, maxChars = 175): string {
+  let t = text.replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
+  const words = t.split(" ").filter(Boolean);
+  if (words.length > maxWords) {
+    t = `${words.slice(0, maxWords).join(" ")}…`;
+  }
+  if (t.length > maxChars) {
+    t = `${t.slice(0, maxChars - 1).trim()}…`;
+  }
+  return t;
 }
 
 function parseLine(text: string): string | null {
@@ -118,7 +130,7 @@ function parseLine(text: string): string | null {
       .trim();
     const parsed = JSON.parse(cleaned) as { line?: string };
     if (typeof parsed.line !== "string" || !parsed.line.trim()) return null;
-    return parsed.line.replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
+    return clampLine(parsed.line.replace(/\*\*/g, "").replace(/\s+/g, " ").trim());
   } catch {
     return null;
   }
@@ -202,7 +214,7 @@ async function generateLevelsBrief(
 function cacheFor(label: SymbolLabel) {
   const open = unstable_cache(
     () => generateLevelsBrief(label),
-    [`levels-brief-v2-${label}-open`],
+    [`levels-brief-v3-${label}-open`],
     {
       revalidate: BIAS_SUMMARY_REVALIDATE_SEC,
       tags: ["levels-brief", `levels-brief-${label}`],
@@ -210,7 +222,7 @@ function cacheFor(label: SymbolLabel) {
   );
   const closed = unstable_cache(
     () => generateLevelsBrief(label),
-    [`levels-brief-v2-${label}-closed`],
+    [`levels-brief-v3-${label}-closed`],
     {
       revalidate: BIAS_SUMMARY_CLOSED_REVALIDATE_SEC,
       tags: ["levels-brief", `levels-brief-${label}`],

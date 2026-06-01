@@ -47,11 +47,20 @@ Return ONLY valid JSON:
 {"war":"","trump":"","expect":"","markets":""}
 
 Rules:
-- war: ONE sentence — latest war/conflict/negotiation context from headlines only. NO stock market or earnings angles.
-- trump: ONE short sentence on Trump's latest war/tariffs/negotiation post — empty string if nothing relevant.
-- expect: ONE sentence — what to watch next on negotiations, strikes, sanctions, or ceasefire talks (next 24h).
-- markets: ONE sentence, max 24 words — how THIS geo backdrop may affect NQ, ES, and gold together (risk-on/off, gap risk, safe-haven bid). Mention inverse gold vs index if risk-off.
-- Ignore stock roundup headlines (Dow Jones, Nvidia, buy points, etc.). Use ONLY source facts. No hype. No trade calls. Plain text.`;
+- war: max 14 words — punchy headline-style, latest conflict fact only. No filler, no second clause with "as/citing/while".
+- trump: max 10 words — Trump's latest war/tariffs post, or empty string if none.
+- expect: max 12 words — one thing to watch in next 24h. No lists.
+- markets: max 18 words — NQ/ES/gold risk tone only.
+- Telegraph style. No stock roundups. No trade calls. Plain text.`;
+}
+
+function clampBriefField(text: string, maxWords: number, maxChars: number): string {
+  let t = text.replace(/\s+/g, " ").trim();
+  const words = t.split(" ").filter(Boolean);
+  if (words.length > maxWords) {
+    t = `${words.slice(0, maxWords).join(" ")}…`;
+  }
+  return truncate(t, maxChars);
 }
 
 function parseBrief(text: string): GeopoliticsBriefCore | null {
@@ -67,13 +76,16 @@ function parseBrief(text: string): GeopoliticsBriefCore | null {
       markets?: string;
     };
 
-    const war = parsed.war?.replace(/\s+/g, " ").trim();
-    const expect = parsed.expect?.replace(/\s+/g, " ").trim();
-    const markets = parsed.markets?.replace(/\s+/g, " ").trim();
+    const war = clampBriefField(parsed.war?.trim() ?? "", 14, 95);
+    const expect = clampBriefField(parsed.expect?.trim() ?? "", 12, 85);
+    const markets = clampBriefField(parsed.markets?.trim() ?? "", 18, 120);
     if (!war || !expect || !markets) return null;
 
     const trumpRaw = parsed.trump?.replace(/\s+/g, " ").trim();
-    const trump = trumpRaw && trumpRaw.length > 3 ? trumpRaw : null;
+    const trump =
+      trumpRaw && trumpRaw.length > 3
+        ? clampBriefField(trumpRaw, 10, 75)
+        : null;
 
     return { war, trump, expect, markets };
   } catch {
@@ -92,15 +104,15 @@ export function formatGeopoliticsDeterministic(
 ): GeopoliticsBriefCore {
   const headline = sources.headlines[0];
   const war = headline
-    ? truncate(headline.title, 140)
-    : "No war or negotiation headline in feed — check back after the next diplomatic update.";
+    ? truncate(headline.title, 85)
+    : "No war headlines in feed right now.";
 
   const trumpPost = sources.trumpGeoPosts[0] ?? null;
-  const trump = trumpPost ? truncate(trumpPost.text, 120) : null;
+  const trump = trumpPost ? truncate(trumpPost.text, 70) : null;
 
   const expect = headline
-    ? "Watch for negotiation headlines, sanction news, or military escalation before the next session."
-    : "Quiet on war talks — normal rules unless breaking conflict news hits.";
+    ? "Watch for retaliation or Hormuz spillover in next 24h."
+    : "Quiet on geo — trade levels unless breaking news hits.";
 
   const riskOff = riskOffHint(
     `${headline?.title ?? ""} ${trumpPost?.text ?? ""}`
@@ -160,13 +172,13 @@ async function generateGeopoliticsBrief(): Promise<GeopoliticsBriefPayload> {
 
 const getCachedGeoBriefOpen = unstable_cache(
   generateGeopoliticsBrief,
-  ["geopolitics-brief-v3-open"],
+  ["geopolitics-brief-v4-open"],
   { revalidate: GEO_BRIEF_REVALIDATE_SEC, tags: ["geopolitics-brief"] }
 );
 
 const getCachedGeoBriefClosed = unstable_cache(
   generateGeopoliticsBrief,
-  ["geopolitics-brief-v3-closed"],
+  ["geopolitics-brief-v4-closed"],
   { revalidate: GEO_BRIEF_CLOSED_REVALIDATE_SEC, tags: ["geopolitics-brief"] }
 );
 
