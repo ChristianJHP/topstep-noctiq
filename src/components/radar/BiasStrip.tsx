@@ -1,6 +1,5 @@
 import type { SymbolPrep } from "@/lib/strategy-prep";
 import { formatCandleCountdown } from "@/lib/candle-timers";
-import { formatPrice } from "@/lib/strategy-prep";
 
 type BiasStripProps = {
   prep: SymbolPrep;
@@ -17,10 +16,16 @@ export function BiasStrip({
   fourHMs,
   candlesPaused,
 }: BiasStripProps) {
-  const { bias, draw, label } = prep;
+  const { bias, label } = prep;
   const biasLabel =
     bias === "bullish" ? "BULL" : bias === "bearish" ? "BEAR" : "MIX";
   const biasGlyph = bias === "bullish" ? "▲" : bias === "bearish" ? "▼" : "◆";
+
+  const timers = [
+    { key: "15M", ms: fifteenMMs },
+    { key: "1H", ms: oneHMs },
+    { key: "4H", ms: fourHMs },
+  ] as const;
 
   return (
     <div className="bias-strip">
@@ -38,36 +43,18 @@ export function BiasStrip({
         ) : null}
       </div>
 
-      <div className="bias-strip-cell">
-        <span className="bias-strip-k">Draw</span>
-        {draw ? (
-          <>
-            <span className="bias-draw-glyph" aria-hidden>
-              {draw.side === "buy-side" ? "↑" : "↓"}
-            </span>
-            <span className="bias-strip-val bias-strip-val--num">
-              {formatPrice(draw.level)}
-            </span>
-            <span className="bias-strip-pts">
-              {Math.round(draw.pointsAway)}pt
-            </span>
-          </>
-        ) : (
-          <span className="bias-strip-val bias-strip-val--muted">—</span>
-        )}
-      </div>
-
       <div className="bias-strip-cell bias-strip-cell--timers">
-        <span className="bias-strip-k">Candles</span>
-        <span className="bias-timer">
-          15M {candlesPaused ? "—" : formatCandleCountdown(fifteenMMs)}
-        </span>
-        <span className="bias-timer">
-          1H {candlesPaused ? "—" : formatCandleCountdown(oneHMs)}
-        </span>
-        <span className="bias-timer">
-          4H {candlesPaused ? "—" : formatCandleCountdown(fourHMs)}
-        </span>
+        <span className="bias-strip-k bias-strip-k--timers">Closes in</span>
+        <div className="bias-timer-row">
+          {timers.map(({ key, ms }) => (
+            <div key={key} className="bias-timer-block">
+              <span className="bias-timer-k">{key}</span>
+              <span className="bias-timer-v" suppressHydrationWarning>
+                {candlesPaused ? "—" : formatCandleCountdown(ms)}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
