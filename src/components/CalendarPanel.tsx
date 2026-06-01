@@ -8,8 +8,10 @@ import { useCountdownTick } from "@/hooks/use-countdown-tick";
 const TZ = "America/New_York";
 const MS_24H = 24 * 60 * 60 * 1000;
 
-type RadarData = {
-  redFolderWeek: EconomicEvent[];
+import type { RadarPayload } from "@/lib/radar-payload";
+
+type CalendarPanelProps = {
+  initialRadar?: RadarPayload | null;
 };
 
 function dayKeyEt(date: Date): string {
@@ -34,20 +36,24 @@ function upcomingEvents(events: EconomicEvent[], now: number): EconomicEvent[] {
     );
 }
 
-export function CalendarPanel() {
+export function CalendarPanel({ initialRadar }: CalendarPanelProps) {
   const now = useCountdownTick();
-  const { data, isLoading, error } = useSWR<RadarData>(
+  const { data, isLoading, error } = useSWR<Pick<RadarPayload, "redFolderWeek">>(
     "/api/radar",
     (url: string) => fetch(url).then((r) => r.json()),
-    { refreshInterval: 120_000 }
+    {
+      fallbackData: initialRadar ?? undefined,
+      revalidateOnMount: !initialRadar?.redFolderWeek?.length,
+      refreshInterval: 120_000,
+    }
   );
 
   const events = data?.redFolderWeek ?? [];
-  const ts = now ?? Date.now();
+  const ts = now;
   const upcoming = upcomingEvents(events, ts);
   const next = upcoming[0];
 
-  if (isLoading) {
+  if (isLoading && events.length === 0) {
     return <p className="calendar-compact calendar-compact--muted">Loading…</p>;
   }
 

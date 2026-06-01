@@ -4,10 +4,9 @@ import useSWR from "swr";
 import Link from "next/link";
 import { getNextCandleClose } from "@/lib/candle-timers";
 import { getTradingSessionInfo } from "@/lib/trading-session";
-import type { MarketContext } from "@/lib/htf-status";
+import type { RadarPayload } from "@/lib/radar-payload";
 import { useCountdownTick } from "@/hooks/use-countdown-tick";
 import { useBiasShiftAlerts } from "@/hooks/use-bias-shift-alerts";
-import type { ChartCandlesPayload } from "@/lib/chart-candles-cache";
 import { useSeedChartCandles } from "@/hooks/use-seed-chart-candles";
 import { BiasShiftToasts } from "@/components/radar/BiasShiftToasts";
 import { MarketBoard } from "@/components/radar/MarketBoard";
@@ -15,16 +14,13 @@ import { GeopoliticsStrip } from "@/components/radar/GeopoliticsStrip";
 import { MarketNewsFeed } from "@/components/radar/MarketNewsFeed";
 import { RadarLoader } from "@/components/radar/RadarLoader";
 
-type RadarData = {
-  markets: MarketContext | null;
-  chartCandles?: Record<string, ChartCandlesPayload>;
+type RadarData = Pick<RadarPayload, "markets" | "chartCandles">;
+
+type MarketRadarProps = {
+  initialData?: RadarPayload | null;
 };
 
-function EtClock({ now }: { now: number | null }) {
-  if (now == null) {
-    return <time className="mr-clock" suppressHydrationWarning>—</time>;
-  }
-
+function EtClock({ now }: { now: number }) {
   const label = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
     hour: "numeric",
@@ -35,23 +31,29 @@ function EtClock({ now }: { now: number | null }) {
   return <time className="mr-clock" suppressHydrationWarning>{label}</time>;
 }
 
-export function MarketRadar() {
+export function MarketRadar({ initialData }: MarketRadarProps) {
   const now = useCountdownTick();
 
-  const { data, isLoading } = useSWR<RadarData>("/api/radar", (url: string) =>
-    fetch(url).then((r) => r.json()),
-    { refreshInterval: 60_000 }
+  const { data, isLoading } = useSWR<RadarData>(
+    "/api/radar",
+    (url: string) => fetch(url).then((r) => r.json()),
+    {
+      fallbackData: initialData ?? undefined,
+      revalidateOnMount: !initialData?.markets,
+      refreshInterval: 60_000,
+    }
   );
 
-  const tradingSession =
-    now != null ? getTradingSessionInfo(new Date(now)) : null;
-  const oneH = getNextCandleClose("1H", now != null ? new Date(now) : undefined);
-  const fourH = getNextCandleClose("4H", now != null ? new Date(now) : undefined);
+  const tradingSession = getTradingSessionInfo(new Date(now));
+  const oneH = getNextCandleClose("1H", new Date(now));
+  const fourH = getNextCandleClose("4H", new Date(now));
   const ctx = data?.markets;
 
   useSeedChartCandles(data?.chartCandles);
-  const { alerts, alertsEnabled, dismissAlert, notifyPermission, enableAlerts, disableAlerts } =
+  const { alerts, alertsEnabled, dismissAlert, enableAlerts, disableAlerts } =
     useBiasShiftAlerts(ctx);
+
+  const showLoader = !ctx && isLoading;
 
   return (
     <div className="mr-page">
@@ -63,24 +65,20 @@ export function MarketRadar() {
           </Link>
           <div className="mr-header-row">
             <h1 className="mr-title">Market Bias</h1>
-            {tradingSession ? (
-              <div className="mr-session-wrap">
-                <span
-                  className={
-                    tradingSession.isMarketOpen
-                      ? "mr-session mr-session--open"
-                      : "mr-session mr-session--closed"
-                  }
-                >
-                  {tradingSession.label}
-                </span>
-                <span className="mr-session-countdown" suppressHydrationWarning>
-                  {tradingSession.countdown}
-                </span>
-              </div>
-            ) : (
-              <span className="mr-session mr-session--closed">—</span>
-            )}
+            <div className="mr-session-wrap">
+              <span
+                className={
+                  tradingSession.isMarketOpen
+                    ? "mr-session mr-session--open"
+                    : "mr-session mr-session--closed"
+                }
+              >
+                {tradingSession.label}
+              </span>
+              <span className="mr-session-countdown" suppressHydrationWarning>
+                {tradingSession.countdown}
+              </span>
+            </div>
           </div>
         </div>
         <div className="mr-header-actions">
@@ -107,9 +105,9 @@ export function MarketRadar() {
         </div>
       </header>
 
-      {isLoading || !ctx || now == null ? (
+      {showLoader ? (
         <RadarLoader />
-      ) : (
+      ) : ctx ? (
         <>
           <GeopoliticsStrip />
           <MarketBoard
@@ -122,6 +120,10 @@ export function MarketRadar() {
           />
           <MarketNewsFeed />
         </>
+      ) : (
+        <p className="geo-strip-muted" style={{ padding: "1rem" }}>
+          Market data unavailable — retrying…
+        </p>
       )}
     </div>
   );

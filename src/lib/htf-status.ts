@@ -1,5 +1,9 @@
 import { MARKET_TICKERS, type Candle } from "@/lib/chart-data";
-import { getCachedChartCandles } from "@/lib/chart-candles-cache";
+import {
+  getCachedChartCandles,
+  type ChartCandlesPayload,
+} from "@/lib/chart-candles-cache";
+import { chartCacheKey } from "@/lib/chart-candles-store";
 import { aggregate1h, aggregate4h, type OhlcBar } from "@/lib/ohlc-aggregate";
 import { analyzeSymbolMarket, type SymbolMarketAnalysis } from "@/lib/market-analysis";
 
@@ -232,9 +236,12 @@ function computeRelativeStrength(
 
 async function computeSymbol(
   label: string,
-  ticker: string
+  ticker: string,
+  prefetched?: Candle[]
 ): Promise<{ context: SymbolContext; bars1h: OhlcBar[]; bars4h: OhlcBar[] }> {
-  const { candles } = await getCachedChartCandles(ticker, "60m", "3mo");
+  const candles =
+    prefetched ??
+    (await getCachedChartCandles(ticker, "60m", "3mo")).candles;
   const bars4h = aggregate4h(candles);
   const bars1h = aggregate1h(candles);
 
@@ -245,15 +252,52 @@ async function computeSymbol(
   };
 }
 
-export function candleSymbolBias(
-  symbol: SymbolContext
-): "bullish" | "bearish" | "mixed" {
-  const h4 = symbol.fourHour.bias;
-  const h1 = symbol.oneHour.bias;
-  if (h4 === h1 && h4 !== "neutral") return h4;
-  if (h4 !== "neutral" && h1 === "neutral") return h4;
-  if (h1 !== "neutral" && h4 === "neutral") return h1;
-  return "mixed";
+function candlesFromPrefetch(
+  chartCandles: Record<string, ChartCandlesPayload>,
+  ticker: string
+): Candle[] | undefined {
+  const key = chartCacheKey(ticker, "60m", "3mo");
+  const payload = chartCandles[key];
+  return payload?.candles?.length ? payload.candles : undefined;
+}
+
+/** Build market context from chart bundle already loaded for /api/radar. */
+export async function computeMarketContextFromCharts(
+  chartCandles: Record<string, ChartCandlesPayload>
+): Promise<MarketContext> {
+  const [nqResult, esResult, goldResult] = await Promise.all([
+    computeSymbol(
+      "NQ",
+      MARKET_TICKERS.NQ,
+      candlesFromPrefetch(chartCandles, MARKET_TICKERS.NQ)
+    ),
+    computeSymbol(
+      "ES",
+      MARKET_TICKERS.ES,
+      candlesFromPrefetch(chartCandles, MARKET_TICKERS.ES)
+    ),
+    computeSymbol(
+      "GC",
+      MARKET_TICKERS.GC,
+      candlesFromPrefetch(chartCandles, MARKET_TICKERS.GC)
+    ),
+  ]);
+
+  const nq = nqResult.context;
+  const es = esResult.context;
+
+  return {
+    nq,
+    es,
+    gold: goldResult.context,
+    relativeStrength: computeRelativeStrength(nq, es),
+    smt: detectSmt(
+      nqResult.bars4h,
+      esResult.bars4h,
+      nqResult.bars1h,
+      esResult.bars1h
+    ),
+  };
 }
 
 export async function computeMarketContext(): Promise<MarketContext> {
@@ -278,6 +322,17 @@ export async function computeMarketContext(): Promise<MarketContext> {
       esResult.bars1h
     ),
   };
+}
+
+export function candleSymbolBias(
+  symbol: SymbolContext
+): "bullish" | "bearish" | "mixed" {
+  const h4 = symbol.fourHour.bias;
+  const h1 = symbol.oneHour.bias;
+  if (h4 === h1 && h4 !== "neutral") return h4;
+  if (h4 !== "neutral" && h1 === "neutral") return h4;
+  if (h1 !== "neutral" && h4 === "neutral") return h1;
+  return "mixed";
 }
 
 export async function computeMarketRadarStatus(): Promise<MarketContext> {
