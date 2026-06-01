@@ -960,17 +960,16 @@
   }
 
   .bias-timer-v {
-    font-size: 0.8125rem;
-    font-weight: 700;
+    font-size: 0.6875rem;
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
-    color: #5eead4;
-    text-shadow: 0 0 12px rgba(94, 234, 212, 0.35);
+    color: var(--foreground);
     line-height: 1.1;
   }
 
   @media (min-width: 720px) {
     .bias-timer-v {
-      font-size: 0.9375rem;
+      font-size: 0.75rem;
     }
   }
 
