@@ -19,6 +19,7 @@ const TABS: { id: RadarTab; label: string }[] = [
 type MarketBoardProps = {
   markets: MarketContext;
   now: number;
+  fifteenMMs: number | null;
   oneHMs: number | null;
   fourHMs: number | null;
   candlesPaused: boolean;
@@ -28,6 +29,7 @@ type MarketBoardProps = {
 export function MarketBoard({
   markets,
   now,
+  fifteenMMs,
   oneHMs,
   fourHMs,
   candlesPaused,
@@ -48,6 +50,7 @@ export function MarketBoard({
     <section className="mr-board">
       <BiasStrip
         prep={symbolPrep}
+        fifteenMMs={fifteenMMs}
         oneHMs={oneHMs}
         fourHMs={fourHMs}
         candlesPaused={candlesPaused}

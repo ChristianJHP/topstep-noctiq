@@ -7,8 +7,11 @@ import { getTradingSessionInfo } from "@/lib/trading-session";
 import type { RadarPayload } from "@/lib/radar-payload";
 import { useCountdownTick } from "@/hooks/use-countdown-tick";
 import { useBiasShiftAlerts } from "@/hooks/use-bias-shift-alerts";
+import { useCandleCloseAlerts } from "@/hooks/use-candle-close-alerts";
 import { useSeedChartCandles } from "@/hooks/use-seed-chart-candles";
 import { BiasShiftToasts } from "@/components/radar/BiasShiftToasts";
+import { CandleAlertToggles } from "@/components/radar/CandleAlertToggles";
+import { CandleCloseToasts } from "@/components/radar/CandleCloseToasts";
 import { MarketBoard } from "@/components/radar/MarketBoard";
 import { GeopoliticsStrip } from "@/components/radar/GeopoliticsStrip";
 import { MarketNewsFeed } from "@/components/radar/MarketNewsFeed";
@@ -45,6 +48,7 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
   );
 
   const tradingSession = getTradingSessionInfo(new Date(now));
+  const fifteenM = getNextCandleClose("15M", new Date(now));
   const oneH = getNextCandleClose("1H", new Date(now));
   const fourH = getNextCandleClose("4H", new Date(now));
   const ctx = data?.markets;
@@ -52,12 +56,22 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
   useSeedChartCandles(data?.chartCandles);
   const { alerts, alertsEnabled, dismissAlert, enableAlerts, disableAlerts } =
     useBiasShiftAlerts(ctx);
+  const {
+    settings: candleAlertSettings,
+    toggle: toggleCandleAlert,
+    alerts: candleCloseAlerts,
+    dismissAlert: dismissCandleAlert,
+  } = useCandleCloseAlerts(now);
 
   const showLoader = !ctx && isLoading;
 
   return (
     <div className="mr-page">
       <BiasShiftToasts alerts={alerts} onDismiss={dismissAlert} />
+      <CandleCloseToasts
+        alerts={candleCloseAlerts}
+        onDismiss={dismissCandleAlert}
+      />
       <header className="mr-header">
         <div className="mr-header-main">
           <Link href="/" className="mr-back">
@@ -82,25 +96,31 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
           </div>
         </div>
         <div className="mr-header-actions">
-          {alertsEnabled ? (
-            <button
-              type="button"
-              className="mr-notify-on mr-notify-toggle"
-              onClick={disableAlerts}
-              title="Turn off bias alerts"
-            >
-              Alerts on
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="mr-notify-btn"
-              onClick={() => void enableAlerts()}
-              title="Enable bias shift alerts"
-            >
-              Enable alerts
-            </button>
-          )}
+          <div className="mr-header-notify-row">
+            {alertsEnabled ? (
+              <button
+                type="button"
+                className="mr-notify-on mr-notify-toggle"
+                onClick={disableAlerts}
+                title="Turn off bias alerts"
+              >
+                Bias on
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="mr-notify-btn"
+                onClick={() => void enableAlerts()}
+                title="Enable bias shift alerts"
+              >
+                Bias alerts
+              </button>
+            )}
+            <CandleAlertToggles
+              settings={candleAlertSettings}
+              onToggle={toggleCandleAlert}
+            />
+          </div>
           <EtClock now={now} />
         </div>
       </header>
@@ -113,6 +133,7 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
           <MarketBoard
             markets={ctx}
             now={now}
+            fifteenMMs={fifteenM.remainingMs}
             oneHMs={oneH.remainingMs}
             fourHMs={fourH.remainingMs}
             candlesPaused={oneH.paused}

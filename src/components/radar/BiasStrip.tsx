@@ -1,9 +1,10 @@
 import type { SymbolPrep } from "@/lib/strategy-prep";
-import { formatCountdownHuman } from "@/lib/candle-timers";
+import { formatCandleCountdown } from "@/lib/candle-timers";
 import { formatPrice } from "@/lib/strategy-prep";
 
 type BiasStripProps = {
   prep: SymbolPrep;
+  fifteenMMs: number | null;
   oneHMs: number | null;
   fourHMs: number | null;
   candlesPaused: boolean;
@@ -11,6 +12,7 @@ type BiasStripProps = {
 
 export function BiasStrip({
   prep,
+  fifteenMMs,
   oneHMs,
   fourHMs,
   candlesPaused,
@@ -50,10 +52,13 @@ export function BiasStrip({
       <div className="bias-strip-cell bias-strip-cell--timers">
         <span className="bias-strip-k">Candles</span>
         <span className="bias-timer">
-          1H {candlesPaused ? "—" : formatCountdownHuman(oneHMs)}
+          15M {candlesPaused ? "—" : formatCandleCountdown(fifteenMMs)}
         </span>
         <span className="bias-timer">
-          4H {candlesPaused ? "—" : formatCountdownHuman(fourHMs)}
+          1H {candlesPaused ? "—" : formatCandleCountdown(oneHMs)}
+        </span>
+        <span className="bias-timer">
+          4H {candlesPaused ? "—" : formatCandleCountdown(fourHMs)}
         </span>
       </div>
     </div>

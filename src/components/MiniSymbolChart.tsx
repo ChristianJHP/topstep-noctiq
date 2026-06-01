@@ -4,11 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CandlestickSeries,
   ColorType,
+  CrosshairMode,
+  TickMarkType,
   createChart,
   LineStyle,
   type IChartApi,
   type IPriceLine,
   type ISeriesApi,
+  type Time,
   type UTCTimestamp,
 } from "lightweight-charts";
 import {
@@ -28,12 +31,35 @@ import {
 } from "@/lib/chart-timeframe";
 import { useChartCandles } from "@/hooks/use-chart-candles";
 import { useIsMobile } from "@/hooks/use-is-mobile";
+import {
+  formatChartEtCrosshair,
+  formatChartEtTickMark,
+  type ChartTickMarkKind,
+} from "@/lib/chart-time-label";
 
 const BG = "#12151a";
 const BULL = "#c8cdd6";
 const BEAR = "#5c6573";
 const WICK_BULL = "#8b939e";
 const WICK_BEAR = "#4a5260";
+
+const CROSSHAIR_LINE = "rgba(148, 163, 184, 0.35)";
+const CROSSHAIR_LABEL_BG = "#1e2430";
+
+function tickMarkKind(type: TickMarkType): ChartTickMarkKind {
+  switch (type) {
+    case TickMarkType.Year:
+      return "year";
+    case TickMarkType.Month:
+      return "month";
+    case TickMarkType.DayOfMonth:
+      return "day";
+    case TickMarkType.TimeWithSeconds:
+      return "time-sec";
+    default:
+      return "time";
+  }
+}
 
 type MiniSymbolChartProps = {
   ticker: string;
@@ -211,6 +237,10 @@ export function MiniSymbolChart({
         fontSize: isMobile ? 10 : 9,
         attributionLogo: false,
       },
+      localization: {
+        locale: "en-US",
+        timeFormatter: (time: Time) => formatChartEtCrosshair(time),
+      },
       grid: {
         vertLines: { visible: false },
         horzLines: { color: "rgba(148, 163, 184, 0.06)" },
@@ -218,13 +248,18 @@ export function MiniSymbolChart({
       rightPriceScale: {
         visible: true,
         borderVisible: false,
-        scaleMargins: { top: 0.06, bottom: 0.06 },
+        scaleMargins: { top: 0.06, bottom: 0.1 },
         minimumWidth: isMobile ? 44 : 52,
       },
       leftPriceScale: { visible: false },
       timeScale: {
-        visible: false,
+        visible: true,
         borderVisible: false,
+        timeVisible: true,
+        secondsVisible: false,
+        ticksVisible: true,
+        tickMarkFormatter: (time: Time, type: TickMarkType) =>
+          formatChartEtTickMark(time, tickMarkKind(type)),
         barSpacing: 6,
         minBarSpacing: 2,
         maxBarSpacing: 48,
@@ -233,8 +268,21 @@ export function MiniSymbolChart({
         fixRightEdge: false,
       },
       crosshair: {
-        vertLine: { visible: false },
-        horzLine: { visible: false },
+        mode: CrosshairMode.Magnet,
+        vertLine: {
+          visible: true,
+          labelVisible: true,
+          color: CROSSHAIR_LINE,
+          width: 1,
+          labelBackgroundColor: CROSSHAIR_LABEL_BG,
+        },
+        horzLine: {
+          visible: true,
+          labelVisible: true,
+          color: "rgba(148, 163, 184, 0.2)",
+          width: 1,
+          labelBackgroundColor: CROSSHAIR_LABEL_BG,
+        },
       },
       handleScroll: {
         mouseWheel: false,

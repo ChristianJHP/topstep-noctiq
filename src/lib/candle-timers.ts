@@ -1,11 +1,17 @@
-import { getMarketSession } from "@/lib/futures-session";
-import { getZonedHourEt as getZonedHourEtFromEtTime } from "@/lib/et-time";
+import {
+  getMarketSession,
+  isFuturesSessionOpen,
+} from "@/lib/futures-session";
+import {
+  getZonedHourEt as getZonedHourEtFromEtTime,
+  getZonedParts,
+} from "@/lib/et-time";
 
 export { getZonedParts } from "@/lib/et-time";
 
 const TZ = "America/New_York";
 
-export type CandleInterval = "1H" | "4H";
+export type CandleInterval = "15M" | "1H" | "4H";
 
 export interface CandleCountdown {
   interval: CandleInterval;
@@ -13,6 +19,64 @@ export interface CandleCountdown {
   remainingMs: number | null;
   paused: boolean;
   pauseReason?: string;
+}
+
+function getEtWeekday(now: Date): number {
+  const label = now.toLocaleDateString("en-US", {
+    timeZone: TZ,
+    weekday: "short",
+  });
+  const map: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+  return map[label] ?? 0;
+}
+
+function weekdayCloseCapSec(day: number, currentSec: number): number | null {
+  if (day >= 1 && day <= 5) {
+    const cap = 17 * 3600;
+    if (currentSec >= cap) return null;
+    return cap;
+  }
+  return null;
+}
+
+function intervalStepSec(interval: CandleInterval): number {
+  if (interval === "15M") return 15 * 60;
+  if (interval === "1H") return 60 * 60;
+  return 4 * 60 * 60;
+}
+
+function msToNextBoundary(interval: CandleInterval, now: Date): number | null {
+  if (!isFuturesSessionOpen()) return null;
+
+  const p = getZonedParts(now, TZ);
+  const day = getEtWeekday(now);
+  const currentSec = p.hour * 3600 + p.minute * 60 + p.second;
+  const cap = weekdayCloseCapSec(day, currentSec);
+
+  let nextSec: number;
+  if (interval === "4H") {
+    const boundaries = [0, 4, 8, 12, 16, 20].map((h) => h * 3600);
+    nextSec = boundaries.find((b) => b > currentSec) ?? 24 * 3600;
+  } else {
+    const step = intervalStepSec(interval);
+    nextSec = Math.floor(currentSec / step) * step + step;
+  }
+
+  if (cap != null) {
+    nextSec = Math.min(nextSec, cap);
+  }
+
+  if (currentSec >= nextSec) return null;
+
+  return (nextSec - currentSec) * 1000;
 }
 
 export function getNextCandleClose(
@@ -31,10 +95,9 @@ export function getNextCandleClose(
     };
   }
 
-  const minutes =
-    interval === "1H" ? session.minutesTo1HClose : session.minutesTo4HClose;
+  const remainingMs = msToNextBoundary(interval, now);
 
-  if (minutes == null) {
+  if (remainingMs == null) {
     return {
       interval,
       closesAt: null,
@@ -44,7 +107,6 @@ export function getNextCandleClose(
     };
   }
 
-  const remainingMs = minutes * 60_000;
   return {
     interval,
     closesAt: new Date(now.getTime() + remainingMs),
@@ -71,13 +133,25 @@ export function formatCountdownHuman(ms: number | null): string {
   if (h >= 24) {
     const days = Math.floor(h / 24);
     const remH = h % 24;
-    return remH > 0 ? `${days}d ${remH}h` : `${days}d`;
+    return remH > 0 ? `${days}d ${remH}h ${m}m` : `${days}d ${m}m`;
   }
 
-  if (h > 0 && m > 0) return `${h}h ${m}m`;
-  if (h > 0) return `${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
   if (m > 0) return `${m}m`;
   return "<1m";
+}
+
+/** Live candle countdown — always shows minutes; seconds under 1h. */
+export function formatCandleCountdown(ms: number | null): string {
+  if (ms == null) return "—";
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
 }
 
 export function getZonedHourEt(date: Date): number {
@@ -86,7 +160,8 @@ export function getZonedHourEt(date: Date): number {
 
 export function getCandleCountdowns(now = new Date()) {
   return {
-    fourHour: getNextCandleClose("4H", now),
+    fifteenMin: getNextCandleClose("15M", now),
     oneHour: getNextCandleClose("1H", now),
+    fourHour: getNextCandleClose("4H", now),
   };
 }
