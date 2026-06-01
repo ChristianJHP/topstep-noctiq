@@ -12,6 +12,7 @@ import { useSeedChartCandles } from "@/hooks/use-seed-chart-candles";
 import { BiasShiftToasts } from "@/components/radar/BiasShiftToasts";
 import { MarketBoard } from "@/components/radar/MarketBoard";
 import { GeopoliticsStrip } from "@/components/radar/GeopoliticsStrip";
+import { FeedbackBox } from "@/components/radar/FeedbackBox";
 import { MarketNewsFeed } from "@/components/radar/MarketNewsFeed";
 import { RadarLoader } from "@/components/radar/RadarLoader";
 
@@ -62,7 +63,7 @@ export function MarketRadar() {
             jhptrades.com
           </Link>
           <div className="mr-header-row">
-            <h1 className="mr-title">Market Radar</h1>
+            <h1 className="mr-title">Market Bias</h1>
             {tradingSession ? (
               <div className="mr-session-wrap">
                 <span
@@ -123,6 +124,7 @@ export function MarketRadar() {
           <MarketNewsFeed />
         </>
       )}
+      <FeedbackBox />
     </div>
   );
 }

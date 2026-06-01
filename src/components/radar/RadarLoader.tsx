@@ -24,7 +24,7 @@ export function RadarLoader() {
   }, []);
 
   return (
-    <div className="mr-loader" aria-busy="true" aria-label="Loading market radar">
+    <div className="mr-loader" aria-busy="true" aria-label="Loading market bias">
       <div className="mr-loader-geo" aria-hidden>
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="mr-loader-geo-row">

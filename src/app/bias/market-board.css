@@ -1,4 +1,4 @@
-/* Market Radar — instrument panel (no decorative chrome) */
+/* Market Bias — instrument panel (no decorative chrome) */
 
 @layer components {
   .mr-page {
@@ -1691,6 +1691,112 @@
     .news-feed-row {
       padding: 0.5rem 0.875rem;
     }
+  }
+
+  .feedback-box {
+    margin-top: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #12151c;
+    padding: 0.625rem 0.75rem 0.75rem;
+  }
+
+  .feedback-box-head {
+    margin-bottom: 0.5rem;
+  }
+
+  .feedback-box-title {
+    margin: 0;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .feedback-box-sub {
+    margin: 0.1875rem 0 0;
+    font-size: 0.625rem;
+    color: var(--muted);
+    opacity: 0.85;
+  }
+
+  .feedback-box-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4375rem;
+  }
+
+  .feedback-box-input {
+    width: 100%;
+    min-height: 4.5rem;
+    resize: vertical;
+    padding: 0.5rem 0.625rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #0f1216;
+    color: var(--foreground);
+    font-family: inherit;
+    font-size: 0.75rem;
+    line-height: 1.45;
+  }
+
+  .feedback-box-input::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+  }
+
+  .feedback-box-input:focus {
+    outline: none;
+    border-color: rgba(148, 163, 184, 0.45);
+  }
+
+  .feedback-box-input:disabled {
+    opacity: 0.6;
+  }
+
+  .feedback-box-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .feedback-box-count {
+    font-size: 0.625rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+  }
+
+  .feedback-box-ok {
+    color: var(--green);
+  }
+
+  .feedback-box-err {
+    color: var(--red);
+  }
+
+  .feedback-box-send {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    padding: 0.3125rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #1a1f28;
+    color: var(--foreground);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .feedback-box-send:hover:not(:disabled) {
+    border-color: rgba(148, 163, 184, 0.4);
+    background: #222830;
+  }
+
+  .feedback-box-send:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 
   .signal-chips {

@@ -3,9 +3,9 @@ import "./radar.css";
 import "./market-board.css";
 
 export const metadata: Metadata = {
-  title: "Market Radar",
+  title: "Market Bias",
   description:
-    "4-step NQ/ES prep: HTF bias, key levels, IFVG confirmation, and execution window.",
+    "NQ/ES/Gold bias, levels, charts, and geo context for futures prep.",
 };
 
 export default function BiasLayout({
