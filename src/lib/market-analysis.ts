@@ -32,7 +32,7 @@ export type ChartPlotZone = {
   top: number;
   bottom: number;
   type: "bullish" | "bearish";
-  timeframe: "4H" | "1H" | "15m";
+  timeframe: "4H" | "1H" | "15m" | "5m";
   kind: ChartPlotZoneKind;
   label: string;
   /** Unix seconds — where the zone formed */

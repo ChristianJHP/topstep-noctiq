@@ -104,6 +104,7 @@ export function chartCandlesSwrKey(
 
 /** One fetch serves both 1H and 4H charts. */
 export const CHART_PREFETCH_SPECS = [
+  { interval: "5m", range: "5d" },
   { interval: "15m", range: "7d" },
   { interval: "60m", range: "3mo" },
 ] as const;

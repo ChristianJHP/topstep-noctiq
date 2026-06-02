@@ -11,18 +11,20 @@ import { ChartOverlayToggles } from "@/components/radar/ChartOverlayToggles";
 import { LevelsSummary } from "@/components/radar/LevelsSummary";
 import { SymbolChartPane } from "@/components/radar/SymbolChartPane";
 import { useIsWideDesktop } from "@/hooks/use-is-wide-desktop";
+import { useLiveQuote } from "@/hooks/use-live-quote";
 
 export function SymbolColumn({ symbol }: { symbol: SymbolContext }) {
   const isWide = useIsWideDesktop();
-  const [timeframe, setTimeframe] = useState<ChartTimeframe>("15m");
+  const [timeframe, setTimeframe] = useState<ChartTimeframe>("5m");
   const { settings: overlays, toggle } = useChartOverlaySettings();
   const label = symbol.label as SymbolLabel;
+  const livePrice = useLiveQuote(symbol.ticker);
 
   return (
     <div className={`sym-col sym-col--solo${isWide ? " sym-col--wide" : ""}`}>
       <div className="sym-col-top">
         <CandleStateDots fourHour={symbol.fourHour} oneHour={symbol.oneHour} />
-        <SymbolPrice symbol={symbol} />
+        <SymbolPrice symbol={symbol} livePrice={livePrice} />
       </div>
 
       <ChartOverlayToggles settings={overlays} onToggle={toggle} />
@@ -35,6 +37,7 @@ export function SymbolColumn({ symbol }: { symbol: SymbolContext }) {
               symbol={symbol}
               timeframe={tf}
               overlays={overlays}
+              livePrice={livePrice}
             />
           ))}
         </div>
@@ -59,6 +62,7 @@ export function SymbolColumn({ symbol }: { symbol: SymbolContext }) {
             symbol={symbol}
             timeframe={timeframe}
             overlays={overlays}
+            livePrice={livePrice}
           />
         </>
       )}

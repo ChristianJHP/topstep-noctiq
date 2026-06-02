@@ -57,7 +57,8 @@ const fetcher = (url: string) =>
 export function useChartCandles(
   ticker: string,
   interval: string,
-  range: string
+  range: string,
+  refreshCapMs?: number
 ) {
   const swrKey = chartCandlesSwrKey(ticker, interval, range);
   const [storedFallback, setStoredFallback] = useState<
@@ -74,8 +75,12 @@ export function useChartCandles(
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     keepPreviousData: true,
-    refreshInterval: (latest) =>
-      (latest?.revalidateSec ?? CHART_CANDLES_REVALIDATE_OPEN_SEC) * 1000,
+    refreshInterval: (latest) => {
+      const base =
+        (latest?.revalidateSec ?? CHART_CANDLES_REVALIDATE_OPEN_SEC) * 1000;
+      if (refreshCapMs != null) return Math.min(base, refreshCapMs);
+      return base;
+    },
   });
 
   useEffect(() => {

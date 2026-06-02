@@ -2,12 +2,19 @@ import type { SymbolContext } from "@/lib/htf-status";
 import { formatDayChangePct } from "@/lib/day-change";
 import { formatPrice } from "@/lib/strategy-prep";
 
-export function SymbolPrice({ symbol }: { symbol: SymbolContext }) {
+export function SymbolPrice({
+  symbol,
+  livePrice,
+}: {
+  symbol: SymbolContext;
+  livePrice?: number | null;
+}) {
   const change = symbol.dayChange;
+  const price = livePrice ?? symbol.current;
 
   return (
     <div className="sym-col-price-wrap">
-      <p className="sym-col-price">{formatPrice(symbol.current)}</p>
+      <p className="sym-col-price">{formatPrice(price)}</p>
       {change ? (
         <p
           className={`sym-col-price-change${

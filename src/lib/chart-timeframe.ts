@@ -17,17 +17,25 @@ import {
 } from "@/lib/rejection-block-detect";
 import { sessionLinesForBars } from "@/lib/session-chart-lines";
 
-export type ChartTimeframe = "15m" | "1H" | "4H";
+export type ChartTimeframe = "5m" | "15m" | "1H" | "4H";
 
-export const CHART_TIMEFRAMES: ChartTimeframe[] = ["15m", "1H", "4H"];
+export const CHART_TIMEFRAMES: ChartTimeframe[] = ["5m", "15m", "1H", "4H"];
 
 type TfConfig = {
-  interval: "15m" | "60m";
+  interval: "5m" | "15m" | "60m";
   range: string;
   barCount: { mobile: number; desktop: number };
+  /** Cap SWR refresh while futures are open (ms). */
+  refreshCapMs?: number;
 };
 
 export const CHART_TF_CONFIG: Record<ChartTimeframe, TfConfig> = {
+  "5m": {
+    interval: "5m",
+    range: "5d",
+    barCount: { mobile: 72, desktop: 120 },
+    refreshCapMs: 45_000,
+  },
   "15m": {
     interval: "15m",
     range: "7d",
@@ -70,6 +78,25 @@ export function barsForTimeframe(
     bars = candlesToBars(candles);
   }
   return bars.slice(-limit);
+}
+
+/** Update the forming bar with a live quote so the chart matches the header price. */
+export function patchFormingBar(
+  bars: OhlcBar[],
+  livePrice: number | undefined
+): OhlcBar[] {
+  if (!livePrice || livePrice <= 0 || bars.length === 0) return bars;
+
+  const last = bars[bars.length - 1]!;
+  return [
+    ...bars.slice(0, -1),
+    {
+      ...last,
+      close: livePrice,
+      high: Math.max(last.high, livePrice),
+      low: Math.min(last.low, livePrice),
+    },
+  ];
 }
 
 export type PlottedFvg = {

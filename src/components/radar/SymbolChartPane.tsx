@@ -10,15 +10,18 @@ export function SymbolChartPane({
   symbol,
   timeframe,
   overlays,
+  livePrice,
 }: {
   symbol: SymbolContext;
   timeframe: ChartTimeframe;
   overlays: ChartOverlaySettings;
+  livePrice?: number | null;
 }) {
   const plot = useMemo(
     () => plotForTimeframe(symbol, timeframe),
     [symbol, timeframe]
   );
+  const currentPrice = livePrice ?? symbol.current;
 
   return (
     <div className="sym-chart-pane">
@@ -31,7 +34,7 @@ export function SymbolChartPane({
           plot={plot}
           timeframe={timeframe}
           overlays={overlays}
-          currentPrice={symbol.current}
+          currentPrice={currentPrice}
         />
       </div>
     </div>

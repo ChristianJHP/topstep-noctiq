@@ -26,6 +26,7 @@ import {
   CHART_RIGHT_OFFSET,
   CHART_TF_CONFIG,
   fitChartTimeScale,
+  patchFormingBar,
   rejectionZonesForBars,
   sessionLinesForBars,
   type ChartTimeframe,
@@ -143,7 +144,8 @@ export function MiniSymbolChart({
   const { candles, isLoading, error: fetchError } = useChartCandles(
     ticker,
     tfConfig.interval,
-    tfConfig.range
+    tfConfig.range,
+    tfConfig.refreshCapMs
   );
 
   const { candles: candles15m } = useChartCandles(ticker, "15m", "7d");
@@ -353,15 +355,18 @@ export function MiniSymbolChart({
   useEffect(() => {
     if (!mounted || !seriesRef.current || !candles.length) return;
 
-    const bars = sanitizeChartBars(
+    let bars = sanitizeChartBars(
       barsForTimeframe(candles, timeframe, barLimit)
     );
     if (bars.length === 0) return;
 
-    barCountRef.current = bars.length;
-    lastBarTimeRef.current = bars[bars.length - 1].time;
+    const livePrice = currentPrice ?? bars[bars.length - 1]!.close;
+    bars = patchFormingBar(bars, livePrice);
 
-    const price = currentPrice ?? bars[bars.length - 1].close;
+    barCountRef.current = bars.length;
+    lastBarTimeRef.current = bars[bars.length - 1]!.time;
+
+    const price = livePrice;
     setRbZones(rejectionZonesForBars(bars, timeframe, price, 2));
 
     if (candles15m.length) {

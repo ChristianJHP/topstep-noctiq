@@ -70,7 +70,7 @@ export function RadarLoader() {
               <span className="mr-loader-shimmer mr-loader-shimmer--price" />
             </div>
             <div className="mr-loader-tf">
-              {["15m", "1H", "4H"].map((tf, i) => (
+              {["5m", "15m", "1H", "4H"].map((tf, i) => (
                 <span
                   key={tf}
                   className={`mr-loader-tf-pill${i === 2 ? " mr-loader-tf-pill--active" : ""}`}

@@ -283,7 +283,7 @@ export function allWatchChips(
   const seen = new Set<string>();
   const out: WatchChip[] = [];
 
-  for (const tf of ["4H", "1H", "15m"] as ChartTimeframe[]) {
+  for (const tf of ["4H", "1H", "15m", "5m"] as ChartTimeframe[]) {
     for (const chip of symbolWatchChips(symbol, ctx, tf)) {
       if (seen.has(chip.id)) continue;
       seen.add(chip.id);
