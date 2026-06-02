@@ -1,4 +1,5 @@
 import { fetchHeadlinesMeta, type Headline } from "@/lib/headlines";
+import { classifyHeadline } from "@/lib/headline-classifier";
 import {
   fetchRecentTrumpPosts,
   type TrumpPost,
@@ -112,6 +113,12 @@ const WAR_UPDATE_PATTERNS: RegExp[] = [
   /white house.{0,40}(iran|israel|ukraine|war|sanction|deal|negotiat)/i,
   /trump.{0,50}(iran|israel|ukraine|russia|war|sanction|ceasefire|negotiat|deal|strike|military|tariff)/i,
   /(iran|israel|ukraine|russia).{0,50}trump.{0,50}(deal|talk|sanction|war|strike|negotiat)/i,
+  /\bdrone strike/i,
+  /\bkyiv\b/i,
+  /\bcentcom\b/i,
+  /us-iran/i,
+  /\btaiwan\b/i,
+  /russia.{0,80}(strike|attack|drone|refinery|war|ukraine)/i,
 ];
 
 const TRUMP_WAR_PATTERNS: RegExp[] = [
@@ -133,9 +140,18 @@ function isJunkHeadline(title: string): boolean {
   return HEADLINE_JUNK.some((p) => p.test(title));
 }
 
+const GEO_IMPORTANT_HINT =
+  /(iran|israel|ukraine|russia|taiwan|tariff|sanction|war|missile|strike|centcom|pentagon|hormuz|gaza|ceasefire|negotiat|conflict|military|drone|kyiv)/i;
+
 export function isWarUpdateHeadline(title: string): boolean {
-  if (isJunkHeadline(title)) return false;
-  return WAR_UPDATE_PATTERNS.some((p) => p.test(title));
+  // War/geo patterns win even inside futures-wrap headlines (Nasdaq + US-Iran war, etc.)
+  if (WAR_UPDATE_PATTERNS.some((p) => p.test(title))) return true;
+
+  const priority = classifyHeadline(title);
+  if (priority === "critical") return true;
+  if (priority === "important" && GEO_IMPORTANT_HINT.test(title)) return true;
+
+  return false;
 }
 
 export function isWarUpdateTrumpPost(text: string): boolean {
