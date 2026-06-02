@@ -6,6 +6,7 @@ import {
 import { chartCacheKey } from "@/lib/chart-candles-store";
 import { aggregate1h, aggregate4h, type OhlcBar } from "@/lib/ohlc-aggregate";
 import { analyzeSymbolMarket, type SymbolMarketAnalysis } from "@/lib/market-analysis";
+import { computeDayChange, type DayChange } from "@/lib/day-change";
 
 export type CandleBias = "bullish" | "bearish" | "neutral";
 
@@ -27,6 +28,7 @@ export interface SymbolContext {
   label: string;
   ticker: string;
   current: number;
+  dayChange: DayChange | null;
   fourHour: IntervalBias;
   oneHour: IntervalBias;
   expansion: string;
@@ -125,6 +127,7 @@ function buildSymbolContext(
     label,
     ticker,
     current: roundPts(current),
+    dayChange: computeDayChange(candles, current),
     fourHour: current4h
       ? toBias(current4h.close, current4h.open)
       : { bias: "neutral", emoji: "🟡", label: "—", colorLabel: "—" },

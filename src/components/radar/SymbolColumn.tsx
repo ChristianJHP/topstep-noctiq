@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { SymbolContext } from "@/lib/htf-status";
 import { CHART_TIMEFRAMES, type ChartTimeframe } from "@/lib/chart-timeframe";
 import type { SymbolLabel } from "@/lib/strategy-prep";
-import { formatPrice } from "@/lib/strategy-prep";
+import { SymbolPrice } from "@/components/radar/SymbolPrice";
 import { useChartOverlaySettings } from "@/lib/chart-overlay-settings";
 import { CandleStateDots } from "@/components/radar/CandleStateDots";
 import { ChartOverlayToggles } from "@/components/radar/ChartOverlayToggles";
@@ -22,7 +22,7 @@ export function SymbolColumn({ symbol }: { symbol: SymbolContext }) {
     <div className={`sym-col sym-col--solo${isWide ? " sym-col--wide" : ""}`}>
       <div className="sym-col-top">
         <CandleStateDots fourHour={symbol.fourHour} oneHour={symbol.oneHour} />
-        <p className="sym-col-price">{formatPrice(symbol.current)}</p>
+        <SymbolPrice symbol={symbol} />
       </div>
 
       <ChartOverlayToggles settings={overlays} onToggle={toggle} />

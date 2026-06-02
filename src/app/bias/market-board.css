@@ -1562,6 +1562,14 @@
     color: var(--muted);
   }
 
+  .sym-col-price-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.125rem;
+    min-width: 0;
+  }
+
   .sym-col-price {
     margin: 0;
     font-size: 1.375rem;
@@ -1572,9 +1580,41 @@
     line-height: 1;
   }
 
+  .sym-col-price-change {
+    display: flex;
+    align-items: center;
+    gap: 0.1875rem;
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .sym-col-price-glyph {
+    font-size: 0.5625rem;
+    line-height: 1;
+  }
+
+  .sym-col-price-change--up {
+    color: #3dd68c;
+  }
+
+  .sym-col-price-change--down {
+    color: #f2555a;
+  }
+
+  .sym-col-price-change--flat {
+    color: var(--muted);
+  }
+
   @media (min-width: 640px) {
     .sym-col-price {
       font-size: 1.5rem;
+    }
+
+    .sym-col-price-change {
+      font-size: 0.8125rem;
     }
   }
 
