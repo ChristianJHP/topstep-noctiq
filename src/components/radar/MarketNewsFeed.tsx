@@ -1,67 +1,47 @@
 "use client";
 
+import { useState } from "react";
 import useSWR from "swr";
-import { GEO_BRIEF_REVALIDATE_SEC } from "@/lib/geopolitics-brief";
 import type { MarketNewsItem } from "@/lib/geopolitics-sources";
 
 type GeoPayload = {
   feed?: MarketNewsItem[];
-  revalidateSec?: number;
 };
+
+const VISIBLE = 3;
 
 function formatTime(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "—";
 
-  const now = new Date();
-  const etToday = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/New_York",
-  }).format(now);
-  const etItem = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/New_York",
-  }).format(date);
-
-  const time = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
-
-  if (etItem === etToday) return time;
-
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const etYesterday = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/New_York",
-  }).format(yesterday);
-  if (etItem === etYesterday) return `Yday ${time}`;
-
   return new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
-    month: "short",
-    day: "numeric",
     hour: "numeric",
     minute: "2-digit",
   }).format(date);
 }
 
-function importanceLabel(
-  item: MarketNewsItem
-): { text: string; className: string } {
-  if (item.kind === "trump") {
-    return { text: "Trump", className: "news-feed-tag--trump" };
-  }
-  switch (item.importance) {
-    case "critical":
-      return { text: "Must know", className: "news-feed-tag--critical" };
-    case "important":
-      return { text: "Macro", className: "news-feed-tag--important" };
+function labelClass(label: MarketNewsItem["label"]): string {
+  switch (label) {
+    case "MUST KNOW":
+      return "news-feed-tag--must-know";
+    case "HIGH IMPACT":
+      return "news-feed-tag--high-impact";
+    case "GEO":
+      return "news-feed-tag--geo";
+    case "MACRO":
+      return "news-feed-tag--macro";
+    case "EARNINGS":
+      return "news-feed-tag--earnings";
+    case "DATA":
+      return "news-feed-tag--data";
     default:
-      return { text: "FYI", className: "news-feed-tag--minor" };
+      return "news-feed-tag--watch";
   }
 }
 
 export function MarketNewsFeed() {
+  const [expanded, setExpanded] = useState(false);
   const { data, isLoading } = useSWR<GeoPayload>(
     "/api/bias/geopolitics",
     (url: string) => fetch(url).then((r) => r.json()),
@@ -73,6 +53,8 @@ export function MarketNewsFeed() {
   );
 
   const feed = data?.feed ?? [];
+  const visible = expanded ? feed : feed.slice(0, VISIBLE);
+  const hiddenCount = Math.max(0, feed.length - VISIBLE);
 
   if (isLoading && feed.length === 0) {
     return (
@@ -84,7 +66,7 @@ export function MarketNewsFeed() {
 
   if (feed.length === 0) {
     return (
-      <section className="news-feed" aria-label="Market news">
+      <section className="news-feed news-feed--compact" aria-label="Market news">
         <header className="news-feed-head">
           <h2 className="news-feed-title">News</h2>
           <span className="news-feed-sub">Live · NQ · ES · Gold</span>
@@ -97,39 +79,52 @@ export function MarketNewsFeed() {
   }
 
   return (
-    <section className="news-feed" aria-label="Market news">
+    <section className="news-feed news-feed--compact" aria-label="Market news">
       <header className="news-feed-head">
         <h2 className="news-feed-title">News</h2>
         <span className="news-feed-sub">Live · NQ · ES · Gold</span>
       </header>
       <ul className="news-feed-list">
-        {feed.map((item) => {
-          const tag = importanceLabel(item);
-          return (
-            <li
-              key={item.id}
-              className={`news-feed-row news-feed-row--${item.importance}`}
-            >
-              <span className={`news-feed-tag ${tag.className}`}>{tag.text}</span>
-              {item.link ? (
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="news-feed-text"
-                >
-                  {item.text}
-                </a>
-              ) : (
-                <p className="news-feed-text">{item.text}</p>
-              )}
-              <time className="news-feed-time" dateTime={item.publishedAt}>
-                {formatTime(item.publishedAt)}
-              </time>
-            </li>
-          );
-        })}
+        {visible.map((item) => (
+          <li key={item.id} className="news-feed-row">
+            <div className="news-feed-tags">
+              <span className={`news-feed-tag ${labelClass(item.label)}`}>
+                {item.label}
+              </span>
+              {item.topics.map((topic) => (
+                <span key={topic} className="news-feed-topic">
+                  {topic}
+                </span>
+              ))}
+            </div>
+            {item.link ? (
+              <a
+                href={item.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="news-feed-text"
+              >
+                {item.text}
+              </a>
+            ) : (
+              <p className="news-feed-text">{item.text}</p>
+            )}
+            <time className="news-feed-time" dateTime={item.publishedAt}>
+              {formatTime(item.publishedAt)}
+            </time>
+          </li>
+        ))}
       </ul>
+      {hiddenCount > 0 ? (
+        <button
+          type="button"
+          className="news-feed-more"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+        >
+          {expanded ? "Show less" : `Show ${hiddenCount} more`}
+        </button>
+      ) : null}
     </section>
   );
 }

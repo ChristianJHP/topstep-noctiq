@@ -7,7 +7,7 @@ import {
   GEO_BRIEF_REVALIDATE_SEC,
   getCachedGeopoliticsBrief,
 } from "@/lib/geopolitics-brief";
-import { gatherGeopoliticsSources, buildMarketNewsFeed } from "@/lib/geopolitics-sources";
+import { gatherGeopoliticsSources, buildMarketNewsFeed, buildContextFeed } from "@/lib/geopolitics-sources";
 import { isFuturesSessionOpen } from "@/lib/futures-session";
 
 export const dynamic = "force-dynamic";
@@ -34,10 +34,12 @@ export async function GET() {
     try {
       const sources = await gatherGeopoliticsSources();
       const strings = formatGeopoliticsDeterministic(sources);
+      const feed = buildMarketNewsFeed(sources);
       return NextResponse.json(
         {
           ...attachSourceLinks(strings, sources),
-          feed: buildMarketNewsFeed(sources),
+          feed,
+          contextFeed: buildContextFeed(feed, sources.headlines),
           generatedAt: new Date().toISOString(),
           configured: false,
           revalidateSec,
@@ -59,6 +61,7 @@ export async function GET() {
           },
           markets: "Unknown headline risk — size down until context clears.",
           feed: [],
+          contextFeed: [],
           generatedAt: new Date().toISOString(),
           configured: false,
           revalidateSec: 60,

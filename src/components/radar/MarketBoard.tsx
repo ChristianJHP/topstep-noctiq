@@ -3,7 +3,9 @@
 import { useMemo, useState } from "react";
 import type { MarketContext } from "@/lib/htf-status";
 import { computeSymbolPrep } from "@/lib/strategy-prep";
+import type { TradingSessionLabel } from "@/lib/trading-session";
 import { BiasStrip } from "@/components/radar/BiasStrip";
+import { MarketContextCard } from "@/components/radar/MarketContextCard";
 import { SymbolColumn } from "@/components/radar/SymbolColumn";
 import { usePrefetchChartCandles } from "@/hooks/use-prefetch-chart-candles";
 import type { ChartCandlesPayload } from "@/lib/chart-candles-cache";
@@ -24,6 +26,7 @@ type MarketBoardProps = {
   fourHMs: number | null;
   candlesPaused: boolean;
   chartCandles?: Record<string, ChartCandlesPayload>;
+  sessionLabel: TradingSessionLabel | "Closed";
 };
 
 export function MarketBoard({
@@ -34,6 +37,7 @@ export function MarketBoard({
   fourHMs,
   candlesPaused,
   chartCandles,
+  sessionLabel,
 }: MarketBoardProps) {
   const [tab, setTab] = useState<RadarTab>("NQ");
   usePrefetchChartCandles(chartCandles);
@@ -71,6 +75,15 @@ export function MarketBoard({
             </button>
           ))}
         </div>
+
+        <MarketContextCard
+          symbol={symbol}
+          markets={markets}
+          prep={symbolPrep}
+          session={sessionLabel}
+          fifteenMMs={fifteenMMs}
+          candlesPaused={candlesPaused}
+        />
 
         <SymbolColumn key={tab} symbol={symbol} />
       </div>

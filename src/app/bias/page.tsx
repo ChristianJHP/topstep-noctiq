@@ -1,5 +1,4 @@
 import { MarketRadar } from "@/components/radar/MarketRadar";
-import { CalendarPanel } from "@/components/CalendarPanel";
 import { FeedbackBox } from "@/components/radar/FeedbackBox";
 import { getRadarPayload } from "@/lib/radar-payload";
 
@@ -16,11 +15,6 @@ export default async function BiasPage() {
   return (
     <main className="radar-shell">
       <MarketRadar initialData={initialRadar} />
-
-      <div className="mr-details">
-        <CalendarPanel initialRadar={initialRadar} />
-      </div>
-
       <FeedbackBox />
     </main>
   );

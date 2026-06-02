@@ -16,7 +16,8 @@ import { RedFolderMoveToasts } from "@/components/radar/RedFolderMoveToasts";
 import { MarketBoard } from "@/components/radar/MarketBoard";
 import { useRedFolderMoveAlerts } from "@/hooks/use-red-folder-move-alerts";
 import type { EconomicEvent } from "@/lib/events";
-import { GeopoliticsStrip } from "@/components/radar/GeopoliticsStrip";
+import { ContextFeed } from "@/components/radar/ContextFeed";
+import { CalendarPanel } from "@/components/CalendarPanel";
 import { MarketNewsFeed } from "@/components/radar/MarketNewsFeed";
 import { RadarLoader } from "@/components/radar/RadarLoader";
 
@@ -112,6 +113,9 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
         </div>
         <div className="mr-header-actions">
           <div className="mr-header-notify-row">
+            <div className="mr-header-calendar">
+              <CalendarPanel initialRadar={initialData ?? undefined} />
+            </div>
             {alertsEnabled ? (
               <button
                 type="button"
@@ -144,7 +148,7 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
         <RadarLoader />
       ) : ctx ? (
         <>
-          <GeopoliticsStrip />
+          <ContextFeed />
           <MarketBoard
             markets={ctx}
             now={now}
@@ -153,6 +157,9 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
             fourHMs={fourH.remainingMs}
             candlesPaused={oneH.paused}
             chartCandles={data?.chartCandles}
+            sessionLabel={
+              tradingSession.isMarketOpen ? tradingSession.label : "Closed"
+            }
           />
           <MarketNewsFeed />
         </>

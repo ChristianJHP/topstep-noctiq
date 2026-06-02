@@ -1,6 +1,13 @@
 import { fetchHeadlinesMeta, type Headline } from "@/lib/headlines";
 import { classifyHeadline } from "@/lib/headline-classifier";
 import {
+  assignMustKnowLabels,
+  classifyNewsHeadline,
+  shortHeadline,
+  type ContextFeedCategory,
+  type NewsLabel,
+} from "@/lib/news-tags";
+import {
   fetchRecentTrumpPosts,
   type TrumpPost,
 } from "@/lib/truthsocial-fetch";
@@ -23,10 +30,16 @@ export type MarketNewsItem = {
   text: string;
   link: string | null;
   publishedAt: string;
-  importance: NewsImportance;
+  label: NewsLabel;
+  topics: string[];
+  impactScore: number;
 };
 
-export type NewsImportance = "critical" | "important" | "minor";
+export type ContextFeedRow = {
+  category: ContextFeedCategory;
+  text: string;
+  link: string | null;
+};
 
 /** Market-wrap slop — not war news. */
 const HEADLINE_JUNK: RegExp[] = [
@@ -167,19 +180,100 @@ export function isGeoTopic(text: string): boolean {
   return isWarUpdateHeadline(text) || isWarUpdateTrumpPost(text);
 }
 
-function importanceForTitle(title: string): NewsImportance {
-  const priority = classifyHeadline(title);
-  if (priority === "critical") return "critical";
-  if (priority === "important") return "important";
-  return "minor";
+function tagHeadline(title: string, kind: "headline" | "trump") {
+  const tags = classifyNewsHeadline(title);
+  if (kind === "trump" && tags.label === "WATCH") {
+    return {
+      ...tags,
+      label: "MACRO" as NewsLabel,
+      impactScore: tags.impactScore + 12,
+      topics: [...new Set([...tags.topics, "POLICY"])],
+    };
+  }
+  return tags;
 }
 
-function importanceForTrump(text: string): NewsImportance {
-  if (isWarUpdateTrumpPost(text)) return "critical";
-  const priority = classifyHeadline(text);
-  if (priority === "critical") return "critical";
-  if (priority === "important") return "important";
-  return "minor";
+/** Live market headlines + Trump posts — newest first, deduped. */
+export function buildMarketNewsFeed(
+  sources: GeopoliticsSources,
+  limit = 10
+): MarketNewsItem[] {
+  const headlineItems: MarketNewsItem[] = sources.headlines.map((h) => {
+    const tags = tagHeadline(h.title, "headline");
+    return {
+      id: `h:${h.link || h.title}`,
+      kind: "headline" as const,
+      text: truncate(h.title, 130),
+      link: h.link,
+      publishedAt: h.publishedAt,
+      label: tags.label,
+      topics: tags.topics,
+      impactScore: tags.impactScore,
+    };
+  });
+
+  const trumpItems: MarketNewsItem[] = sources.trumpPosts
+    .slice(0, 6)
+    .map((p) => {
+      const tags = tagHeadline(p.text, "trump");
+      return {
+        id: `t:${p.id}`,
+        kind: "trump" as const,
+        text: truncate(p.text, 130),
+        link: p.url || null,
+        publishedAt: p.publishedAt,
+        label: tags.label,
+        topics: tags.topics,
+        impactScore: tags.impactScore,
+      };
+    });
+
+  const merged = [...headlineItems, ...trumpItems].sort(
+    (a, b) =>
+      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+  );
+
+  const deduped = dedupeNewsItems(merged, limit);
+  return assignMustKnowLabels(deduped, 2);
+}
+
+export function buildContextFeed(
+  feed: MarketNewsItem[],
+  headlines: GeoHeadline[]
+): ContextFeedRow[] {
+  const rows: ContextFeedRow[] = [];
+  const used = new Set<string>();
+
+  const tryAdd = (category: ContextFeedCategory, text: string, link: string | null) => {
+    const key = `${category}:${text}`;
+    if (used.has(key) || !text.trim()) return;
+    used.add(key);
+    rows.push({ category, text: shortHeadline(text, 56), link });
+  };
+
+  for (const cat of ["GEO", "POLICY", "DATA", "WATCH"] as ContextFeedCategory[]) {
+    const fromFeed = feed.find((item) => {
+      const tags = classifyNewsHeadline(item.text);
+      return tags.contextCategory === cat;
+    });
+    if (fromFeed) {
+      tryAdd(cat, fromFeed.text, fromFeed.link);
+      continue;
+    }
+    for (const h of headlines) {
+      const tags = classifyNewsHeadline(h.title);
+      if (tags.contextCategory === cat) {
+        tryAdd(cat, h.title, h.link);
+        break;
+      }
+    }
+  }
+
+  if (rows.length === 0 && headlines[0]) {
+    tryAdd("WATCH", headlines[0].title, headlines[0].link);
+  }
+
+  return rows.slice(0, 3);
 }
 
 /** Live RSS headlines — market-moving first, then recent wire, minus obvious slop. */
@@ -311,39 +405,6 @@ function dedupeNewsItems(items: MarketNewsItem[], limit: number): MarketNewsItem
     if (kept.length >= limit) break;
   }
   return kept;
-}
-
-/** Live market headlines + Trump posts — newest first, deduped. */
-export function buildMarketNewsFeed(
-  sources: GeopoliticsSources,
-  limit = 10
-): MarketNewsItem[] {
-  const headlineItems: MarketNewsItem[] = sources.headlines.map((h) => ({
-    id: `h:${h.link || h.title}`,
-    kind: "headline" as const,
-    text: truncate(h.title, 130),
-    link: h.link,
-    publishedAt: h.publishedAt,
-    importance: importanceForTitle(h.title),
-  }));
-
-  const trumpItems: MarketNewsItem[] = sources.trumpPosts
-    .slice(0, 6)
-    .map((p) => ({
-      id: `t:${p.id}`,
-      kind: "trump" as const,
-      text: truncate(p.text, 130),
-      link: p.url || null,
-      publishedAt: p.publishedAt,
-      importance: importanceForTrump(p.text),
-    }));
-
-  const merged = [...headlineItems, ...trumpItems].sort(
-    (a, b) =>
-      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-  );
-
-  return dedupeNewsItems(merged, limit);
 }
 
 export function truncate(text: string, max: number): string {

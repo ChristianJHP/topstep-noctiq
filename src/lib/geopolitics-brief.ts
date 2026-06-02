@@ -3,13 +3,14 @@ import { generateText } from "ai";
 import { getBiasSummaryModel, isAiGatewayConfigured } from "@/lib/ai-gateway";
 import { isFuturesSessionOpen } from "@/lib/futures-session";
 import {
+  buildContextFeed,
   buildMarketNewsFeed,
   gatherGeopoliticsSources,
   truncate,
+  type ContextFeedRow,
   type GeopoliticsSources,
   type MarketNewsItem,
 } from "@/lib/geopolitics-sources";
-import { classifyHeadline } from "@/lib/headline-classifier";
 
 export const GEO_BRIEF_REVALIDATE_SEC = 3 * 60;
 export const GEO_BRIEF_CLOSED_REVALIDATE_SEC = 10 * 60;
@@ -24,6 +25,7 @@ export type GeopoliticsBriefPayload = {
   trump: GeoBriefField | null;
   expect: GeoBriefField;
   markets: string;
+  contextFeed: ContextFeedRow[];
   feed: MarketNewsItem[];
   generatedAt: string;
   configured: boolean;
@@ -39,7 +41,7 @@ type GeopoliticsBriefStrings = {
 
 type GeopoliticsBriefCore = Omit<
   GeopoliticsBriefPayload,
-  "generatedAt" | "configured" | "revalidateSec" | "feed"
+  "generatedAt" | "configured" | "revalidateSec" | "feed" | "contextFeed"
 >;
 
 function buildPrompt(sources: GeopoliticsSources): string {
@@ -182,28 +184,38 @@ function isPlaceholderExpect(text: string): boolean {
 export function formatGeopoliticsDeterministic(
   sources: GeopoliticsSources
 ): GeopoliticsBriefStrings {
-  const headline = sources.headlines[0];
-  const critical =
-    sources.headlines.find((h) => classifyHeadline(h.title) === "critical") ??
-    headline;
+  const feed = buildMarketNewsFeed(sources);
+  const contextFeed = buildContextFeed(feed, sources.headlines);
 
-  const war = critical
-    ? firstShortClause(critical.title, 10, 62)
-    : "Quiet tape — no headline risk.";
+  const geoRow = contextFeed.find((r) => r.category === "GEO");
+  const policyRow = contextFeed.find((r) => r.category === "POLICY");
+  const dataRow = contextFeed.find((r) => r.category === "DATA");
+  const watchRow = contextFeed.find((r) => r.category === "WATCH");
+
+  const top = feed.find((f) => f.label === "MUST KNOW") ?? feed[0];
+  const war = geoRow
+    ? geoRow.text
+    : top
+      ? firstShortClause(top.text, 10, 62)
+      : "Quiet tape — no headline risk.";
 
   const trumpPost = sources.trumpPosts[0] ?? null;
-  const trump = trumpPost
-    ? firstShortClause(trumpPost.text, 8, 52)
-    : null;
+  const trump = policyRow
+    ? firstShortClause(policyRow.text, 8, 52)
+    : trumpPost
+      ? firstShortClause(trumpPost.text, 8, 52)
+      : null;
 
-  const expect = critical
-    ? classifyHeadline(critical.title) === "critical"
-      ? "Watch headline follow-through on NQ next 24h."
-      : "Macro noise low — trade levels unless headline breaks."
-    : "Feed quiet — structure over news.";
+  const expect = dataRow
+    ? firstShortClause(dataRow.text, 10, 58)
+    : watchRow
+      ? firstShortClause(watchRow.text, 10, 58)
+      : top
+        ? "Watch headline follow-through on NQ next 24h."
+        : "Feed quiet — structure over news.";
 
   const riskOff = riskOffHint(
-    `${critical?.title ?? ""} ${trumpPost?.text ?? ""}`
+    `${geoRow?.text ?? ""} ${top?.text ?? ""} ${trumpPost?.text ?? ""}`
   );
   const markets = riskOff
     ? "Headline risk — NQ/ES heavy, gold bid on gaps."
@@ -216,14 +228,19 @@ function attachFeed(
   brief: GeopoliticsBriefStrings,
   sources: GeopoliticsSources
 ): Omit<GeopoliticsBriefPayload, "generatedAt" | "configured" | "revalidateSec"> {
-  return { ...attachSourceLinks(brief, sources), feed: buildMarketNewsFeed(sources) };
+  const feed = buildMarketNewsFeed(sources);
+  return {
+    ...attachSourceLinks(brief, sources),
+    feed,
+    contextFeed: buildContextFeed(feed, sources.headlines),
+  };
 }
 
 function finalizeBrief(
   brief: Omit<GeopoliticsBriefPayload, "generatedAt" | "configured" | "revalidateSec">,
   base: Pick<GeopoliticsBriefPayload, "generatedAt" | "configured" | "revalidateSec">
 ): GeopoliticsBriefPayload {
-  const { feed, ...core } = brief;
+  const { feed, contextFeed, ...core } = brief;
   const clamped = sanitizeGeoBrief({
     war: core.war.text,
     trump: core.trump?.text ?? null,
@@ -239,6 +256,7 @@ function finalizeBrief(
     expect: { text: clamped.expect, link: core.expect.link },
     markets: clamped.markets,
     feed,
+    contextFeed,
     ...base,
   };
 }
@@ -285,13 +303,13 @@ async function generateGeopoliticsBrief(): Promise<GeopoliticsBriefPayload> {
 
 const getCachedGeoBriefOpen = unstable_cache(
   generateGeopoliticsBrief,
-  ["geopolitics-brief-v8-open"],
+  ["geopolitics-brief-v9-open"],
   { revalidate: GEO_BRIEF_REVALIDATE_SEC, tags: ["geopolitics-brief"] }
 );
 
 const getCachedGeoBriefClosed = unstable_cache(
   generateGeopoliticsBrief,
-  ["geopolitics-brief-v8-closed"],
+  ["geopolitics-brief-v9-closed"],
   { revalidate: GEO_BRIEF_CLOSED_REVALIDATE_SEC, tags: ["geopolitics-brief"] }
 );
 
@@ -320,6 +338,7 @@ export async function composeGeopoliticsPayload(
     {
       ...attachSourceLinks(strings, sources),
       feed: live.feed,
+      contextFeed: live.contextFeed,
     },
     {
       generatedAt: new Date().toISOString(),
