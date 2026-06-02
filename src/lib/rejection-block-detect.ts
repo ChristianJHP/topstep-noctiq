@@ -196,16 +196,23 @@ export function detectRejectionBlocks(bars: OhlcBar[]): RejectionBlock[] {
   return annotateMitigation([...unique.values()], bars);
 }
 
+function maxDistForSymbol(label: string, current: number): number {
+  if (label === "GC") return Math.max(current * 0.012, 8);
+  if (label === "ES") return Math.max(current * 0.012, 15);
+  return Math.max(current * 0.015, 50);
+}
+
 /** Active rejection blocks near current price for the chart overlay. */
 export function relevantRejectionBlocksForChart(
   blocks: RejectionBlock[],
   current: number,
-  max: number
+  max: number,
+  symbolLabel?: string
 ): RejectionBlock[] {
   if (max <= 0 || current <= 0) return [];
 
   const pool = blocks.filter((b) => !b.mitigated);
-  const maxDist = Math.max(current * 0.015, 50);
+  const maxDist = maxDistForSymbol(symbolLabel ?? "NQ", current);
 
   const scored = pool
     .map((block) => {

@@ -1,16 +1,19 @@
 import type { SymbolContext } from "@/lib/htf-status";
-import { formatDayChangePct } from "@/lib/day-change";
+import { dayChangeFromPriorClose, formatDayChangePct } from "@/lib/day-change";
 import { formatPrice } from "@/lib/strategy-prep";
+import type { LiveQuote } from "@/lib/yahoo-live-quote";
 
 export function SymbolPrice({
   symbol,
-  livePrice,
+  liveQuote,
 }: {
   symbol: SymbolContext;
-  livePrice?: number | null;
+  liveQuote?: LiveQuote | null;
 }) {
-  const change = symbol.dayChange;
-  const price = livePrice ?? symbol.current;
+  const price = liveQuote?.price ?? symbol.current;
+  const change =
+    dayChangeFromPriorClose(price, liveQuote?.previousClose) ??
+    symbol.dayChange;
 
   return (
     <div className="sym-col-price-wrap">

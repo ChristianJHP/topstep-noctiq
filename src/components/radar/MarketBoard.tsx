@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import type { MarketContext } from "@/lib/htf-status";
+import { MARKET_TICKERS } from "@/lib/chart-data";
 import type { TradingSessionLabel } from "@/lib/trading-session";
 import { MarketContextCard } from "@/components/radar/MarketContextCard";
 import { SymbolColumn } from "@/components/radar/SymbolColumn";
 import { usePrefetchChartCandles } from "@/hooks/use-prefetch-chart-candles";
+import { useLiveQuote } from "@/hooks/use-live-quote";
 import type { ChartCandlesPayload } from "@/lib/chart-candles-cache";
 
 export type RadarTab = "NQ" | "ES" | "GC";
@@ -34,8 +36,14 @@ export function MarketBoard({
   const [tab, setTab] = useState<RadarTab>("NQ");
   usePrefetchChartCandles(chartCandles);
 
+  const nqQuote = useLiveQuote(MARKET_TICKERS.NQ);
+  const esQuote = useLiveQuote(MARKET_TICKERS.ES);
+  const gcQuote = useLiveQuote(MARKET_TICKERS.GC);
+
   const symbol =
     tab === "NQ" ? markets.nq : tab === "ES" ? markets.es : markets.gold;
+  const liveQuote =
+    tab === "NQ" ? nqQuote : tab === "ES" ? esQuote : gcQuote;
 
   return (
     <section className="mr-board">
@@ -60,9 +68,14 @@ export function MarketBoard({
           session={sessionLabel}
           fifteenMMs={fifteenMMs}
           candlesPaused={candlesPaused}
+          liveQuote={liveQuote}
         />
 
-        <SymbolColumn key={tab} symbol={symbol} />
+        <SymbolColumn
+          key={tab}
+          symbol={symbol}
+          liveQuote={liveQuote}
+        />
       </div>
     </section>
   );

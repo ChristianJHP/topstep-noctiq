@@ -10,7 +10,7 @@ const fetcher = (url: string) =>
   });
 
 /** Poll Yahoo 1m quote so header + forming candle stay near live. */
-export function useLiveQuote(ticker: string): number | null {
+export function useLiveQuote(ticker: string): LiveQuote | null {
   const { data } = useSWR<LiveQuote>(
     `/api/quote?ticker=${encodeURIComponent(ticker)}`,
     fetcher,
@@ -21,6 +21,6 @@ export function useLiveQuote(ticker: string): number | null {
     }
   );
 
-  if (data?.price && data.price > 0) return data.price;
+  if (data?.price && data.price > 0) return data;
   return null;
 }

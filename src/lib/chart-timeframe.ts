@@ -121,7 +121,12 @@ export function plottedFvgsForTimeframe(
   const pool =
     plotTf === "4H" ? symbol.analysis.fvgs4h : symbol.analysis.fvgs1h;
 
-  const picked = relevantFvgsForChart(pool, current, fvgLimit(chartTf));
+  const picked = relevantFvgsForChart(
+    pool,
+    current,
+    fvgLimit(chartTf),
+    symbol.label
+  );
   return picked.map((fvg) => ({ timeframe: plotTf, fvg }));
 }
 
@@ -218,11 +223,17 @@ export function rejectionZonesForBars(
   bars: OhlcBar[],
   chartTf: ChartTimeframe,
   current: number,
-  max = 2
+  max = 2,
+  symbolLabel?: string
 ): SymbolChartPlot["zones"] {
   if (!bars.length || current <= 0) return [];
   const blocks = detectRejectionBlocks(bars);
-  const picked = relevantRejectionBlocksForChart(blocks, current, max);
+  const picked = relevantRejectionBlocksForChart(
+    blocks,
+    current,
+    max,
+    symbolLabel
+  );
   return picked.map((block) => rejectionToChartZone(block, chartTf));
 }
 

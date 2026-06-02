@@ -195,14 +195,17 @@ export function activeFvgsForChart(
 export function relevantFvgsForChart(
   fvgs: FairValueGap[],
   current: number,
-  max: number
+  max: number,
+  symbolLabel?: string
 ): FairValueGap[] {
   if (max <= 0 || current <= 0) return [];
 
   const pool = fvgs.filter(
     (f) => !f.mitigated && f.respect !== "disrespected"
   );
-  const maxDist = Math.max(current * 0.015, 50);
+  const minDist =
+    symbolLabel === "GC" ? 8 : symbolLabel === "ES" ? 15 : 50;
+  const maxDist = Math.max(current * 0.012, minDist);
 
   const scored = pool
     .map((fvg) => {

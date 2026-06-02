@@ -56,3 +56,17 @@ export function formatDayChangePct(pct: number): string {
   const sign = pct > 0 ? "+" : pct < 0 ? "" : "";
   return `${sign}${pct.toFixed(2)}%`;
 }
+
+/** Prior settlement day change — matches TradingView / Yahoo. */
+export function dayChangeFromPriorClose(
+  price: number,
+  previousClose: number | null | undefined
+): DayChange | null {
+  if (!previousClose || previousClose <= 0 || !Number.isFinite(price)) {
+    return null;
+  }
+  const pts = Math.round((price - previousClose) * 100) / 100;
+  const pct =
+    Math.round(((price - previousClose) / previousClose) * 10000) / 100;
+  return { pct, pts, reference: previousClose };
+}

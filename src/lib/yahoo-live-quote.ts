@@ -3,6 +3,8 @@ import { MARKET_TICKERS } from "@/lib/chart-data";
 export type LiveQuote = {
   ticker: string;
   price: number;
+  /** Prior settlement — matches TradingView / Yahoo day-change %. */
+  previousClose: number | null;
   /** Unix seconds — when Yahoo last updated the quote. */
   quoteTime: number;
   /** Forming 1m bar at quoteTime (if available). */
@@ -20,6 +22,8 @@ type YahooChartResult = {
   meta?: {
     regularMarketPrice?: number;
     regularMarketTime?: number;
+    previousClose?: number;
+    chartPreviousClose?: number;
   };
   timestamp?: number[];
   indicators?: {
@@ -95,9 +99,16 @@ export async function fetchYahooLiveQuote(
   const quoteTime =
     meta?.regularMarketTime ?? bar?.time ?? Math.floor(Date.now() / 1000);
 
+  const previousClose =
+    meta?.previousClose ?? meta?.chartPreviousClose ?? null;
+
   return {
     ticker,
     price,
+    previousClose:
+      previousClose != null && Number.isFinite(previousClose)
+        ? previousClose
+        : null,
     quoteTime,
     bar,
     fetchedAt: Date.now(),

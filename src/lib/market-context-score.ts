@@ -34,31 +34,42 @@ function rangeDescriptor(pct: number): string {
   return "4H range active";
 }
 
-function nearCleanLevel(symbol: SymbolContext): boolean {
+function pctInH4Range(symbol: SymbolContext, price: number): number {
+  if (symbol.h4High <= symbol.h4Low) return 50;
+  return Math.round(
+    ((price - symbol.h4Low) / (symbol.h4High - symbol.h4Low)) * 100
+  );
+}
+
+function nearCleanLevel(symbol: SymbolContext, price: number): boolean {
   const threshold = symbol.label === "GC" ? 6 : symbol.label === "ES" ? 4 : 20;
   const dists = [
-    symbol.distances.toH4High,
-    symbol.distances.toH4Low,
-    symbol.distances.toH1High,
-    symbol.distances.toH1Low,
+    symbol.h4High - price,
+    price - symbol.h4Low,
+    symbol.h1High - price,
+    price - symbol.h1Low,
   ];
   if (symbol.analysis.cisd) {
-    dists.push(Math.abs(symbol.current - symbol.analysis.cisd.price));
+    dists.push(Math.abs(price - symbol.analysis.cisd.price));
   }
   if (symbol.analysis.swingHigh) {
-    dists.push(Math.abs(symbol.current - symbol.analysis.swingHigh));
+    dists.push(Math.abs(price - symbol.analysis.swingHigh));
   }
   if (symbol.analysis.swingLow) {
-    dists.push(Math.abs(symbol.current - symbol.analysis.swingLow));
+    dists.push(Math.abs(price - symbol.analysis.swingLow));
   }
   return dists.some((d) => d <= threshold);
 }
 
 /** Mechanical clarity — not discretionary. */
-export function computeContextClarity(symbol: SymbolContext): ClarityLevel {
+export function computeContextClarity(
+  symbol: SymbolContext,
+  livePrice?: number | null
+): ClarityLevel {
+  const price = livePrice ?? symbol.current;
   const h4 = symbol.fourHour.bias;
   const h1 = symbol.oneHour.bias;
-  const pct = symbol.pctInH4Range;
+  const pct = pctInH4Range(symbol, price);
   const mixed = candleSymbolBias(symbol) === "mixed";
   const inChop = pct >= 30 && pct <= 70;
   const tfConflict =
@@ -67,18 +78,19 @@ export function computeContextClarity(symbol: SymbolContext): ClarityLevel {
 
   if (inChop || (h4 === "neutral" && h1 === "neutral")) return "Low";
   if (tfConflict || mixed) return "Medium";
-  if (aligned && nearCleanLevel(symbol)) return "High";
+  if (aligned && nearCleanLevel(symbol, price)) return "High";
   return "Medium";
 }
 
 export function computeContextScores(
   symbol: SymbolContext,
   session: TradingSessionLabel | "Closed",
-  feed: MarketNewsItem[]
+  feed: MarketNewsItem[],
+  livePrice?: number | null
 ): MarketContextScores {
-  let clarity = computeContextClarity(symbol);
+  let clarity = computeContextClarity(symbol, livePrice);
 
-  const pct = symbol.pctInH4Range;
+  const pct = pctInH4Range(symbol, livePrice ?? symbol.current);
   let volatility: VolatilityLevel = "Normal";
   if (pct >= 85 || pct <= 15) volatility = "Elevated";
   else if (pct >= 35 && pct <= 65) volatility = "Low";
@@ -106,11 +118,14 @@ export function buildMarketSnapshot(
   session: TradingSessionLabel | "Closed",
   fifteenMMs: number | null,
   candlesPaused: boolean,
-  topCatalyst: string | null
+  topCatalyst: string | null,
+  livePrice?: number | null
 ): MarketSnapshot {
   const bias = contextBiasLabel(candleSymbolBias(symbol));
-  const price = formatPrice(symbol.current);
-  const range = rangeDescriptor(symbol.pctInH4Range);
+  const price = formatPrice(livePrice ?? symbol.current);
+  const range = rangeDescriptor(
+    pctInH4Range(symbol, livePrice ?? symbol.current)
+  );
   const sessionPart =
     session === "Closed" ? "Futures closed" : `${session} session`;
   const closePart = candlesPaused

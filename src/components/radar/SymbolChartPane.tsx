@@ -4,24 +4,25 @@ import { useMemo } from "react";
 import type { SymbolContext } from "@/lib/htf-status";
 import { plotForTimeframe, type ChartTimeframe } from "@/lib/chart-timeframe";
 import type { ChartOverlaySettings } from "@/lib/chart-overlay-types";
+import type { LiveQuote } from "@/lib/yahoo-live-quote";
 import { MiniSymbolChart } from "@/components/MiniSymbolChart";
 
 export function SymbolChartPane({
   symbol,
   timeframe,
   overlays,
-  livePrice,
+  liveQuote,
 }: {
   symbol: SymbolContext;
   timeframe: ChartTimeframe;
   overlays: ChartOverlaySettings;
-  livePrice?: number | null;
+  liveQuote?: LiveQuote | null;
 }) {
   const plot = useMemo(
     () => plotForTimeframe(symbol, timeframe),
     [symbol, timeframe]
   );
-  const currentPrice = livePrice ?? symbol.current;
+  const currentPrice = liveQuote?.price ?? symbol.current;
 
   return (
     <div className="sym-chart-pane">
@@ -31,6 +32,7 @@ export function SymbolChartPane({
       <div className="sym-col-chart sym-col-chart--pane">
         <MiniSymbolChart
           ticker={symbol.ticker}
+          symbolLabel={symbol.label}
           plot={plot}
           timeframe={timeframe}
           overlays={overlays}

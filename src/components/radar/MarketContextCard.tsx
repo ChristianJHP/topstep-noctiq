@@ -9,6 +9,7 @@ import {
   topCatalystFromFeed,
 } from "@/lib/market-context-score";
 import type { MarketNewsItem } from "@/lib/geopolitics-sources";
+import type { LiveQuote } from "@/lib/yahoo-live-quote";
 
 type GeoPayload = {
   feed?: MarketNewsItem[];
@@ -19,6 +20,7 @@ type MarketContextCardProps = {
   session: TradingSessionLabel | "Closed";
   fifteenMMs: number | null;
   candlesPaused: boolean;
+  liveQuote?: LiveQuote | null;
 };
 
 function scoreClass(level: string): string {
@@ -30,6 +32,7 @@ export function MarketContextCard({
   session,
   fifteenMMs,
   candlesPaused,
+  liveQuote,
 }: MarketContextCardProps) {
   const { data } = useSWR<GeoPayload>(
     "/api/bias/geopolitics",
@@ -42,14 +45,16 @@ export function MarketContextCard({
   );
 
   const feed = data?.feed ?? [];
+  const livePrice = liveQuote?.price ?? null;
   const snapshot = buildMarketSnapshot(
     symbol,
     session,
     fifteenMMs,
     candlesPaused,
-    topCatalystFromFeed(feed)
+    topCatalystFromFeed(feed),
+    livePrice
   );
-  const scores = computeContextScores(symbol, session, feed);
+  const scores = computeContextScores(symbol, session, feed, livePrice);
 
   return (
     <section className="ctx-card" aria-label="Instrument context">

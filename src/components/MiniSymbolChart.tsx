@@ -69,6 +69,7 @@ function tickMarkKind(type: TickMarkType): ChartTickMarkKind {
 
 type MiniSymbolChartProps = {
   ticker: string;
+  symbolLabel?: string;
   plot: SymbolChartPlot;
   timeframe: ChartTimeframe;
   overlays?: ChartOverlaySettings;
@@ -116,6 +117,7 @@ function lineStyleForRole(
 
 export function MiniSymbolChart({
   ticker,
+  symbolLabel,
   plot,
   timeframe,
   overlays,
@@ -367,7 +369,9 @@ export function MiniSymbolChart({
     lastBarTimeRef.current = bars[bars.length - 1]!.time;
 
     const price = livePrice;
-    setRbZones(rejectionZonesForBars(bars, timeframe, price, 2));
+    setRbZones(
+      rejectionZonesForBars(bars, timeframe, price, 2, symbolLabel)
+    );
 
     if (candles15m.length) {
       const sessBars = barsForTimeframe(candles15m, "15m", barLimit);
