@@ -21,6 +21,7 @@ import {
   type SymbolChartPlot,
 } from "@/lib/market-analysis";
 import type { ChartOverlaySettings } from "@/lib/chart-overlay-types";
+import type { OhlcBar } from "@/lib/ohlc-aggregate";
 import {
   barsForTimeframe,
   CHART_RIGHT_OFFSET,
@@ -132,6 +133,7 @@ export function MiniSymbolChart({
   const lastBarTimeRef = useRef<number>(0);
   const plotRef = useRef(plot);
   const barCountRef = useRef(0);
+  const lastBarRef = useRef<OhlcBar | null>(null);
   const [rbZones, setRbZones] = useState<ChartPlotZone[]>([]);
   const [sessionLines, setSessionLines] = useState<ChartPlotLine[]>([]);
   const [mounted, setMounted] = useState(false);
@@ -380,6 +382,8 @@ export function MiniSymbolChart({
       setSessionLines([]);
     }
 
+    lastBarRef.current = bars[bars.length - 1] ?? null;
+
     seriesRef.current.setData(
       bars.map((b) => ({
         time: b.time as UTCTimestamp,
@@ -398,10 +402,35 @@ export function MiniSymbolChart({
     timeframe,
     barLimit,
     mounted,
-    currentPrice,
     fitToContainer,
     refreshOverlay,
+    symbolLabel,
   ]);
+
+  /** Live quote tick — update forming candle only (no full chart rebuild). */
+  useEffect(() => {
+    const series = seriesRef.current;
+    const last = lastBarRef.current;
+    if (!mounted || !series || !last || currentPrice == null || currentPrice <= 0) {
+      return;
+    }
+    if (Math.abs(last.close - currentPrice) < 0.01) return;
+
+    const updated: OhlcBar = {
+      ...last,
+      close: currentPrice,
+      high: Math.max(last.high, currentPrice),
+      low: Math.min(last.low, currentPrice),
+    };
+    lastBarRef.current = updated;
+    series.update({
+      time: updated.time as UTCTimestamp,
+      open: updated.open,
+      high: updated.high,
+      low: updated.low,
+      close: updated.close,
+    });
+  }, [currentPrice, mounted]);
 
   useEffect(() => {
     if (fetchError && !candles.length) setError("unavailable");

@@ -8,6 +8,7 @@ import {
   chartCandlesSwrKey,
   type ChartCandlesPayload,
 } from "@/lib/chart-candles-cache";
+import { usePageVisible } from "@/hooks/use-page-visible";
 
 const STORAGE_PREFIX = "jhp-chart-v1";
 
@@ -60,6 +61,7 @@ export function useChartCandles(
   range: string,
   refreshCapMs?: number
 ) {
+  const pageVisible = usePageVisible();
   const swrKey = chartCandlesSwrKey(ticker, interval, range);
   const [storedFallback, setStoredFallback] = useState<
     ChartCandlesPayload | undefined
@@ -76,6 +78,7 @@ export function useChartCandles(
     revalidateOnReconnect: false,
     keepPreviousData: true,
     refreshInterval: (latest) => {
+      if (!pageVisible) return 0;
       const base =
         (latest?.revalidateSec ?? CHART_CANDLES_REVALIDATE_OPEN_SEC) * 1000;
       if (refreshCapMs != null) return Math.min(base, refreshCapMs);

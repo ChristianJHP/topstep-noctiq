@@ -18,6 +18,7 @@ export function LevelsSummary({ symbol }: { symbol: SymbolLabel }) {
         (latest?.revalidateSec ?? BIAS_SUMMARY_REVALIDATE_SEC) * 1000,
       revalidateOnFocus: false,
       dedupingInterval: BIAS_SUMMARY_REVALIDATE_SEC * 1000,
+      keepPreviousData: true,
     }
   );
 

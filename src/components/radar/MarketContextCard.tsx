@@ -1,6 +1,5 @@
 "use client";
 
-import useSWR from "swr";
 import type { SymbolContext } from "@/lib/htf-status";
 import type { TradingSessionLabel } from "@/lib/trading-session";
 import {
@@ -8,14 +7,10 @@ import {
   computeContextScores,
   topCatalystFromFeed,
 } from "@/lib/market-context-score";
-import type { MarketNewsItem } from "@/lib/geopolitics-sources";
+import { filterNewsForInstrument } from "@/lib/instrument-news";
 import type { LiveQuote } from "@/lib/yahoo-live-quote";
 import type { SymbolLabel } from "@/lib/strategy-prep";
-import { filterNewsForInstrument } from "@/lib/instrument-news";
-
-type GeoPayload = {
-  feed?: MarketNewsItem[];
-};
+import { useGeopoliticsFeed } from "@/hooks/use-geopolitics-feed";
 
 type MarketContextCardProps = {
   symbol: SymbolContext;
@@ -36,17 +31,7 @@ export function MarketContextCard({
   candlesPaused,
   liveQuote,
 }: MarketContextCardProps) {
-  const { data } = useSWR<GeoPayload>(
-    "/api/bias/geopolitics",
-    (url: string) => fetch(url).then((r) => r.json()),
-    {
-      refreshInterval: 60_000,
-      revalidateOnFocus: true,
-      dedupingInterval: 30_000,
-    }
-  );
-
-  const feed = data?.feed ?? [];
+  const { feed } = useGeopoliticsFeed();
   const instrumentFeed = filterNewsForInstrument(
     feed,
     symbol.label as SymbolLabel,

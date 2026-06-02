@@ -2,6 +2,7 @@
 
 import useSWR from "swr";
 import type { LiveQuote } from "@/lib/yahoo-live-quote";
+import { usePageVisible } from "@/hooks/use-page-visible";
 
 const fetcher = (url: string) =>
   fetch(url).then((r) => {
@@ -9,15 +10,25 @@ const fetcher = (url: string) =>
     return r.json() as Promise<LiveQuote>;
   });
 
-/** Poll Yahoo 1m quote so header + forming candle stay near live. */
-export function useLiveQuote(ticker: string): LiveQuote | null {
+type UseLiveQuoteOptions = {
+  refreshMs?: number;
+};
+
+/** Poll Yahoo 1m quote — pauses when the browser tab is hidden. */
+export function useLiveQuote(
+  ticker: string,
+  { refreshMs = 15_000 }: UseLiveQuoteOptions = {}
+): LiveQuote | null {
+  const pageVisible = usePageVisible();
+
   const { data } = useSWR<LiveQuote>(
     `/api/quote?ticker=${encodeURIComponent(ticker)}`,
     fetcher,
     {
-      refreshInterval: 15_000,
-      revalidateOnFocus: true,
+      refreshInterval: pageVisible ? refreshMs : 0,
+      revalidateOnFocus: pageVisible,
       dedupingInterval: 10_000,
+      keepPreviousData: true,
     }
   );
 

@@ -38,14 +38,16 @@ export function MarketBoard({
   const [tab, setTab] = useState<RadarTab>("NQ");
   usePrefetchChartCandles(chartCandles);
 
-  const nqQuote = useLiveQuote(MARKET_TICKERS.NQ);
-  const esQuote = useLiveQuote(MARKET_TICKERS.ES);
-  const gcQuote = useLiveQuote(MARKET_TICKERS.GC);
+  const activeTicker =
+    tab === "NQ"
+      ? MARKET_TICKERS.NQ
+      : tab === "ES"
+        ? MARKET_TICKERS.ES
+        : MARKET_TICKERS.GC;
+  const liveQuote = useLiveQuote(activeTicker);
 
   const symbol =
     tab === "NQ" ? markets.nq : tab === "ES" ? markets.es : markets.gold;
-  const liveQuote =
-    tab === "NQ" ? nqQuote : tab === "ES" ? esQuote : gcQuote;
 
   return (
     <section className="mr-board">
@@ -75,11 +77,7 @@ export function MarketBoard({
           liveQuote={liveQuote}
         />
 
-        <SymbolColumn
-          key={tab}
-          symbol={symbol}
-          liveQuote={liveQuote}
-        />
+        <SymbolColumn symbol={symbol} liveQuote={liveQuote} />
 
         <MarketNewsFeed instrument={tab} />
       </div>

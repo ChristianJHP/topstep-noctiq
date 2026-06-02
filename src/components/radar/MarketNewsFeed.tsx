@@ -1,17 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import useSWR from "swr";
-import type { MarketNewsItem } from "@/lib/geopolitics-sources";
 import {
   filterNewsForInstrument,
   instrumentNewsSubtitle,
   type InstrumentNewsLabel,
 } from "@/lib/instrument-news";
-
-type GeoPayload = {
-  feed?: MarketNewsItem[];
-};
+import { useGeopoliticsFeed } from "@/hooks/use-geopolitics-feed";
 
 const VISIBLE = 3;
 
@@ -26,7 +21,7 @@ function formatTime(iso: string): string {
   }).format(date);
 }
 
-function labelClass(label: MarketNewsItem["label"]): string {
+function labelClass(label: string): string {
   switch (label) {
     case "MUST KNOW":
       return "news-feed-tag--must-know";
@@ -47,19 +42,11 @@ function labelClass(label: MarketNewsItem["label"]): string {
 
 export function MarketNewsFeed({ instrument }: { instrument: InstrumentNewsLabel }) {
   const [expanded, setExpanded] = useState(false);
-  const { data, isLoading } = useSWR<GeoPayload>(
-    "/api/bias/geopolitics",
-    (url: string) => fetch(url).then((r) => r.json()),
-    {
-      refreshInterval: 60_000,
-      revalidateOnFocus: true,
-      dedupingInterval: 30_000,
-    }
-  );
+  const { feed: rawFeed, isLoading } = useGeopoliticsFeed();
 
   const feed = useMemo(
-    () => filterNewsForInstrument(data?.feed ?? [], instrument, 10),
-    [data?.feed, instrument]
+    () => filterNewsForInstrument(rawFeed, instrument, 10),
+    [rawFeed, instrument]
   );
 
   const visible = expanded ? feed : feed.slice(0, VISIBLE);
@@ -67,9 +54,11 @@ export function MarketNewsFeed({ instrument }: { instrument: InstrumentNewsLabel
 
   if (isLoading && feed.length === 0) {
     return (
-      <section className="news-feed news-feed--loading" aria-label="Market news">
-        <p className="news-feed-muted">Loading live headlines…</p>
-      </section>
+      <section
+        className="news-feed news-feed--loading news-feed--placeholder"
+        aria-label="Market news"
+        aria-busy="true"
+      />
     );
   }
 

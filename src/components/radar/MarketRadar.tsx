@@ -6,6 +6,7 @@ import { getNextCandleClose } from "@/lib/candle-timers";
 import { getTradingSessionInfo } from "@/lib/trading-session";
 import type { RadarPayload } from "@/lib/radar-payload";
 import { useCountdownTick } from "@/hooks/use-countdown-tick";
+import { usePageVisible } from "@/hooks/use-page-visible";
 import { useBiasShiftAlerts } from "@/hooks/use-bias-shift-alerts";
 import { useCandleCloseAlerts } from "@/hooks/use-candle-close-alerts";
 import { useSeedChartCandles } from "@/hooks/use-seed-chart-candles";
@@ -42,6 +43,7 @@ function EtClock({ now }: { now: number }) {
 
 export function MarketRadar({ initialData }: MarketRadarProps) {
   const now = useCountdownTick();
+  const pageVisible = usePageVisible();
 
   const { data, isLoading } = useSWR<RadarData>(
     "/api/radar",
@@ -49,7 +51,9 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
     {
       fallbackData: initialData ?? undefined,
       revalidateOnMount: !initialData?.markets,
-      refreshInterval: 60_000,
+      refreshInterval: pageVisible ? 60_000 : 0,
+      keepPreviousData: true,
+      dedupingInterval: 30_000,
     }
   );
 
