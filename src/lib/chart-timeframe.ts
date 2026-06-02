@@ -201,6 +201,9 @@ export function rejectionZonesForBars(
 
 export { sessionLinesForBars } from "@/lib/session-chart-lines";
 
+/** Empty bar slots after the forming candle so it isn't flush against the price scale. */
+export const CHART_RIGHT_OFFSET = 8;
+
 export function fitBarSpacing(
   containerWidth: number,
   barCount: number,
@@ -208,8 +211,7 @@ export function fitBarSpacing(
 ): number {
   const scaleW = isMobile ? 44 : 52;
   const plotW = Math.max(120, containerWidth - scaleW - 8);
-  const rightOffset = 2;
-  const slots = Math.max(barCount, 1) + rightOffset;
+  const slots = Math.max(barCount, 1) + CHART_RIGHT_OFFSET;
   return Math.max(3, plotW / slots);
 }
 
@@ -234,7 +236,6 @@ export function fitChartTimeScale(
 ): void {
   if (barCount <= 0 || containerWidth <= 0) return;
 
-  const rightOffset = 2;
   const spacing = fitBarSpacing(containerWidth, barCount, isMobile);
 
   chart.applyOptions({
@@ -242,12 +243,12 @@ export function fitChartTimeScale(
       barSpacing: spacing,
       minBarSpacing: 2,
       maxBarSpacing: 48,
-      rightOffset,
+      rightOffset: CHART_RIGHT_OFFSET,
     },
   });
 
   chart.timeScale().setVisibleLogicalRange({
     from: -0.5,
-    to: barCount - 1 + rightOffset * 0.5,
+    to: barCount - 1 + CHART_RIGHT_OFFSET,
   });
 }

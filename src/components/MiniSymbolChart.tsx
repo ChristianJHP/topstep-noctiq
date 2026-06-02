@@ -23,6 +23,7 @@ import {
 import type { ChartOverlaySettings } from "@/lib/chart-overlay-types";
 import {
   barsForTimeframe,
+  CHART_RIGHT_OFFSET,
   CHART_TF_CONFIG,
   fitChartTimeScale,
   rejectionZonesForBars,
@@ -263,7 +264,7 @@ export function MiniSymbolChart({
         barSpacing: 6,
         minBarSpacing: 2,
         maxBarSpacing: 48,
-        rightOffset: 2,
+        rightOffset: CHART_RIGHT_OFFSET,
         fixLeftEdge: false,
         fixRightEdge: false,
       },
