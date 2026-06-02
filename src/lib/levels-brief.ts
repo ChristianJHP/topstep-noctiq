@@ -7,8 +7,9 @@ import {
 } from "@/lib/bias-summary-config";
 import { computeMarketContext, type SymbolContext } from "@/lib/htf-status";
 import { isFuturesSessionOpen } from "@/lib/futures-session";
-import { computeSymbolPrep, type SymbolLabel } from "@/lib/strategy-prep";
+import type { SymbolLabel } from "@/lib/strategy-prep";
 import { getCachedGeopoliticsBrief } from "@/lib/geopolitics-brief";
+import { relevantFvgsForChart } from "@/lib/fvg-detect";
 
 export type LevelsBriefPayload = {
   line: string;
@@ -20,20 +21,13 @@ export type LevelsBriefPayload = {
 export type LevelsBriefContext = {
   symbol: string;
   price: number;
-  bias: string;
-  draw: { side: string; level: number; pts: number } | null;
-  h4High: number;
-  h4Low: number;
-  h1High: number;
-  h1Low: number;
-  levels: { label: string; price: number; role: string; pts: number }[];
-  smt: string | null;
-  geo: {
-    war: string;
-    trump: string | null;
-    expect: string;
-    riskOff: boolean;
-  };
+  structure: string;
+  cisd: number | null;
+  levelBelow: number | null;
+  levelAbove: number | null;
+  levelBelowLabel: string | null;
+  levelAboveLabel: string | null;
+  newsRiskElevated: boolean;
 };
 
 function pickSymbol(
@@ -51,53 +45,78 @@ function geoRiskOff(war: string, trump: string | null): boolean {
   );
 }
 
+function nearestLevels(symbol: SymbolContext): {
+  below: { price: number; label: string } | null;
+  above: { price: number; label: string } | null;
+} {
+  const price = symbol.current;
+  const candidates: { price: number; label: string }[] = [];
+
+  if (symbol.analysis.cisd) {
+    candidates.push({ price: symbol.analysis.cisd.price, label: "CISD" });
+  }
+
+  const fvgs = [
+    ...relevantFvgsForChart(symbol.analysis.fvgs4h, price, 2),
+    ...relevantFvgsForChart(symbol.analysis.fvgs1h, price, 2),
+  ];
+  for (const fvg of fvgs) {
+    const mid = Math.round((fvg.top + fvg.bottom) / 2);
+    candidates.push({
+      price: mid,
+      label: `${fvg.timeframe} ${fvg.type === "bullish" ? "bull" : "bear"} imbalance`,
+    });
+  }
+
+  if (symbol.analysis.swingLow) {
+    candidates.push({ price: symbol.analysis.swingLow, label: "swing low" });
+  }
+  if (symbol.analysis.swingHigh) {
+    candidates.push({ price: symbol.analysis.swingHigh, label: "swing high" });
+  }
+  candidates.push({ price: symbol.h4Low, label: "4H low" });
+  candidates.push({ price: symbol.h4High, label: "4H high" });
+
+  const below = candidates
+    .filter((c) => c.price < price - 1)
+    .sort((a, b) => b.price - a.price)[0] ?? null;
+  const above = candidates
+    .filter((c) => c.price > price + 1)
+    .sort((a, b) => a.price - b.price)[0] ?? null;
+
+  return { below, above };
+}
+
 export function buildLevelsContext(
   symbol: SymbolContext,
   market: Awaited<ReturnType<typeof computeMarketContext>>,
   geo: Awaited<ReturnType<typeof getCachedGeopoliticsBrief>>
 ): LevelsBriefContext {
-  const prep = computeSymbolPrep(symbol, market);
+  const { below, above } = nearestLevels(symbol);
+  const cisd = symbol.analysis.cisd?.price ?? null;
+
+  let structure = `${symbol.label} near ${Math.round(symbol.current)}`;
+  if (cisd && symbol.current < cisd) {
+    structure = `${symbol.label} trading below the ${Math.round(cisd)} CISD reference`;
+  } else if (cisd && symbol.current > cisd) {
+    structure = `${symbol.label} trading above the ${Math.round(cisd)} CISD reference`;
+  }
 
   return {
     symbol: symbol.label,
     price: symbol.current,
-    bias: prep.bias,
-    draw: prep.draw
-      ? {
-          side: prep.draw.side,
-          level: prep.draw.level,
-          pts: Math.round(prep.draw.pointsAway),
-        }
-      : null,
-    h4High: symbol.h4High,
-    h4Low: symbol.h4Low,
-    h1High: symbol.h1High,
-    h1Low: symbol.h1Low,
-    levels: prep.keyLevels.slice(0, 4).map((l) => ({
-      label: l.label,
-      price: l.price,
-      role: l.role,
-      pts: Math.round(l.pointsAway),
-    })),
-    smt: symbol.label !== "GC" ? market.smt?.message ?? null : null,
-    geo: {
-      war: geo.war.text,
-      trump: geo.trump?.text ?? null,
-      expect: geo.expect.text,
-      riskOff: geoRiskOff(geo.war.text, geo.trump?.text ?? null),
-    },
+    structure,
+    cisd: cisd ? Math.round(cisd) : null,
+    levelBelow: below ? Math.round(below.price) : null,
+    levelAbove: above ? Math.round(above.price) : null,
+    levelBelowLabel: below?.label ?? null,
+    levelAboveLabel: above?.label ?? null,
+    newsRiskElevated: geoRiskOff(geo.war.text, geo.trump?.text ?? null),
   };
 }
 
 function buildPrompt(ctx: LevelsBriefContext): string {
-  const symbolRules =
-    ctx.symbol === "GC"
-      ? `- GC: tie war/Trump backdrop to safe-haven flow. On risk-off headlines, gold often bids while NQ/ES sell — say if that fits now. Mention nearest 4H/FVG level.`
-      : ctx.symbol === "ES"
-        ? `- ES: broad US risk gauge — same macro as NQ but less tech beta. Tie Trump/war news to gap/vol risk and nearest draw or 4H level.`
-        : `- NQ: tech/risk-on sensitivity — Trump tariffs/war headlines can gap NQ harder than ES. Tie headline tone to bias and nearest draw/FVG/4H level.`;
-
-  return `You write ONE plain sentence for a futures trader — technical levels PLUS how current war/Trump news affects THIS symbol.
+  return `You write ONE neutral structure sentence for public futures context — NOT trade advice.
 
 INPUT JSON:
 ${JSON.stringify(ctx)}
@@ -105,14 +124,14 @@ ${JSON.stringify(ctx)}
 Return ONLY valid JSON: {"line": ""}
 
 Rules:
-- Exactly ONE sentence, max 28 words. No bullet lists. No raw ranges.
-- One geo hook max (3–5 words), then bias + nearest level + watch.
-- Mention draw on liquidity and nearest 4H/1H or FVG level with rounded prices.
-${symbolRules}
-- Use ONLY JSON facts + geo fields. No trade calls. Trader shorthand OK ("cuz", "rn").`;
+- Max 32 words. Plain English. No jargon like "reclaim", "targets", "eye", "watch for longs".
+- Describe where price sits vs CISD / imbalance references only using JSON numbers.
+- Mention nearby levels below/above as references, not targets.
+- If newsRiskElevated is true, end with "News risk remains elevated." or similar — one short clause.
+- No trade calls. No directional advice. No "should" or "look for entries".`;
 }
 
-function clampLine(text: string, maxWords = 28, maxChars = 175): string {
+function clampLine(text: string, maxWords = 32, maxChars = 220): string {
   let t = text.replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
   const words = t.split(" ").filter(Boolean);
   if (words.length > maxWords) {
@@ -139,37 +158,26 @@ function parseLine(text: string): string | null {
 }
 
 export function formatLevelsDeterministic(ctx: LevelsBriefContext): string {
-  const { price, symbol, draw, h4High, h4Low, bias, geo } = ctx;
+  const parts: string[] = [];
 
-  const geoBit =
-    symbol === "GC" && geo.riskOff
-      ? "War headlines bid safe haven — gold often inverse NQ on risk-off; "
-      : geo.riskOff && symbol !== "GC"
-        ? "Risk-off geo leans heavy on index; "
-        : geo.trump
-          ? "Trump headline in play; "
-          : "";
+  if (ctx.cisd && ctx.structure.includes("CISD")) {
+    parts.push(ctx.structure);
+  } else {
+    parts.push(`${ctx.symbol} near ${Math.round(ctx.price)}`);
+  }
 
-  const levelBit = draw
-    ? (() => {
-        const drawDir = draw.side === "buy-side" ? "↑" : "↓";
-        const roundedDraw = Math.round(draw.level);
-        return draw.level > price
-          ? `draw ${drawDir} ${roundedDraw} overhead, 4H high ${Math.round(h4High)}`
-          : draw.level < price
-            ? `draw ${drawDir} ${roundedDraw} below, 4H low ${Math.round(h4Low)}`
-            : `4H range ${Math.round(h4Low)}–${Math.round(h4High)}`;
-      })()
-    : `4H range ${Math.round(h4Low)}–${Math.round(h4High)}`;
+  const refs: string[] = [];
+  if (ctx.levelBelow) refs.push(`${ctx.levelBelow} below`);
+  if (ctx.levelAbove) refs.push(`${ctx.levelAbove} above`);
+  if (refs.length) {
+    parts.push(`Nearby levels: ${refs.join(", ")}`);
+  }
 
-  const watch =
-    bias === "bullish"
-      ? "watch holds on dips"
-      : bias === "bearish"
-        ? "watch rejection at supply"
-        : "wait for geo or level to break";
+  if (ctx.newsRiskElevated) {
+    parts.push("News risk remains elevated");
+  }
 
-  return `${geoBit}${symbol} ${Math.round(price)} ${bias} — ${levelBit}; ${watch}.`;
+  return `${parts.join(". ")}.`;
 }
 
 async function generateLevelsBrief(
@@ -206,7 +214,7 @@ async function generateLevelsBrief(
     const { text } = await generateText({
       model,
       prompt: buildPrompt(ctx),
-      maxOutputTokens: 100,
+      maxOutputTokens: 120,
     });
     const line = parseLine(text) ?? fallback;
     return { line, ...base };
@@ -219,7 +227,7 @@ async function generateLevelsBrief(
 function cacheFor(label: SymbolLabel) {
   const open = unstable_cache(
     () => generateLevelsBrief(label),
-    [`levels-brief-v3-${label}-open`],
+    [`levels-brief-v4-${label}-open`],
     {
       revalidate: BIAS_SUMMARY_REVALIDATE_SEC,
       tags: ["levels-brief", `levels-brief-${label}`],
@@ -227,7 +235,7 @@ function cacheFor(label: SymbolLabel) {
   );
   const closed = unstable_cache(
     () => generateLevelsBrief(label),
-    [`levels-brief-v3-${label}-closed`],
+    [`levels-brief-v4-${label}-closed`],
     {
       revalidate: BIAS_SUMMARY_CLOSED_REVALIDATE_SEC,
       tags: ["levels-brief", `levels-brief-${label}`],

@@ -3,9 +3,9 @@ import "./radar.css";
 import "./market-board.css";
 
 export const metadata: Metadata = {
-  title: "Market Bias",
+  title: "Market Context",
   description:
-    "NQ/ES/Gold bias, levels, charts, and geo context for futures prep.",
+    "NQ/ES/Gold context, levels, charts, and catalyst feed for futures prep.",
 };
 
 export default function BiasLayout({

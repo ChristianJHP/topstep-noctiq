@@ -23,18 +23,18 @@ const BIAS_STORAGE_KEY = "jhptrades-bias-snapshot";
 const ALERTS_ENABLED_KEY = "jhptrades-bias-alerts-enabled";
 const SYMBOLS: SymbolLabel[] = ["NQ", "ES", "GC"];
 
-function biasLabel(b: HtfBias): string {
-  if (b === "bullish") return "BULL";
-  if (b === "bearish") return "BEAR";
-  return "MIX";
+function contextLabel(b: HtfBias): string {
+  if (b === "bullish") return "Bullish";
+  if (b === "bearish") return "Bearish";
+  return "Mixed";
 }
 
 export function formatBiasShiftTitle(alert: BiasShiftAlert): string {
   if (alert.shifts.length === 1) {
     const s = alert.shifts[0];
-    return `${s.symbol} bias → ${biasLabel(s.to)}`;
+    return `${s.symbol} · ${contextLabel(s.to)} context`;
   }
-  return "Bias shifts";
+  return "Context shifts";
 }
 
 export function formatBiasShiftTimestamp(at: number): string {
@@ -55,7 +55,7 @@ export function formatBiasShiftBody(alert: BiasShiftAlert): string {
   if (alert.reason) return alert.reason;
   if (alert.reasonLoading) return "…";
   return alert.shifts
-    .map((s) => `${s.symbol} ${biasLabel(s.from)} → ${biasLabel(s.to)}`)
+    .map((s) => `${s.symbol} ${contextLabel(s.from)} → ${contextLabel(s.to)}`)
     .join(" · ");
 }
 

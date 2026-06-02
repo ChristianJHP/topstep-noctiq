@@ -4,6 +4,7 @@ import {
   assignMustKnowLabels,
   classifyNewsHeadline,
   shortHeadline,
+  whyItMattersFor,
   type ContextFeedCategory,
   type NewsLabel,
 } from "@/lib/news-tags";
@@ -39,6 +40,7 @@ export type ContextFeedRow = {
   category: ContextFeedCategory;
   text: string;
   link: string | null;
+  whyItMatters: string;
 };
 
 /** Market-wrap slop — not war news. */
@@ -248,7 +250,13 @@ export function buildContextFeed(
     const key = `${category}:${text}`;
     if (used.has(key) || !text.trim()) return;
     used.add(key);
-    rows.push({ category, text: shortHeadline(text, 56), link });
+    const tags = classifyNewsHeadline(text);
+    rows.push({
+      category,
+      text: shortHeadline(text, 56),
+      link,
+      whyItMatters: whyItMattersFor(category, text, tags.topics),
+    });
   };
 
   for (const cat of ["GEO", "POLICY", "DATA", "WATCH"] as ContextFeedCategory[]) {

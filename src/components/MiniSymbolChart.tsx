@@ -30,6 +30,10 @@ import {
   sessionLinesForBars,
   type ChartTimeframe,
 } from "@/lib/chart-timeframe";
+import {
+  makeChartAutoscaleProvider,
+  sanitizeChartBars,
+} from "@/lib/chart-autoscale";
 import { useChartCandles } from "@/hooks/use-chart-candles";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import {
@@ -69,41 +73,6 @@ type MiniSymbolChartProps = {
   overlays?: ChartOverlaySettings;
   currentPrice?: number;
 };
-
-function makeAutoscale(plot: SymbolChartPlot) {
-  return (
-    original: () => { priceRange: { minValue: number; maxValue: number } } | null
-  ) => {
-    const res = original();
-    if (!res) return res;
-
-    let { minValue, maxValue } = res.priceRange;
-    const candleSpan = Math.max(maxValue - minValue, 1);
-    const reach = candleSpan * 0.22;
-
-    for (const line of plot.lines) {
-      if (!Number.isFinite(line.price)) continue;
-      const p = line.price;
-      if (p >= minValue - reach && p <= maxValue + reach) {
-        minValue = Math.min(minValue, p);
-        maxValue = Math.max(maxValue, p);
-      }
-    }
-
-    for (const zone of plot.zones) {
-      if (zone.top < minValue - reach || zone.bottom > maxValue + reach) continue;
-      minValue = Math.min(minValue, zone.bottom);
-      maxValue = Math.max(maxValue, zone.top);
-    }
-
-    const span = maxValue - minValue;
-    const pad = Math.max(8, span * 0.05);
-    return {
-      priceRange: { minValue: minValue - pad, maxValue: maxValue + pad },
-      margins: { above: 10, below: 10 },
-    };
-  };
-}
 
 function syncZoneOverlay(
   chart: IChartApi,
@@ -309,7 +278,7 @@ export function MiniSymbolChart({
       borderVisible: false,
       wickUpColor: WICK_BULL,
       wickDownColor: WICK_BEAR,
-      autoscaleInfoProvider: makeAutoscale(plotRef.current),
+      autoscaleInfoProvider: makeChartAutoscaleProvider(plotRef.current),
     });
 
     chartRef.current = chart;
@@ -352,7 +321,9 @@ export function MiniSymbolChart({
     const series = seriesRef.current;
     if (!series) return;
 
-    series.applyOptions({ autoscaleInfoProvider: makeAutoscale(mergedPlot) });
+    series.applyOptions({
+      autoscaleInfoProvider: makeChartAutoscaleProvider(mergedPlot),
+    });
 
     for (const line of linesRef.current) {
       series.removePriceLine(line);
@@ -382,7 +353,9 @@ export function MiniSymbolChart({
   useEffect(() => {
     if (!mounted || !seriesRef.current || !candles.length) return;
 
-    const bars = barsForTimeframe(candles, timeframe, barLimit);
+    const bars = sanitizeChartBars(
+      barsForTimeframe(candles, timeframe, barLimit)
+    );
     if (bars.length === 0) return;
 
     barCountRef.current = bars.length;

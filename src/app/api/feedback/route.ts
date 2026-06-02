@@ -36,12 +36,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const content = `**Market Bias feedback**\n${raw}`;
+  const content = `**Market Context feedback**\n${raw}`;
 
   const res = await fetch(webhookUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content, username: "Market Bias" }),
+    body: JSON.stringify({ content, username: "Market Context" }),
   });
 
   if (!res.ok) {

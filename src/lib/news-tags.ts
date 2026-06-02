@@ -162,3 +162,29 @@ export function shortHeadline(title: string, max = 48): string {
   if (t.length <= max) return t;
   return `${t.slice(0, max - 1).trim()}…`;
 }
+
+export function whyItMattersFor(
+  category: ContextFeedCategory,
+  text: string,
+  topics: string[] = []
+): string {
+  const tags = topics.length ? topics : classifyNewsHeadline(text).topics;
+
+  if (category === "GEO") {
+    if (tags.includes("ENERGY")) return "Energy / geopolitical risk tone";
+    if (tags.includes("CHINA") || tags.includes("GEO")) return "Geopolitical risk tone";
+    return "Geopolitical risk tone";
+  }
+  if (category === "POLICY") {
+    if (tags.includes("POLICY") || /tariff|white house|trump/i.test(text)) {
+      return "Tariff / inflation-sensitive headline";
+    }
+    return "Policy headline for risk assets";
+  }
+  if (category === "DATA") {
+    if (tags.includes("AUD") || /australia/i.test(text)) return "Asia macro session context";
+    if (/employment|nfp|cpi|gdp|payroll/i.test(text)) return "US macro release context";
+    return "Macro data release context";
+  }
+  return "Upcoming catalyst to monitor";
+}

@@ -1,12 +1,10 @@
 "use client";
 
 import useSWR from "swr";
-import type { MarketContext } from "@/lib/htf-status";
 import type { SymbolContext } from "@/lib/htf-status";
-import type { SymbolPrep } from "@/lib/strategy-prep";
 import type { TradingSessionLabel } from "@/lib/trading-session";
 import {
-  buildMarketSnapshotLine,
+  buildMarketSnapshot,
   computeContextScores,
   topCatalystFromFeed,
 } from "@/lib/market-context-score";
@@ -18,8 +16,6 @@ type GeoPayload = {
 
 type MarketContextCardProps = {
   symbol: SymbolContext;
-  markets: MarketContext;
-  prep: SymbolPrep;
   session: TradingSessionLabel | "Closed";
   fifteenMMs: number | null;
   candlesPaused: boolean;
@@ -31,7 +27,6 @@ function scoreClass(level: string): string {
 
 export function MarketContextCard({
   symbol,
-  markets,
   session,
   fifteenMMs,
   candlesPaused,
@@ -47,21 +42,30 @@ export function MarketContextCard({
   );
 
   const feed = data?.feed ?? [];
-  const catalyst = topCatalystFromFeed(feed);
-  const snapshot = buildMarketSnapshotLine(
+  const snapshot = buildMarketSnapshot(
     symbol,
     session,
     fifteenMMs,
     candlesPaused,
-    catalyst
+    topCatalystFromFeed(feed)
   );
-  const scores = computeContextScores(symbol, markets, session, feed);
+  const scores = computeContextScores(symbol, session, feed);
 
   return (
-    <section className="ctx-card" aria-label="Market context">
-      <p className="ctx-snapshot" suppressHydrationWarning>
-        {snapshot}
-      </p>
+    <section className="ctx-card" aria-label="Instrument context">
+      <div className="ctx-snapshot-block">
+        <p className="ctx-snapshot-headline" suppressHydrationWarning>
+          {snapshot.headline}
+        </p>
+        <p className="ctx-snapshot-meta" suppressHydrationWarning>
+          {snapshot.meta}
+        </p>
+        {snapshot.catalyst ? (
+          <p className="ctx-snapshot-catalyst" suppressHydrationWarning>
+            Top catalyst: {snapshot.catalyst}
+          </p>
+        ) : null}
+      </div>
       <div className="ctx-scores">
         <div className="ctx-score">
           <span className="ctx-score-k">Context clarity</span>

@@ -17,6 +17,7 @@ import { MarketBoard } from "@/components/radar/MarketBoard";
 import { useRedFolderMoveAlerts } from "@/hooks/use-red-folder-move-alerts";
 import type { EconomicEvent } from "@/lib/events";
 import { ContextFeed } from "@/components/radar/ContextFeed";
+import { CandleTimerStrip } from "@/components/radar/CandleTimerStrip";
 import { CalendarPanel } from "@/components/CalendarPanel";
 import { MarketNewsFeed } from "@/components/radar/MarketNewsFeed";
 import { RadarLoader } from "@/components/radar/RadarLoader";
@@ -94,7 +95,7 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
             jhptrades.com
           </Link>
           <div className="mr-header-row">
-            <h1 className="mr-title">Market Bias</h1>
+            <h1 className="mr-title">Market Context</h1>
             <div className="mr-session-wrap">
               <span
                 className={
@@ -116,23 +117,29 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
             <div className="mr-header-calendar">
               <CalendarPanel initialRadar={initialData ?? undefined} />
             </div>
+            <CandleTimerStrip
+              fifteenMMs={fifteenM.remainingMs}
+              oneHMs={oneH.remainingMs}
+              fourHMs={fourH.remainingMs}
+              candlesPaused={oneH.paused}
+            />
             {alertsEnabled ? (
               <button
                 type="button"
                 className="mr-notify-on mr-notify-toggle"
                 onClick={disableAlerts}
-                title="Turn off bias alerts"
+                title="Turn off context shift alerts"
               >
-                Bias on
+                Context on
               </button>
             ) : (
               <button
                 type="button"
                 className="mr-notify-btn"
                 onClick={() => void enableAlerts()}
-                title="Enable bias shift alerts"
+                title="Enable context shift alerts"
               >
-                Bias alerts
+                Live context
               </button>
             )}
             <CandleAlertToggles
@@ -151,10 +158,7 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
           <ContextFeed />
           <MarketBoard
             markets={ctx}
-            now={now}
             fifteenMMs={fifteenM.remainingMs}
-            oneHMs={oneH.remainingMs}
-            fourHMs={fourH.remainingMs}
             candlesPaused={oneH.paused}
             chartCandles={data?.chartCandles}
             sessionLabel={

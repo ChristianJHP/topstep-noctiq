@@ -58,7 +58,7 @@ function BiasShiftToastItem({
       <button
         type="button"
         className="bias-shift-close"
-        aria-label="Dismiss bias alert"
+        aria-label="Dismiss context alert"
         onClick={() => onDismiss(alert.id)}
       >
         ×

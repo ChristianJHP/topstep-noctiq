@@ -16,10 +16,16 @@ export type MarketContextScores = {
   sessionLiquidity: TradingSessionLabel | "Closed";
 };
 
-function biasLabel(bias: ReturnType<typeof candleSymbolBias>): string {
-  if (bias === "bullish") return "Bullish";
-  if (bias === "bearish") return "Bearish";
-  return "Mixed";
+export type MarketSnapshot = {
+  headline: string;
+  meta: string;
+  catalyst: string | null;
+};
+
+function contextBiasLabel(bias: ReturnType<typeof candleSymbolBias>): string {
+  if (bias === "bullish") return "Bullish context";
+  if (bias === "bearish") return "Bearish context";
+  return "Mixed context";
 }
 
 function rangeDescriptor(pct: number): string {
@@ -28,26 +34,49 @@ function rangeDescriptor(pct: number): string {
   return "4H range active";
 }
 
+function nearCleanLevel(symbol: SymbolContext): boolean {
+  const threshold = symbol.label === "GC" ? 6 : symbol.label === "ES" ? 4 : 20;
+  const dists = [
+    symbol.distances.toH4High,
+    symbol.distances.toH4Low,
+    symbol.distances.toH1High,
+    symbol.distances.toH1Low,
+  ];
+  if (symbol.analysis.cisd) {
+    dists.push(Math.abs(symbol.current - symbol.analysis.cisd.price));
+  }
+  if (symbol.analysis.swingHigh) {
+    dists.push(Math.abs(symbol.current - symbol.analysis.swingHigh));
+  }
+  if (symbol.analysis.swingLow) {
+    dists.push(Math.abs(symbol.current - symbol.analysis.swingLow));
+  }
+  return dists.some((d) => d <= threshold);
+}
+
+/** Mechanical clarity — not discretionary. */
+export function computeContextClarity(symbol: SymbolContext): ClarityLevel {
+  const h4 = symbol.fourHour.bias;
+  const h1 = symbol.oneHour.bias;
+  const pct = symbol.pctInH4Range;
+  const mixed = candleSymbolBias(symbol) === "mixed";
+  const inChop = pct >= 30 && pct <= 70;
+  const tfConflict =
+    h4 !== h1 && h4 !== "neutral" && h1 !== "neutral";
+  const aligned = h4 === h1 && h4 !== "neutral" && !mixed;
+
+  if (inChop || (h4 === "neutral" && h1 === "neutral")) return "Low";
+  if (tfConflict || mixed) return "Medium";
+  if (aligned && nearCleanLevel(symbol)) return "High";
+  return "Medium";
+}
+
 export function computeContextScores(
   symbol: SymbolContext,
-  markets: MarketContext,
   session: TradingSessionLabel | "Closed",
   feed: MarketNewsItem[]
 ): MarketContextScores {
-  const nqBias = candleSymbolBias(markets.nq);
-  const esBias = candleSymbolBias(markets.es);
-  const aligned =
-    nqBias === esBias && nqBias !== "mixed" && markets.nq.fourHour.bias === markets.es.fourHour.bias;
-
-  let clarity: ClarityLevel = "Medium";
-  if (aligned) clarity = "High";
-  else if (
-    nqBias === "mixed" ||
-    esBias === "mixed" ||
-    symbol.fourHour.bias !== symbol.oneHour.bias
-  ) {
-    clarity = "Low";
-  }
+  let clarity = computeContextClarity(symbol);
 
   const pct = symbol.pctInH4Range;
   let volatility: VolatilityLevel = "Normal";
@@ -60,6 +89,10 @@ export function computeContextScores(
   if (mustKnow >= 2 || geoHits >= 3) newsRisk = "High";
   else if (mustKnow >= 1 || geoHits >= 1) newsRisk = "Medium";
 
+  if (newsRisk === "High" && clarity === "High") clarity = "Medium";
+  if (newsRisk === "Medium" && clarity === "High") clarity = "Medium";
+  if (session === "Asia" && clarity === "High") clarity = "Medium";
+
   return {
     clarity,
     volatility,
@@ -68,14 +101,14 @@ export function computeContextScores(
   };
 }
 
-export function buildMarketSnapshotLine(
+export function buildMarketSnapshot(
   symbol: SymbolContext,
   session: TradingSessionLabel | "Closed",
   fifteenMMs: number | null,
   candlesPaused: boolean,
   topCatalyst: string | null
-): string {
-  const bias = biasLabel(candleSymbolBias(symbol));
+): MarketSnapshot {
+  const bias = contextBiasLabel(candleSymbolBias(symbol));
   const price = formatPrice(symbol.current);
   const range = rangeDescriptor(symbol.pctInH4Range);
   const sessionPart =
@@ -83,18 +116,14 @@ export function buildMarketSnapshotLine(
   const closePart = candlesPaused
     ? "candles paused"
     : fifteenMMs != null
-      ? `next 15m close in ${formatCandleCountdown(fifteenMMs)}`
+      ? `15m close in ${formatCandleCountdown(fifteenMMs)}`
       : null;
 
-  const parts = [
-    `${symbol.label}: ${bias} near ${price}`,
-    range,
-    sessionPart,
-    closePart,
-    topCatalyst ? `top catalyst: ${topCatalyst}` : null,
-  ].filter(Boolean);
-
-  return parts.join(" · ");
+  return {
+    headline: `${symbol.label} · ${bias} near ${price}`,
+    meta: [range, sessionPart, closePart].filter(Boolean).join(" · "),
+    catalyst: topCatalyst,
+  };
 }
 
 export function topCatalystFromFeed(feed: MarketNewsItem[]): string | null {
@@ -102,6 +131,6 @@ export function topCatalystFromFeed(feed: MarketNewsItem[]): string | null {
   if (!top) return null;
   const t = top.text.replace(/^FinancialJuice:\s*/i, "").trim();
   const clause = t.split(/[;,]/)[0]?.trim() ?? t;
-  if (clause.length <= 42) return clause;
-  return `${clause.slice(0, 41).trim()}…`;
+  if (clause.length <= 52) return clause;
+  return `${clause.slice(0, 51).trim()}…`;
 }

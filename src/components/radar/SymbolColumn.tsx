@@ -14,7 +14,7 @@ import { useIsWideDesktop } from "@/hooks/use-is-wide-desktop";
 
 export function SymbolColumn({ symbol }: { symbol: SymbolContext }) {
   const isWide = useIsWideDesktop();
-  const [timeframe, setTimeframe] = useState<ChartTimeframe>("4H");
+  const [timeframe, setTimeframe] = useState<ChartTimeframe>("15m");
   const { settings: overlays, toggle } = useChartOverlaySettings();
   const label = symbol.label as SymbolLabel;
 
