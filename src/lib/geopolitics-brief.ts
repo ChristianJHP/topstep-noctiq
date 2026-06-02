@@ -9,9 +9,10 @@ import {
   type GeopoliticsSources,
   type MarketNewsItem,
 } from "@/lib/geopolitics-sources";
+import { classifyHeadline } from "@/lib/headline-classifier";
 
-export const GEO_BRIEF_REVALIDATE_SEC = 15 * 60;
-export const GEO_BRIEF_CLOSED_REVALIDATE_SEC = 45 * 60;
+export const GEO_BRIEF_REVALIDATE_SEC = 3 * 60;
+export const GEO_BRIEF_CLOSED_REVALIDATE_SEC = 10 * 60;
 
 export type GeoBriefField = {
   text: string;
@@ -42,9 +43,9 @@ type GeopoliticsBriefCore = Omit<
 >;
 
 function buildPrompt(sources: GeopoliticsSources): string {
-  return `You write a tight geopolitical brief for NQ/ES/Gold futures traders.
+  return `You write a tight market-news brief for NQ/ES/Gold futures traders.
 
-HEADLINES (newest first):
+LIVE HEADLINES (newest first):
 ${sources.headlines.map((h) => `- ${h.title}`).join("\n") || "- none"}
 
 TRUMP TRUTH SOCIAL (newest first):
@@ -59,11 +60,11 @@ Return ONLY valid JSON:
 {"war":"","trump":"","expect":"","markets":""}
 
 Rules:
-- war: ONE short sentence, max 10 words. Example: "US struck Iranian radar sites after drone downed." NEVER paste a full headline.
-- trump: max 8 words — or empty string if none.
-- expect: max 10 words — one watch item for next 24h.
-- markets: max 16 words — NQ/ES/gold risk tone only.
-- Telegraph style. No stock roundups. No trade calls. Plain text.`;
+- war: ONE short sentence, max 10 words — the single headline that matters most for NQ right now. If nothing is market-moving, say "Quiet tape — no headline risk."
+- trump: max 8 words — or empty string if none relevant.
+- expect: max 10 words — what to watch next 24h from the feed.
+- markets: max 16 words — NQ/ES/gold risk tone from the headlines (risk-on/off, geo, macro).
+- Skip stock-picker fluff. Telegraph style. No trade calls. Plain text.`;
 }
 
 /** Cut filler clauses and enforce hard length — never show wire essay text. */
@@ -111,7 +112,7 @@ export function attachSourceLinks(
   const sanitized = sanitizeGeoBrief(brief);
   const warHeadline = sources.headlines[0];
   const expectHeadline = sources.headlines[1] ?? warHeadline;
-  const trumpPost = sources.trumpGeoPosts[0] ?? null;
+  const trumpPost = sources.trumpPosts[0] ?? null;
 
   return {
     war: {
@@ -168,29 +169,45 @@ function riskOffHint(text: string): boolean {
   );
 }
 
+function isPlaceholderWar(text: string): boolean {
+  return /no war headlines|no live headlines|feed unavailable|quiet tape/i.test(
+    text
+  );
+}
+
+function isPlaceholderExpect(text: string): boolean {
+  return /quiet on geo|feed quiet|unless breaking news/i.test(text);
+}
+
 export function formatGeopoliticsDeterministic(
   sources: GeopoliticsSources
 ): GeopoliticsBriefStrings {
   const headline = sources.headlines[0];
-  const war = headline
-    ? firstShortClause(headline.title, 10, 62)
-    : "No war headlines right now.";
+  const critical =
+    sources.headlines.find((h) => classifyHeadline(h.title) === "critical") ??
+    headline;
 
-  const trumpPost = sources.trumpGeoPosts[0] ?? null;
+  const war = critical
+    ? firstShortClause(critical.title, 10, 62)
+    : "Quiet tape — no headline risk.";
+
+  const trumpPost = sources.trumpPosts[0] ?? null;
   const trump = trumpPost
     ? firstShortClause(trumpPost.text, 8, 52)
     : null;
 
-  const expect = headline
-    ? "Watch Hormuz retaliation or Kuwait spillover next 24h."
-    : "Quiet on geo unless breaking news hits.";
+  const expect = critical
+    ? classifyHeadline(critical.title) === "critical"
+      ? "Watch headline follow-through on NQ next 24h."
+      : "Macro noise low — trade levels unless headline breaks."
+    : "Feed quiet — structure over news.";
 
   const riskOff = riskOffHint(
-    `${headline?.title ?? ""} ${trumpPost?.text ?? ""}`
+    `${critical?.title ?? ""} ${trumpPost?.text ?? ""}`
   );
   const markets = riskOff
-    ? "Risk-off tone — NQ/ES heavy, gold bid on gaps."
-    : "Low geo noise — trade structure and levels.";
+    ? "Headline risk — NQ/ES heavy, gold bid on gaps."
+    : "Low headline risk — trade structure and levels.";
 
   return sanitizeGeoBrief({ war, trump, expect, markets });
 }
@@ -268,15 +285,49 @@ async function generateGeopoliticsBrief(): Promise<GeopoliticsBriefPayload> {
 
 const getCachedGeoBriefOpen = unstable_cache(
   generateGeopoliticsBrief,
-  ["geopolitics-brief-v7-open"],
+  ["geopolitics-brief-v8-open"],
   { revalidate: GEO_BRIEF_REVALIDATE_SEC, tags: ["geopolitics-brief"] }
 );
 
 const getCachedGeoBriefClosed = unstable_cache(
   generateGeopoliticsBrief,
-  ["geopolitics-brief-v7-closed"],
+  ["geopolitics-brief-v8-closed"],
   { revalidate: GEO_BRIEF_CLOSED_REVALIDATE_SEC, tags: ["geopolitics-brief"] }
 );
+
+/** Merge cached AI brief with always-fresh live headlines + feed. */
+export async function composeGeopoliticsPayload(
+  cached: GeopoliticsBriefPayload
+): Promise<GeopoliticsBriefPayload> {
+  const sources = await gatherGeopoliticsSources();
+  const live = attachFeed(formatGeopoliticsDeterministic(sources), sources);
+  const aiUsable =
+    cached.configured &&
+    sources.headlines.length > 0 &&
+    !isPlaceholderWar(cached.war.text);
+
+  const strings: GeopoliticsBriefStrings = {
+    war: aiUsable ? cached.war.text : live.war.text,
+    trump: cached.trump?.text ?? live.trump?.text ?? null,
+    expect:
+      aiUsable && !isPlaceholderExpect(cached.expect.text)
+        ? cached.expect.text
+        : live.expect.text,
+    markets: cached.markets || live.markets,
+  };
+
+  return finalizeBrief(
+    {
+      ...attachSourceLinks(strings, sources),
+      feed: live.feed,
+    },
+    {
+      generatedAt: new Date().toISOString(),
+      configured: cached.configured,
+      revalidateSec: cached.revalidateSec,
+    }
+  );
+}
 
 export async function getCachedGeopoliticsBrief(): Promise<GeopoliticsBriefPayload> {
   return isFuturesSessionOpen()

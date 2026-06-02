@@ -45,15 +45,30 @@ function formatTime(iso: string): string {
   }).format(date);
 }
 
+function importanceLabel(
+  item: MarketNewsItem
+): { text: string; className: string } {
+  if (item.kind === "trump") {
+    return { text: "Trump", className: "news-feed-tag--trump" };
+  }
+  switch (item.importance) {
+    case "critical":
+      return { text: "Must know", className: "news-feed-tag--critical" };
+    case "important":
+      return { text: "Macro", className: "news-feed-tag--important" };
+    default:
+      return { text: "FYI", className: "news-feed-tag--minor" };
+  }
+}
+
 export function MarketNewsFeed() {
   const { data, isLoading } = useSWR<GeoPayload>(
     "/api/bias/geopolitics",
     (url: string) => fetch(url).then((r) => r.json()),
     {
-      refreshInterval: (latest) =>
-        (latest?.revalidateSec ?? GEO_BRIEF_REVALIDATE_SEC) * 1000,
-      revalidateOnFocus: false,
-      dedupingInterval: GEO_BRIEF_REVALIDATE_SEC * 1000,
+      refreshInterval: 60_000,
+      revalidateOnFocus: true,
+      dedupingInterval: 30_000,
     }
   );
 
@@ -62,7 +77,7 @@ export function MarketNewsFeed() {
   if (isLoading && feed.length === 0) {
     return (
       <section className="news-feed news-feed--loading" aria-label="Market news">
-        <p className="news-feed-muted">Scanning war &amp; Trump headlines…</p>
+        <p className="news-feed-muted">Loading live headlines…</p>
       </section>
     );
   }
@@ -72,9 +87,11 @@ export function MarketNewsFeed() {
       <section className="news-feed" aria-label="Market news">
         <header className="news-feed-head">
           <h2 className="news-feed-title">News</h2>
-          <span className="news-feed-sub">NQ · ES · Gold</span>
+          <span className="news-feed-sub">Live · NQ · ES · Gold</span>
         </header>
-        <p className="news-feed-muted">No war or Trump headlines in feed right now.</p>
+        <p className="news-feed-muted">
+          Headlines unavailable — RSS may be blocked. Retry in a minute.
+        </p>
       </section>
     );
   }
@@ -83,31 +100,35 @@ export function MarketNewsFeed() {
     <section className="news-feed" aria-label="Market news">
       <header className="news-feed-head">
         <h2 className="news-feed-title">News</h2>
-        <span className="news-feed-sub">War &amp; Trump · NQ · ES · Gold</span>
+        <span className="news-feed-sub">Live · NQ · ES · Gold</span>
       </header>
       <ul className="news-feed-list">
-        {feed.map((item) => (
-          <li key={item.id} className={`news-feed-row news-feed-row--${item.kind}`}>
-            <span className={`news-feed-tag news-feed-tag--${item.kind}`}>
-              {item.kind === "trump" ? "Trump" : "War"}
-            </span>
-            {item.link ? (
-              <a
-                href={item.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="news-feed-text"
-              >
-                {item.text}
-              </a>
-            ) : (
-              <p className="news-feed-text">{item.text}</p>
-            )}
-            <time className="news-feed-time" dateTime={item.publishedAt}>
-              {formatTime(item.publishedAt)}
-            </time>
-          </li>
-        ))}
+        {feed.map((item) => {
+          const tag = importanceLabel(item);
+          return (
+            <li
+              key={item.id}
+              className={`news-feed-row news-feed-row--${item.importance}`}
+            >
+              <span className={`news-feed-tag ${tag.className}`}>{tag.text}</span>
+              {item.link ? (
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="news-feed-text"
+                >
+                  {item.text}
+                </a>
+              ) : (
+                <p className="news-feed-text">{item.text}</p>
+              )}
+              <time className="news-feed-time" dateTime={item.publishedAt}>
+                {formatTime(item.publishedAt)}
+              </time>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

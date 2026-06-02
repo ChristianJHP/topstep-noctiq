@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   attachSourceLinks,
+  composeGeopoliticsPayload,
   formatGeopoliticsDeterministic,
   GEO_BRIEF_CLOSED_REVALIDATE_SEC,
   GEO_BRIEF_REVALIDATE_SEC,
@@ -9,6 +10,8 @@ import {
 import { gatherGeopoliticsSources, buildMarketNewsFeed } from "@/lib/geopolitics-sources";
 import { isFuturesSessionOpen } from "@/lib/futures-session";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const marketClosed = !isFuturesSessionOpen();
   const revalidateSec = marketClosed
@@ -16,10 +19,14 @@ export async function GET() {
     : GEO_BRIEF_REVALIDATE_SEC;
 
   try {
-    const payload = await getCachedGeopoliticsBrief();
+    const cached = await getCachedGeopoliticsBrief();
+    const payload = await composeGeopoliticsPayload({
+      ...cached,
+      revalidateSec,
+    });
     return NextResponse.json(payload, {
       headers: {
-        "Cache-Control": `public, s-maxage=${revalidateSec}, max-age=${revalidateSec}, stale-while-revalidate=300`,
+        "Cache-Control": `public, s-maxage=60, max-age=60, stale-while-revalidate=120`,
       },
     });
   } catch (error) {
@@ -42,15 +49,15 @@ export async function GET() {
       return NextResponse.json(
         {
           war: {
-            text: "Geopolitics feed unavailable.",
+            text: "Headlines feed unavailable.",
             link: null,
           },
           trump: null,
           expect: {
-            text: "Check headlines manually before trading.",
+            text: "Check FinancialJuice manually before trading.",
             link: null,
           },
-          markets: "Unknown geo impact — size down until context clears.",
+          markets: "Unknown headline risk — size down until context clears.",
           feed: [],
           generatedAt: new Date().toISOString(),
           configured: false,

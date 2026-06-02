@@ -1862,16 +1862,28 @@
     margin-top: 0.125rem;
   }
 
-  .news-feed-tag--war {
+  .news-feed-tag--trump {
+    color: #c4b5fd;
+    background: rgba(167, 139, 250, 0.1);
+    border: 1px solid rgba(167, 139, 250, 0.2);
+  }
+
+  .news-feed-tag--critical {
     color: #f0a868;
     background: rgba(229, 160, 71, 0.12);
     border: 1px solid rgba(229, 160, 71, 0.22);
   }
 
-  .news-feed-tag--trump {
-    color: #c4b5fd;
-    background: rgba(167, 139, 250, 0.1);
-    border: 1px solid rgba(167, 139, 250, 0.2);
+  .news-feed-tag--important {
+    color: #7eb8ff;
+    background: rgba(90, 162, 255, 0.1);
+    border: 1px solid rgba(90, 162, 255, 0.2);
+  }
+
+  .news-feed-tag--minor {
+    color: var(--muted);
+    background: rgba(148, 163, 184, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.14);
   }
 
   .news-feed-text {

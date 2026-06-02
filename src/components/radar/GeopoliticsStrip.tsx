@@ -2,7 +2,6 @@
 
 import useSWR from "swr";
 import {
-  GEO_BRIEF_REVALIDATE_SEC,
   type GeoBriefField,
 } from "@/lib/geopolitics-brief";
 
@@ -36,10 +35,9 @@ export function GeopoliticsStrip() {
     "/api/bias/geopolitics",
     (url: string) => fetch(url).then((r) => r.json()),
     {
-      refreshInterval: (latest) =>
-        (latest?.revalidateSec ?? GEO_BRIEF_REVALIDATE_SEC) * 1000,
-      revalidateOnFocus: false,
-      dedupingInterval: GEO_BRIEF_REVALIDATE_SEC * 1000,
+      refreshInterval: 60_000,
+      revalidateOnFocus: true,
+      dedupingInterval: 30_000,
     }
   );
 
@@ -56,7 +54,7 @@ export function GeopoliticsStrip() {
   return (
     <section className="geo-strip" aria-label="Geopolitics brief">
       <div className="geo-strip-row">
-        <span className="geo-k">War</span>
+        <span className="geo-k">Now</span>
         <GeoLink field={data.war} className="geo-v" />
       </div>
       {data.trump ? (

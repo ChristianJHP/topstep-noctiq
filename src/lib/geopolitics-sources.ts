@@ -23,7 +23,10 @@ export type MarketNewsItem = {
   text: string;
   link: string | null;
   publishedAt: string;
+  importance: NewsImportance;
 };
+
+export type NewsImportance = "critical" | "important" | "minor";
 
 /** Market-wrap slop — not war news. */
 const HEADLINE_JUNK: RegExp[] = [
@@ -164,16 +167,43 @@ export function isGeoTopic(text: string): boolean {
   return isWarUpdateHeadline(text) || isWarUpdateTrumpPost(text);
 }
 
-function filterGeoHeadlines(raw: Headline[], limit = 10): GeoHeadline[] {
-  const sorted = raw
-    .filter((h) => isWarUpdateHeadline(h.title))
-    .sort(
-      (a, b) =>
-        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-    )
-    .map(({ title, link, publishedAt }) => ({ title, link, publishedAt }));
+function importanceForTitle(title: string): NewsImportance {
+  const priority = classifyHeadline(title);
+  if (priority === "critical") return "critical";
+  if (priority === "important") return "important";
+  return "minor";
+}
 
-  return dedupeByStory(sorted, limit);
+function importanceForTrump(text: string): NewsImportance {
+  if (isWarUpdateTrumpPost(text)) return "critical";
+  const priority = classifyHeadline(text);
+  if (priority === "critical") return "critical";
+  if (priority === "important") return "important";
+  return "minor";
+}
+
+/** Live RSS headlines — market-moving first, then recent wire, minus obvious slop. */
+function buildLiveHeadlines(
+  raw: Headline[],
+  marketMoving: Headline[],
+  limit = 15
+): GeoHeadline[] {
+  const seen = new Set<string>();
+  const out: GeoHeadline[] = [];
+
+  const add = (h: Headline) => {
+    if (!h.title?.trim()) return;
+    if (isJunkHeadline(h.title)) return;
+    const key = h.link || h.title;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ title: h.title, link: h.link, publishedAt: h.publishedAt });
+  };
+
+  for (const h of marketMoving) add(h);
+  for (const h of raw) add(h);
+
+  return out.slice(0, limit);
 }
 
 const STOP_WORDS = new Set([
@@ -283,10 +313,10 @@ function dedupeNewsItems(items: MarketNewsItem[], limit: number): MarketNewsItem
   return kept;
 }
 
-/** War + Trump headlines that can move NQ / ES / Gold — newest first, deduped. */
+/** Live market headlines + Trump posts — newest first, deduped. */
 export function buildMarketNewsFeed(
   sources: GeopoliticsSources,
-  limit = 8
+  limit = 10
 ): MarketNewsItem[] {
   const headlineItems: MarketNewsItem[] = sources.headlines.map((h) => ({
     id: `h:${h.link || h.title}`,
@@ -294,15 +324,19 @@ export function buildMarketNewsFeed(
     text: truncate(h.title, 130),
     link: h.link,
     publishedAt: h.publishedAt,
+    importance: importanceForTitle(h.title),
   }));
 
-  const trumpItems: MarketNewsItem[] = sources.trumpGeoPosts.map((p) => ({
-    id: `t:${p.id}`,
-    kind: "trump" as const,
-    text: truncate(p.text, 130),
-    link: p.url || null,
-    publishedAt: p.publishedAt,
-  }));
+  const trumpItems: MarketNewsItem[] = sources.trumpPosts
+    .slice(0, 6)
+    .map((p) => ({
+      id: `t:${p.id}`,
+      kind: "trump" as const,
+      text: truncate(p.text, 130),
+      link: p.url || null,
+      publishedAt: p.publishedAt,
+      importance: importanceForTrump(p.text),
+    }));
 
   const merged = [...headlineItems, ...trumpItems].sort(
     (a, b) =>
@@ -319,12 +353,12 @@ export function truncate(text: string, max: number): string {
 }
 
 export async function gatherGeopoliticsSources(): Promise<GeopoliticsSources> {
-  const [{ raw }, trumpPosts] = await Promise.all([
+  const [{ raw, marketMoving }, trumpPosts] = await Promise.all([
     fetchHeadlinesMeta(),
     fetchRecentTrumpPosts(10),
   ]);
 
-  const headlines = filterGeoHeadlines(raw);
+  const headlines = buildLiveHeadlines(raw, marketMoving);
   const trumpGeoPosts = trumpPosts.filter((p) => isWarUpdateTrumpPost(p.text));
 
   return { headlines, trumpPosts, trumpGeoPosts };

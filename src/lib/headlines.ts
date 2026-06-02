@@ -137,7 +137,7 @@ async function fetchHeadlinesUncached(): Promise<HeadlinesPayload> {
 
 const getCachedHeadlines = unstable_cache(
   fetchHeadlinesUncached,
-  ["market-headlines-v3"],
+  ["market-headlines-v4"],
   { revalidate: 120, tags: ["headlines"] }
 );
 
