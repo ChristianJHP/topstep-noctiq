@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import useSWR from "swr";
 import type { MarketNewsItem } from "@/lib/geopolitics-sources";
+import {
+  filterNewsForInstrument,
+  instrumentNewsSubtitle,
+  type InstrumentNewsLabel,
+} from "@/lib/instrument-news";
 
 type GeoPayload = {
   feed?: MarketNewsItem[];
@@ -40,7 +45,7 @@ function labelClass(label: MarketNewsItem["label"]): string {
   }
 }
 
-export function MarketNewsFeed() {
+export function MarketNewsFeed({ instrument }: { instrument: InstrumentNewsLabel }) {
   const [expanded, setExpanded] = useState(false);
   const { data, isLoading } = useSWR<GeoPayload>(
     "/api/bias/geopolitics",
@@ -52,7 +57,11 @@ export function MarketNewsFeed() {
     }
   );
 
-  const feed = data?.feed ?? [];
+  const feed = useMemo(
+    () => filterNewsForInstrument(data?.feed ?? [], instrument, 10),
+    [data?.feed, instrument]
+  );
+
   const visible = expanded ? feed : feed.slice(0, VISIBLE);
   const hiddenCount = Math.max(0, feed.length - VISIBLE);
 
@@ -69,7 +78,7 @@ export function MarketNewsFeed() {
       <section className="news-feed news-feed--compact" aria-label="Market news">
         <header className="news-feed-head">
           <h2 className="news-feed-title">News</h2>
-          <span className="news-feed-sub">Live · NQ · ES · Gold</span>
+          <span className="news-feed-sub">{instrumentNewsSubtitle(instrument)}</span>
         </header>
         <p className="news-feed-muted">
           Headlines unavailable — RSS may be blocked. Retry in a minute.
@@ -82,7 +91,7 @@ export function MarketNewsFeed() {
     <section className="news-feed news-feed--compact" aria-label="Market news">
       <header className="news-feed-head">
         <h2 className="news-feed-title">News</h2>
-        <span className="news-feed-sub">Live · NQ · ES · Gold</span>
+        <span className="news-feed-sub">{instrumentNewsSubtitle(instrument)}</span>
       </header>
       <ul className="news-feed-list">
         {visible.map((item) => (

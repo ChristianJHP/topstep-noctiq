@@ -1,13 +1,19 @@
 "use client";
 
 import useSWR from "swr";
-import type { ContextFeedRow } from "@/lib/geopolitics-sources";
+import { useMemo } from "react";
+import type { ContextFeedRow, GeoHeadline, MarketNewsItem } from "@/lib/geopolitics-sources";
+import {
+  buildInstrumentContextFeed,
+  type InstrumentNewsLabel,
+} from "@/lib/instrument-news";
 
 type GeoPayload = {
-  contextFeed?: ContextFeedRow[];
+  feed?: MarketNewsItem[];
+  headlines?: GeoHeadline[];
 };
 
-export function ContextFeed() {
+export function ContextFeed({ instrument }: { instrument: InstrumentNewsLabel }) {
   const { data, isLoading } = useSWR<GeoPayload>(
     "/api/bias/geopolitics",
     (url: string) => fetch(url).then((r) => r.json()),
@@ -18,7 +24,12 @@ export function ContextFeed() {
     }
   );
 
-  const rows = data?.contextFeed ?? [];
+  const rows = useMemo(() => {
+    const feed = data?.feed ?? [];
+    const headlines = data?.headlines ?? [];
+    if (!feed.length && !headlines.length) return [];
+    return buildInstrumentContextFeed(feed, headlines, instrument);
+  }, [data?.feed, data?.headlines, instrument]);
 
   if (isLoading && rows.length === 0) {
     return (
@@ -31,8 +42,8 @@ export function ContextFeed() {
   if (rows.length === 0) return null;
 
   return (
-    <section className="context-feed" aria-label="Top catalysts">
-      {rows.map((row) => (
+    <section className="context-feed" aria-label={`Top catalysts for ${instrument}`}>
+      {rows.map((row: ContextFeedRow) => (
         <div key={`${row.category}-${row.text}`} className="context-feed-row">
           <span className={`context-feed-k context-feed-k--${row.category.toLowerCase()}`}>
             {row.category}

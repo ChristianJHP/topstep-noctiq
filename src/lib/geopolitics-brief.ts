@@ -8,6 +8,7 @@ import {
   gatherGeopoliticsSources,
   truncate,
   type ContextFeedRow,
+  type GeoHeadline,
   type GeopoliticsSources,
   type MarketNewsItem,
 } from "@/lib/geopolitics-sources";
@@ -27,6 +28,8 @@ export type GeopoliticsBriefPayload = {
   markets: string;
   contextFeed: ContextFeedRow[];
   feed: MarketNewsItem[];
+  /** Raw headline pool for per-instrument ranking on the client. */
+  headlines: GeoHeadline[];
   generatedAt: string;
   configured: boolean;
   revalidateSec: number;
@@ -41,7 +44,7 @@ type GeopoliticsBriefStrings = {
 
 type GeopoliticsBriefCore = Omit<
   GeopoliticsBriefPayload,
-  "generatedAt" | "configured" | "revalidateSec" | "feed" | "contextFeed"
+  "generatedAt" | "configured" | "revalidateSec" | "feed" | "contextFeed" | "headlines"
 >;
 
 function buildPrompt(sources: GeopoliticsSources): string {
@@ -233,6 +236,7 @@ function attachFeed(
     ...attachSourceLinks(brief, sources),
     feed,
     contextFeed: buildContextFeed(feed, sources.headlines),
+    headlines: sources.headlines,
   };
 }
 
@@ -240,7 +244,7 @@ function finalizeBrief(
   brief: Omit<GeopoliticsBriefPayload, "generatedAt" | "configured" | "revalidateSec">,
   base: Pick<GeopoliticsBriefPayload, "generatedAt" | "configured" | "revalidateSec">
 ): GeopoliticsBriefPayload {
-  const { feed, contextFeed, ...core } = brief;
+  const { feed, contextFeed, headlines, ...core } = brief;
   const clamped = sanitizeGeoBrief({
     war: core.war.text,
     trump: core.trump?.text ?? null,
@@ -257,6 +261,7 @@ function finalizeBrief(
     markets: clamped.markets,
     feed,
     contextFeed,
+    headlines,
     ...base,
   };
 }
@@ -339,6 +344,7 @@ export async function composeGeopoliticsPayload(
       ...attachSourceLinks(strings, sources),
       feed: live.feed,
       contextFeed: live.contextFeed,
+      headlines: sources.headlines,
     },
     {
       generatedAt: new Date().toISOString(),

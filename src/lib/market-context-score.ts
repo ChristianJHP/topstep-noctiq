@@ -4,6 +4,7 @@ import { candleSymbolBias } from "@/lib/htf-status";
 import type { TradingSessionLabel } from "@/lib/trading-session";
 import { formatPrice } from "@/lib/strategy-prep";
 import type { MarketNewsItem } from "@/lib/geopolitics-sources";
+import { topCatalystForInstrument } from "@/lib/instrument-news";
 
 export type ClarityLevel = "Low" | "Medium" | "High";
 export type VolatilityLevel = "Low" | "Normal" | "Elevated";
@@ -141,7 +142,11 @@ export function buildMarketSnapshot(
   };
 }
 
-export function topCatalystFromFeed(feed: MarketNewsItem[]): string | null {
+export function topCatalystFromFeed(
+  feed: MarketNewsItem[],
+  instrument?: "NQ" | "ES" | "GC"
+): string | null {
+  if (instrument) return topCatalystForInstrument(feed, instrument);
   const top = feed.find((f) => f.label === "MUST KNOW") ?? feed[0];
   if (!top) return null;
   const t = top.text.replace(/^FinancialJuice:\s*/i, "").trim();

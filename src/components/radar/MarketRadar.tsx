@@ -16,10 +16,8 @@ import { RedFolderMoveToasts } from "@/components/radar/RedFolderMoveToasts";
 import { MarketBoard } from "@/components/radar/MarketBoard";
 import { useRedFolderMoveAlerts } from "@/hooks/use-red-folder-move-alerts";
 import type { EconomicEvent } from "@/lib/events";
-import { ContextFeed } from "@/components/radar/ContextFeed";
 import { CandleTimerStrip } from "@/components/radar/CandleTimerStrip";
 import { CalendarPanel } from "@/components/CalendarPanel";
-import { MarketNewsFeed } from "@/components/radar/MarketNewsFeed";
 import { RadarLoader } from "@/components/radar/RadarLoader";
 
 type RadarData = Pick<
@@ -155,7 +153,6 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
         <RadarLoader />
       ) : ctx ? (
         <>
-          <ContextFeed />
           <MarketBoard
             markets={ctx}
             fifteenMMs={fifteenM.remainingMs}
@@ -165,7 +162,6 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
               tradingSession.isMarketOpen ? tradingSession.label : "Closed"
             }
           />
-          <MarketNewsFeed />
         </>
       ) : (
         <p className="geo-strip-muted" style={{ padding: "1rem" }}>

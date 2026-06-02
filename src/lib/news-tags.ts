@@ -20,6 +20,9 @@ export type NewsTagResult = {
 };
 
 const TOPIC_RULES: { pattern: RegExp; topic: string }[] = [
+  { pattern: /nasdaq|\bnq\b|qqq|growth stock/i, topic: "NQ" },
+  { pattern: /s&p|sp500|\bes\b|equity index/i, topic: "ES" },
+  { pattern: /gold|bullion|comex|xau|precious metal|safe.?haven/i, topic: "GOLD" },
   { pattern: /oil|refinery|opec|crude|energy|pipeline/i, topic: "ENERGY" },
   { pattern: /taiwan|china|cny|yuan|beijing|wechat|tencent/i, topic: "CHINA" },
   {

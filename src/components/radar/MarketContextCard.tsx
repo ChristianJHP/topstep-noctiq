@@ -10,6 +10,8 @@ import {
 } from "@/lib/market-context-score";
 import type { MarketNewsItem } from "@/lib/geopolitics-sources";
 import type { LiveQuote } from "@/lib/yahoo-live-quote";
+import type { SymbolLabel } from "@/lib/strategy-prep";
+import { filterNewsForInstrument } from "@/lib/instrument-news";
 
 type GeoPayload = {
   feed?: MarketNewsItem[];
@@ -45,16 +47,21 @@ export function MarketContextCard({
   );
 
   const feed = data?.feed ?? [];
+  const instrumentFeed = filterNewsForInstrument(
+    feed,
+    symbol.label as SymbolLabel,
+    10
+  );
   const livePrice = liveQuote?.price ?? null;
   const snapshot = buildMarketSnapshot(
     symbol,
     session,
     fifteenMMs,
     candlesPaused,
-    topCatalystFromFeed(feed),
+    topCatalystFromFeed(instrumentFeed, symbol.label as SymbolLabel),
     livePrice
   );
-  const scores = computeContextScores(symbol, session, feed, livePrice);
+  const scores = computeContextScores(symbol, session, instrumentFeed, livePrice);
 
   return (
     <section className="ctx-card" aria-label="Instrument context">

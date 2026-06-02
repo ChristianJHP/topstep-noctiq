@@ -6,6 +6,8 @@ import { MARKET_TICKERS } from "@/lib/chart-data";
 import type { TradingSessionLabel } from "@/lib/trading-session";
 import { MarketContextCard } from "@/components/radar/MarketContextCard";
 import { SymbolColumn } from "@/components/radar/SymbolColumn";
+import { ContextFeed } from "@/components/radar/ContextFeed";
+import { MarketNewsFeed } from "@/components/radar/MarketNewsFeed";
 import { usePrefetchChartCandles } from "@/hooks/use-prefetch-chart-candles";
 import { useLiveQuote } from "@/hooks/use-live-quote";
 import type { ChartCandlesPayload } from "@/lib/chart-candles-cache";
@@ -63,6 +65,8 @@ export function MarketBoard({
           ))}
         </div>
 
+        <ContextFeed instrument={tab} />
+
         <MarketContextCard
           symbol={symbol}
           session={sessionLabel}
@@ -76,6 +80,8 @@ export function MarketBoard({
           symbol={symbol}
           liveQuote={liveQuote}
         />
+
+        <MarketNewsFeed instrument={tab} />
       </div>
     </section>
   );
