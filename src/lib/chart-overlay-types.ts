@@ -23,7 +23,7 @@ export const CHART_OVERLAY_LABELS: Record<
 export const DEFAULT_CHART_OVERLAYS: ChartOverlaySettings = {
   draw: true,
   fvg: true,
-  rejection: true,
+  rejection: false,
   cisd: false,
   session: true,
   levels: true,

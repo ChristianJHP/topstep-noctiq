@@ -13,7 +13,7 @@ export {
   DEFAULT_CHART_OVERLAYS,
 } from "@/lib/chart-overlay-types";
 
-const STORAGE_KEY = "jhptrades-chart-overlays-v2";
+const STORAGE_KEY = "jhptrades-chart-overlays-v3";
 
 function readStored(): ChartOverlaySettings {
   if (typeof window === "undefined") return DEFAULT_CHART_OVERLAYS;
