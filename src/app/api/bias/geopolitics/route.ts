@@ -6,17 +6,31 @@ import {
   GEO_BRIEF_CLOSED_REVALIDATE_SEC,
   GEO_BRIEF_REVALIDATE_SEC,
   getCachedGeopoliticsBrief,
+  getFreshGeopoliticsBrief,
 } from "@/lib/geopolitics-brief";
 import { gatherGeopoliticsSources, buildMarketNewsFeed, buildContextFeed } from "@/lib/geopolitics-sources";
 import { isFuturesSessionOpen } from "@/lib/futures-session";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const fresh = new URL(request.url).searchParams.get("fresh") === "1";
   const marketClosed = !isFuturesSessionOpen();
   const revalidateSec = marketClosed
     ? GEO_BRIEF_CLOSED_REVALIDATE_SEC
     : GEO_BRIEF_REVALIDATE_SEC;
+
+  if (fresh) {
+    try {
+      const payload = await getFreshGeopoliticsBrief();
+      return NextResponse.json(
+        { ...payload, revalidateSec },
+        { headers: { "Cache-Control": "no-store" } }
+      );
+    } catch (error) {
+      console.error("[bias/geopolitics fresh]", error);
+    }
+  }
 
   try {
     const cached = await getCachedGeopoliticsBrief();

@@ -59,9 +59,9 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
     {
       fallbackData: initialData ?? undefined,
       revalidateOnMount: !initialData?.markets,
-      refreshInterval: pageVisible ? 60_000 : 0,
+      refreshInterval: pageVisible ? 30_000 : 0,
       keepPreviousData: true,
-      dedupingInterval: 30_000,
+      dedupingInterval: 15_000,
     }
   );
 

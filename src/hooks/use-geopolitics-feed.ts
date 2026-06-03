@@ -3,6 +3,8 @@
 import useSWR from "swr";
 import type { GeoHeadline, MarketNewsItem } from "@/lib/geopolitics-sources";
 import { usePageVisible } from "@/hooks/use-page-visible";
+import { isFuturesSessionOpen } from "@/lib/futures-session";
+import { LIVE_NEWS_REFRESH_MS } from "@/lib/bias-summary-config";
 
 export type GeopoliticsFeedPayload = {
   feed?: MarketNewsItem[];
@@ -18,11 +20,12 @@ const fetcher = (url: string) =>
 /** One shared poll for catalyst + news — avoids duplicate /api/bias/geopolitics requests. */
 export function useGeopoliticsFeed() {
   const pageVisible = usePageVisible();
+  const fast = pageVisible && isFuturesSessionOpen();
 
   const swr = useSWR<GeopoliticsFeedPayload>("/api/bias/geopolitics", fetcher, {
-    refreshInterval: pageVisible ? 60_000 : 0,
-    revalidateOnFocus: pageVisible,
-    dedupingInterval: 30_000,
+    refreshInterval: fast ? LIVE_NEWS_REFRESH_MS : 0,
+    revalidateOnFocus: fast,
+    dedupingInterval: fast ? 15_000 : 30_000,
     keepPreviousData: true,
   });
 

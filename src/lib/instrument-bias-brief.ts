@@ -3,6 +3,7 @@ import { generateText } from "ai";
 import { getBiasSummaryModel, isAiGatewayConfigured } from "@/lib/ai-gateway";
 import {
   BIAS_SUMMARY_CLOSED_REVALIDATE_SEC,
+  BIAS_SUMMARY_REACTION_REVALIDATE_SEC,
   BIAS_SUMMARY_REVALIDATE_SEC,
 } from "@/lib/bias-summary-config";
 import { fetchCalendarMeta, pickNextHighImpact } from "@/lib/events";
@@ -356,4 +357,31 @@ export async function getCachedInstrumentBiasBrief(
 ): Promise<InstrumentBiasPayload> {
   const c = caches[label];
   return isFuturesSessionOpen() ? c.open() : c.closed();
+}
+
+/** Bypass 30m cache — fresh structure + prices after a volatile move. */
+export async function getFreshInstrumentBiasBrief(
+  label: SymbolLabel,
+  liveReaction?: string
+): Promise<InstrumentBiasPayload> {
+  const ctx = await buildInstrumentBiasContext(label);
+  let tradeMap = buildTradeMapFromContext(ctx);
+  if (liveReaction) {
+    tradeMap = {
+      ...tradeMap,
+      context: `${liveReaction} ${tradeMap.context}`,
+      newsLine: liveReaction,
+    };
+  }
+  const summaryText = `${tradeMap.headline} ${tradeMap.context}`;
+  return {
+    symbol: label,
+    generatedAt: new Date().toISOString(),
+    configured: isAiGatewayConfigured(),
+    marketOpen: ctx.marketOpen,
+    revalidateSec: BIAS_SUMMARY_REACTION_REVALIDATE_SEC,
+    line: summaryText,
+    tradeMap,
+    overlays: resolveSummaryOverlays(summaryText, ctx),
+  };
 }

@@ -359,3 +359,9 @@ export async function getCachedGeopoliticsBrief(): Promise<GeopoliticsBriefPaylo
     ? getCachedGeoBriefOpen()
     : getCachedGeoBriefClosed();
 }
+
+/** Bypass unstable_cache — fresh AI brief + live headlines after a volatile move. */
+export async function getFreshGeopoliticsBrief(): Promise<GeopoliticsBriefPayload> {
+  const brief = await generateGeopoliticsBrief();
+  return composeGeopoliticsPayload(brief);
+}

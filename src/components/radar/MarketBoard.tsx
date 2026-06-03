@@ -11,6 +11,7 @@ import { overlaysFromSummaryText } from "@/lib/summary-chart-overlays";
 import { usePrefetchChartCandles } from "@/hooks/use-prefetch-chart-candles";
 import { useWarmChartCache } from "@/hooks/use-warm-chart-cache";
 import { useLiveQuote } from "@/hooks/use-live-quote";
+import { usePriceReactions } from "@/hooks/use-price-reactions";
 import type { ChartCandlesPayload } from "@/lib/chart-candles-cache";
 
 export type RadarTab = "NQ" | "ES" | "GC";
@@ -49,6 +50,8 @@ function SymbolPanel({
   markets: MarketContext;
   liveQuote: ReturnType<typeof useLiveQuote>;
 }) {
+  const ticker = MARKET_TICKERS[id];
+  const { liveReaction } = usePriceReactions(id, ticker, liveQuote, active);
   const summary = useInstrumentBiasSummary(id);
   const symbol =
     id === "NQ" ? markets.nq : id === "ES" ? markets.es : markets.gold;
@@ -73,6 +76,7 @@ function SymbolPanel({
         data={summary.data}
         isLoading={summary.isLoading}
         isValidating={summary.isValidating}
+        liveReaction={liveReaction}
       />
       <SymbolColumn
         symbol={symbol}
@@ -86,6 +90,7 @@ function SymbolPanel({
         instrument={id}
         newsImpact={summary.data?.tradeMap?.newsImpact}
         newsLine={summary.data?.tradeMap?.newsLine}
+        liveReaction={liveReaction}
       />
     </div>
   );

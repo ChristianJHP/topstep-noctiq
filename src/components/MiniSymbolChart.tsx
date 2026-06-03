@@ -38,6 +38,7 @@ import {
 } from "@/lib/chart-autoscale";
 import { useChartCandles } from "@/hooks/use-chart-candles";
 import { useIsMobile } from "@/hooks/use-is-mobile";
+import type { LiveQuote } from "@/lib/yahoo-live-quote";
 import { ChartSkeleton } from "@/components/radar/LiveSkeleton";
 import {
   formatChartEtCrosshair,
@@ -76,6 +77,8 @@ type MiniSymbolChartProps = {
   timeframe: ChartTimeframe;
   overlays?: ChartOverlaySettings;
   currentPrice?: number;
+  /** Forming 1m bar from live quote — wicks update during volatile moves. */
+  liveBar?: LiveQuote["bar"];
   /** When a keep-alive panel becomes visible, nudge the chart to measure. */
   visible?: boolean;
 };
@@ -126,6 +129,7 @@ export function MiniSymbolChart({
   timeframe,
   overlays,
   currentPrice,
+  liveBar = null,
   visible = true,
 }: MiniSymbolChartProps) {
   const isMobile = useIsMobile();
@@ -444,7 +448,7 @@ export function MiniSymbolChart({
     if (!mounted || !seriesRef.current || !bars.length) return;
 
     const livePrice = currentPrice ?? bars[bars.length - 1]!.close;
-    const patched = patchFormingBar(bars, livePrice);
+    const patched = patchFormingBar(bars, livePrice, liveBar);
 
     barCountRef.current = patched.length;
     lastBarTimeRef.current = patched[patched.length - 1]!.time;
@@ -482,16 +486,31 @@ export function MiniSymbolChart({
   useEffect(() => {
     const series = seriesRef.current;
     const last = lastBarRef.current;
-    if (!mounted || !series || !last || currentPrice == null || currentPrice <= 0) {
+    if (!mounted || !series || !last) return;
+
+    const close =
+      currentPrice != null && currentPrice > 0
+        ? currentPrice
+        : liveBar?.close && liveBar.close > 0
+          ? liveBar.close
+          : null;
+    if (close == null) return;
+
+    const high = Math.max(last.high, close, liveBar?.high ?? close);
+    const low = Math.min(last.low, close, liveBar?.low ?? close);
+    if (
+      Math.abs(last.close - close) < 0.01 &&
+      Math.abs(last.high - high) < 0.01 &&
+      Math.abs(last.low - low) < 0.01
+    ) {
       return;
     }
-    if (Math.abs(last.close - currentPrice) < 0.01) return;
 
     const updated: OhlcBar = {
       ...last,
-      close: currentPrice,
-      high: Math.max(last.high, currentPrice),
-      low: Math.min(last.low, currentPrice),
+      close,
+      high,
+      low,
     };
     lastBarRef.current = updated;
     series.update({
@@ -501,7 +520,7 @@ export function MiniSymbolChart({
       low: updated.low,
       close: updated.close,
     });
-  }, [currentPrice, mounted]);
+  }, [currentPrice, liveBar, mounted]);
 
   useEffect(() => {
     if (fetchError && !candles.length) setError("unavailable");

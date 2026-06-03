@@ -28,6 +28,7 @@ export function SymbolChartPane({
     [symbol, timeframe, chartFocus, overlays]
   );
   const currentPrice = liveQuote?.price ?? symbol.current;
+  const liveBar = liveQuote?.bar ?? null;
 
   return (
     <div className="sym-chart-pane">
@@ -42,6 +43,7 @@ export function SymbolChartPane({
           timeframe={timeframe}
           overlays={overlays}
           currentPrice={currentPrice}
+          liveBar={liveBar}
           visible={visible}
         />
       </div>

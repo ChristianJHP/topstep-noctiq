@@ -5,6 +5,7 @@ import {
   buildInstrumentBiasContext,
   formatInstrumentBiasDeterministic,
   getCachedInstrumentBiasBrief,
+  getFreshInstrumentBiasBrief,
 } from "@/lib/instrument-bias-brief";
 import { resolveSummaryOverlays } from "@/lib/summary-chart-overlays";
 import type { SymbolLabel } from "@/lib/strategy-prep";
@@ -18,9 +19,10 @@ function parseSymbol(raw: string | null): SymbolLabel | null {
 }
 
 export async function GET(request: Request) {
-  const label = parseSymbol(
-    new URL(request.url).searchParams.get("symbol")?.toUpperCase() ?? null
-  );
+  const url = new URL(request.url);
+  const label = parseSymbol(url.searchParams.get("symbol")?.toUpperCase() ?? null);
+  const fresh = url.searchParams.get("fresh") === "1";
+  const reaction = url.searchParams.get("reaction")?.trim() || undefined;
 
   if (!label) {
     return NextResponse.json(
@@ -30,6 +32,18 @@ export async function GET(request: Request) {
   }
 
   const marketClosed = !isFuturesSessionOpen();
+
+  if (fresh) {
+    try {
+      const payload = await getFreshInstrumentBiasBrief(label, reaction);
+      return NextResponse.json(payload, {
+        headers: { "Cache-Control": "no-store" },
+      });
+    } catch (error) {
+      console.error("[bias/instrument-summary fresh]", error);
+    }
+  }
+
   const cacheControl = biasSummaryCacheControl(marketClosed);
 
   try {

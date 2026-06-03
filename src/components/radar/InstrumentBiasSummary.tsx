@@ -53,6 +53,7 @@ type InstrumentBiasSummaryProps = {
   data?: InstrumentSummaryPayload;
   isLoading?: boolean;
   isValidating?: boolean;
+  liveReaction?: string | null;
 };
 
 export function InstrumentBiasSummary({
@@ -60,6 +61,7 @@ export function InstrumentBiasSummary({
   data,
   isLoading = false,
   isValidating = false,
+  liveReaction = null,
 }: InstrumentBiasSummaryProps) {
   const now = useCountdownTick(30_000);
   const map = data?.tradeMap;
@@ -88,6 +90,13 @@ export function InstrumentBiasSummary({
           <span className="bias-summary-timing">{refreshMeta}</span>
         ) : null}
       </header>
+
+      {liveReaction ? (
+        <p className="trade-map-live-reaction live-stagger-in" role="status">
+          <span className="live-pulse-dot" aria-hidden />
+          {liveReaction}
+        </p>
+      ) : null}
 
       {isLoading && !map?.headline ? (
         <BiasSummarySkeleton />

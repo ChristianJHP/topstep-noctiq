@@ -8,6 +8,7 @@ import {
 } from "@/lib/instrument-news";
 import { NewsFeedSkeleton } from "@/components/radar/LiveSkeleton";
 import { useGeopoliticsFeed } from "@/hooks/use-geopolitics-feed";
+import { mergeReactionIntoNewsLine } from "@/lib/live-reaction";
 
 function formatTime(iso: string): string {
   const date = new Date(iso);
@@ -43,12 +44,14 @@ type MarketNewsFeedProps = {
   instrument: InstrumentNewsLabel;
   newsImpact?: string;
   newsLine?: string;
+  liveReaction?: string | null;
 };
 
 export function MarketNewsFeed({
   instrument,
   newsImpact,
   newsLine,
+  liveReaction = null,
 }: MarketNewsFeedProps) {
   const [expanded, setExpanded] = useState(false);
   const { feed: rawFeed, isLoading } = useGeopoliticsFeed();
@@ -63,7 +66,10 @@ export function MarketNewsFeed({
   }
 
   const impact = newsImpact ?? "Mixed";
-  const catalyst = newsLine ?? "No catalyst summary available.";
+  const baseCatalyst = newsLine ?? "No catalyst summary available.";
+  const catalyst = liveReaction
+    ? mergeReactionIntoNewsLine(baseCatalyst, liveReaction)
+    : baseCatalyst;
 
   return (
     <section className="news-feed news-feed--compact live-enter" aria-label="Market news">

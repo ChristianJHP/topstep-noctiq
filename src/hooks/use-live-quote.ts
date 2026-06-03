@@ -3,6 +3,8 @@
 import useSWR from "swr";
 import type { LiveQuote } from "@/lib/yahoo-live-quote";
 import { usePageVisible } from "@/hooks/use-page-visible";
+import { isFuturesSessionOpen } from "@/lib/futures-session";
+import { LIVE_QUOTE_REFRESH_MS } from "@/lib/bias-summary-config";
 
 const fetcher = (url: string) =>
   fetch(url).then((r) => {
@@ -17,17 +19,18 @@ type UseLiveQuoteOptions = {
 /** Poll Yahoo 1m quote — pauses when the browser tab is hidden. */
 export function useLiveQuote(
   ticker: string,
-  { refreshMs = 15_000 }: UseLiveQuoteOptions = {}
+  { refreshMs = LIVE_QUOTE_REFRESH_MS }: UseLiveQuoteOptions = {}
 ): LiveQuote | null {
   const pageVisible = usePageVisible();
+  const fast = pageVisible && isFuturesSessionOpen();
 
   const { data } = useSWR<LiveQuote>(
     `/api/quote?ticker=${encodeURIComponent(ticker)}`,
     fetcher,
     {
-      refreshInterval: pageVisible ? refreshMs : 0,
-      revalidateOnFocus: pageVisible,
-      dedupingInterval: 10_000,
+      refreshInterval: fast ? refreshMs : 0,
+      revalidateOnFocus: fast,
+      dedupingInterval: fast ? 2_000 : 10_000,
       keepPreviousData: true,
     }
   );

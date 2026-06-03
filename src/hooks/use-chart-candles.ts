@@ -55,6 +55,8 @@ const fetcher = (url: string) =>
     return r.json() as Promise<ChartCandlesPayload>;
   });
 
+const CHART_CANDLES_DEDUPING_MS = 15_000;
+
 export function useChartCandles(
   ticker: string,
   interval: string,
@@ -67,7 +69,7 @@ export function useChartCandles(
 
   const swr = useSWR<ChartCandlesPayload>(swrKey, fetcher, {
     fallbackData: localFallback,
-    dedupingInterval: CHART_CANDLES_REVALIDATE_OPEN_SEC * 1000,
+    dedupingInterval: CHART_CANDLES_DEDUPING_MS,
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     keepPreviousData: true,

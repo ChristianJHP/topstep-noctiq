@@ -93,21 +93,48 @@ export function barsForTimeframe(
 /** Update the forming bar with a live quote so the chart matches the header price. */
 export function patchFormingBar(
   bars: OhlcBar[],
-  livePrice: number | undefined
+  livePrice: number | undefined,
+  liveMinuteBar?: {
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+  } | null
 ): OhlcBar[] {
-  if (!livePrice || livePrice <= 0 || bars.length === 0) return bars;
+  if (bars.length === 0) return bars;
 
   const last = bars[bars.length - 1]!;
+  const close =
+    livePrice && livePrice > 0
+      ? livePrice
+      : liveMinuteBar?.close && liveMinuteBar.close > 0
+        ? liveMinuteBar.close
+        : undefined;
+
+  if (liveMinuteBar && close) {
+    return [
+      ...bars.slice(0, -1),
+      {
+        ...last,
+        close,
+        high: Math.max(last.high, liveMinuteBar.high, close),
+        low: Math.min(last.low, liveMinuteBar.low, close),
+      },
+    ];
+  }
+
+  if (!close) return bars;
+
   const maxPatch = Math.max(last.close * 0.025, last.close > 2000 ? 140 : 24);
-  if (Math.abs(livePrice - last.close) > maxPatch) return bars;
+  if (Math.abs(close - last.close) > maxPatch) return bars;
 
   return [
     ...bars.slice(0, -1),
     {
       ...last,
-      close: livePrice,
-      high: Math.max(last.high, livePrice),
-      low: Math.min(last.low, livePrice),
+      close,
+      high: Math.max(last.high, close),
+      low: Math.min(last.low, close),
     },
   ];
 }

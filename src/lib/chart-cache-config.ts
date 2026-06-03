@@ -1,7 +1,7 @@
 import { isFuturesSessionOpen } from "@/lib/futures-session";
 
 /** Yahoo candle refresh while futures are open (seconds). */
-export const CHART_CANDLES_REVALIDATE_OPEN_SEC = 90;
+export const CHART_CANDLES_REVALIDATE_OPEN_SEC = 30;
 
 /** Longer cache when futures are closed. */
 export const CHART_CANDLES_REVALIDATE_CLOSED_SEC = 5 * 60;
