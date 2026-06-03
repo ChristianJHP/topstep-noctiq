@@ -16,6 +16,11 @@ import {
   type SymbolLabel,
 } from "@/lib/strategy-prep";
 import { getTradingSessionInfo } from "@/lib/trading-session";
+import {
+  parseModelOverlays,
+  resolveSummaryOverlays,
+} from "@/lib/summary-chart-overlays";
+import type { ChartOverlaySettings } from "@/lib/chart-overlay-types";
 
 export type InstrumentBiasPayload = {
   line: string;
@@ -24,6 +29,7 @@ export type InstrumentBiasPayload = {
   configured: boolean;
   marketOpen: boolean;
   revalidateSec: number;
+  overlays: ChartOverlaySettings;
 };
 
 export type InstrumentBiasContext = {
@@ -169,7 +175,9 @@ function buildPrompt(ctx: InstrumentBiasContext): string {
 INPUT JSON:
 ${JSON.stringify(ctx)}
 
-Return ONLY valid JSON: {"line": ""}
+Return ONLY valid JSON: {"line": "", "overlays": {"draw": false, "fvg": false, "rejection": false, "cisd": false, "session": false, "levels": false}}
+
+Set each overlays.* key to true ONLY if that concept appears in your sentence (draw on liquidity, FVG/gap, rejection block, CISD, session name, HTF levels/PD/premium/discount). Otherwise false.
 
 The sentence must weave in relevant drivers from JSON only, such as:
 ${closed
@@ -201,17 +209,28 @@ function clampLine(text: string, maxWords = 45, maxChars = 280): string {
   return t;
 }
 
-function parseLine(text: string): string | null {
+function parseAiResponse(text: string): {
+  line: string | null;
+  overlays: Partial<ChartOverlaySettings> | null;
+} {
   try {
     const cleaned = text
       .replace(/```json\n?/g, "")
       .replace(/```\n?/g, "")
       .trim();
-    const parsed = JSON.parse(cleaned) as { line?: string };
-    if (typeof parsed.line !== "string" || !parsed.line.trim()) return null;
-    return clampLine(parsed.line);
+    const parsed = JSON.parse(cleaned) as {
+      line?: string;
+      overlays?: unknown;
+    };
+    if (typeof parsed.line !== "string" || !parsed.line.trim()) {
+      return { line: null, overlays: null };
+    }
+    return {
+      line: clampLine(parsed.line),
+      overlays: parseModelOverlays(parsed.overlays),
+    };
   } catch {
-    return null;
+    return { line: null, overlays: null };
   }
 }
 
@@ -272,25 +291,42 @@ async function generateInstrumentBiasBrief(
   };
 
   if (!isAiGatewayConfigured()) {
-    return { line: fallback, ...base };
+    return {
+      line: fallback,
+      overlays: resolveSummaryOverlays(fallback, ctx),
+      ...base,
+    };
   }
 
   const model = getBiasSummaryModel();
   if (!model) {
-    return { line: fallback, ...base };
+    return {
+      line: fallback,
+      overlays: resolveSummaryOverlays(fallback, ctx),
+      ...base,
+    };
   }
 
   try {
     const { text } = await generateText({
       model,
       prompt: buildPrompt(ctx),
-      maxOutputTokens: 140,
+      maxOutputTokens: 180,
     });
-    const line = parseLine(text) ?? fallback;
-    return { line, ...base };
+    const parsed = parseAiResponse(text);
+    const line = parsed.line ?? fallback;
+    return {
+      line,
+      overlays: resolveSummaryOverlays(line, ctx, parsed.overlays),
+      ...base,
+    };
   } catch (error) {
     console.error(`[instrument-bias/${label}]`, error);
-    return { line: fallback, ...base };
+    return {
+      line: fallback,
+      overlays: resolveSummaryOverlays(fallback, ctx),
+      ...base,
+    };
   }
 }
 

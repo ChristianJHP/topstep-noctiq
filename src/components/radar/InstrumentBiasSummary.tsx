@@ -1,34 +1,12 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import useSWR from "swr";
 import { useCountdownTick } from "@/hooks/use-countdown-tick";
 import { BIAS_SUMMARY_REVALIDATE_SEC } from "@/lib/bias-summary-config";
 import { BiasSummarySkeleton } from "@/components/radar/LiveSkeleton";
+import type { InstrumentSummaryPayload } from "@/hooks/use-instrument-bias-summary";
 import type { RadarTab } from "@/components/radar/MarketBoard";
 
-const DEFAULT_REVALIDATE_MS = BIAS_SUMMARY_REVALIDATE_SEC * 1000;
-
-type SummaryPayload = {
-  line: string | null;
-  symbol?: string;
-  generatedAt?: string;
-  configured?: boolean;
-  marketOpen?: boolean;
-  revalidateSec?: number;
-};
-
-type StoredSummary = {
-  fetchedAt: number;
-  revalidateSec: number;
-  data: SummaryPayload;
-};
-
-function storageKey(symbol: RadarTab) {
-  return `jhp-instrument-bias-v1-${symbol}`;
-}
-
-function revalidateMs(data: SummaryPayload | undefined): number {
+function revalidateMs(data: InstrumentSummaryPayload | undefined): number {
   return (data?.revalidateSec ?? BIAS_SUMMARY_REVALIDATE_SEC) * 1000;
 }
 
@@ -58,65 +36,26 @@ function formatRefreshMeta(
   return `${at} ET · refresh ${minsUntil}m`;
 }
 
-function readStoredSummary(symbol: RadarTab): SummaryPayload | undefined {
-  if (typeof window === "undefined") return undefined;
-  try {
-    const raw = localStorage.getItem(storageKey(symbol));
-    if (!raw) return undefined;
-    const parsed = JSON.parse(raw) as StoredSummary;
-    const ttl = parsed.revalidateSec * 1000;
-    if (Date.now() - parsed.fetchedAt > ttl) return undefined;
-    return parsed.data;
-  } catch {
-    return undefined;
-  }
-}
-
-function writeStoredSummary(symbol: RadarTab, data: SummaryPayload) {
-  if (typeof window === "undefined" || !data.line) return;
-  try {
-    localStorage.setItem(
-      storageKey(symbol),
-      JSON.stringify({
-        fetchedAt: Date.now(),
-        revalidateSec: data.revalidateSec ?? BIAS_SUMMARY_REVALIDATE_SEC,
-        data,
-      })
-    );
-  } catch {
-    /* ignore */
-  }
-}
-
 const SYMBOL_LABEL: Record<RadarTab, string> = {
   NQ: "NQ",
   ES: "ES",
   GC: "Gold",
 };
 
-export function InstrumentBiasSummary({ symbol }: { symbol: RadarTab }) {
-  const stored = useMemo(() => readStoredSummary(symbol), [symbol]);
+type InstrumentBiasSummaryProps = {
+  symbol: RadarTab;
+  data?: InstrumentSummaryPayload;
+  isLoading?: boolean;
+  isValidating?: boolean;
+};
+
+export function InstrumentBiasSummary({
+  symbol,
+  data,
+  isLoading = false,
+  isValidating = false,
+}: InstrumentBiasSummaryProps) {
   const now = useCountdownTick(30_000);
-
-  const { data, isLoading, isValidating } = useSWR<SummaryPayload>(
-    `/api/bias/instrument-summary?symbol=${symbol}`,
-    (url: string) => fetch(url).then((r) => r.json()),
-    {
-      fallbackData: stored,
-      refreshInterval: (latest) =>
-        latest?.revalidateSec
-          ? latest.revalidateSec * 1000
-          : DEFAULT_REVALIDATE_MS,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: DEFAULT_REVALIDATE_MS,
-      keepPreviousData: true,
-    }
-  );
-
-  useEffect(() => {
-    if (data?.line) writeStoredSummary(symbol, data);
-  }, [data, symbol]);
 
   const refreshMeta = formatRefreshMeta(
     data?.generatedAt,

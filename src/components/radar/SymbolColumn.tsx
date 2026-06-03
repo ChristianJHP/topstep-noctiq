@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { SymbolContext } from "@/lib/htf-status";
 import { CHART_TIMEFRAMES, type ChartTimeframe } from "@/lib/chart-timeframe";
 import type { LiveQuote } from "@/lib/yahoo-live-quote";
+import type { ChartOverlaySettings } from "@/lib/chart-overlay-types";
 import { SymbolPrice } from "@/components/radar/SymbolPrice";
 import { useChartOverlaySettings } from "@/lib/chart-overlay-settings";
 import { CandleStateDots } from "@/components/radar/CandleStateDots";
@@ -25,17 +26,24 @@ export function SymbolColumn({
   symbol,
   liveQuote,
   visible = true,
+  aiOverlays,
+  summaryKey,
 }: {
   symbol: SymbolContext;
   liveQuote?: LiveQuote | null;
   visible?: boolean;
+  aiOverlays?: ChartOverlaySettings | null;
+  summaryKey?: string | null;
 }) {
   const isWide = useIsWideDesktop();
   const [timeframe, setTimeframe] = useState<ChartTimeframe>("1H");
   const [mountedTfs, setMountedTfs] = useState<ReadonlySet<ChartTimeframe>>(
     () => new Set(["1H"])
   );
-  const { settings: overlays, toggle } = useChartOverlaySettings();
+  const { settings: overlays, toggle } = useChartOverlaySettings(
+    aiOverlays,
+    summaryKey
+  );
 
   useEffect(() => {
     setMountedTfs((prev) => warmAllTimeframes(timeframe, prev));

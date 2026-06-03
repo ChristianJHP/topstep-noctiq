@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   DEFAULT_CHART_OVERLAYS,
   type ChartOverlayKey,
@@ -27,16 +27,34 @@ function readStored(): ChartOverlaySettings {
   }
 }
 
-export function useChartOverlaySettings() {
+export function useChartOverlaySettings(
+  aiOverlays?: ChartOverlaySettings | null,
+  summaryKey?: string | null
+) {
   const [settings, setSettings] = useState<ChartOverlaySettings>(
     DEFAULT_CHART_OVERLAYS
   );
+  const userTouchedRef = useRef(false);
+  const lastSummaryKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     setSettings(readStored());
   }, []);
 
+  useEffect(() => {
+    if (summaryKey && summaryKey !== lastSummaryKeyRef.current) {
+      lastSummaryKeyRef.current = summaryKey;
+      userTouchedRef.current = false;
+    }
+  }, [summaryKey]);
+
+  useEffect(() => {
+    if (!aiOverlays || userTouchedRef.current) return;
+    setSettings(aiOverlays);
+  }, [aiOverlays]);
+
   const toggle = useCallback((key: ChartOverlayKey) => {
+    userTouchedRef.current = true;
     setSettings((prev) => {
       const next = { ...prev, [key]: !prev[key] };
       try {

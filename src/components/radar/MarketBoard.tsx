@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { MarketContext } from "@/lib/htf-status";
 import { MARKET_TICKERS } from "@/lib/chart-data";
 import { InstrumentBiasSummary } from "@/components/radar/InstrumentBiasSummary";
 import { SymbolColumn } from "@/components/radar/SymbolColumn";
 import { MarketNewsFeed } from "@/components/radar/MarketNewsFeed";
+import { useInstrumentBiasSummary } from "@/hooks/use-instrument-bias-summary";
+import { overlaysFromSummaryText } from "@/lib/summary-chart-overlays";
 import { usePrefetchChartCandles } from "@/hooks/use-prefetch-chart-candles";
 import { useWarmChartCache } from "@/hooks/use-warm-chart-cache";
 import { useLiveQuote } from "@/hooks/use-live-quote";
@@ -35,6 +37,54 @@ type MarketBoardProps = {
   markets: MarketContext;
   chartCandles?: Record<string, ChartCandlesPayload>;
 };
+
+function SymbolPanel({
+  id,
+  active,
+  markets,
+  liveQuote,
+}: {
+  id: RadarTab;
+  active: boolean;
+  markets: MarketContext;
+  liveQuote: ReturnType<typeof useLiveQuote>;
+}) {
+  const summary = useInstrumentBiasSummary(id);
+  const symbol =
+    id === "NQ" ? markets.nq : id === "ES" ? markets.es : markets.gold;
+  const summaryKey = summary.data?.generatedAt
+    ? `${id}:${summary.data.generatedAt}`
+    : null;
+  const aiOverlays = useMemo(() => {
+    if (summary.data?.overlays) return summary.data.overlays;
+    if (summary.data?.line) return overlaysFromSummaryText(summary.data.line);
+    return null;
+  }, [summary.data?.overlays, summary.data?.line]);
+
+  return (
+    <div
+      className={`mr-symbol-panel${active ? "" : " mr-symbol-panel--hidden"}`}
+      role="tabpanel"
+      aria-hidden={!active}
+      hidden={!active}
+    >
+      <InstrumentBiasSummary
+        symbol={id}
+        data={summary.data}
+        isLoading={summary.isLoading}
+        isValidating={summary.isValidating}
+      />
+      <SymbolColumn
+        symbol={symbol}
+        liveQuote={liveQuote}
+        visible={active}
+        aiOverlays={aiOverlays}
+        summaryKey={summaryKey}
+      />
+      <MarketNewsFeed instrument={id} />
+    </div>
+  );
+}
 
 export function MarketBoard({
   markets,
@@ -66,9 +116,6 @@ export function MarketBoard({
   const esQuote = useLiveQuote(MARKET_TICKERS.ES);
   const gcQuote = useLiveQuote(MARKET_TICKERS.GC);
 
-  const symbolForTab = (id: RadarTab) =>
-    id === "NQ" ? markets.nq : id === "ES" ? markets.es : markets.gold;
-
   const quoteForTab = (id: RadarTab) =>
     id === "NQ" ? nqQuote : id === "ES" ? esQuote : gcQuote;
 
@@ -92,23 +139,14 @@ export function MarketBoard({
       <div className="mr-symbol-stacks">
         {ALL_TABS.map((id) => {
           if (!mountedTabs.has(id)) return null;
-          const active = tab === id;
           return (
-            <div
+            <SymbolPanel
               key={id}
-              className={`mr-symbol-panel${active ? "" : " mr-symbol-panel--hidden"}`}
-              role="tabpanel"
-              aria-hidden={!active}
-              hidden={!active}
-            >
-              <InstrumentBiasSummary symbol={id} />
-              <SymbolColumn
-                symbol={symbolForTab(id)}
-                liveQuote={quoteForTab(id)}
-                visible={active}
-              />
-              <MarketNewsFeed instrument={id} />
-            </div>
+              id={id}
+              active={tab === id}
+              markets={markets}
+              liveQuote={quoteForTab(id)}
+            />
           );
         })}
       </div>

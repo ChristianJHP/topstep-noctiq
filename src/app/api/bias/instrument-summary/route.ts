@@ -6,6 +6,7 @@ import {
   formatInstrumentBiasDeterministic,
   getCachedInstrumentBiasBrief,
 } from "@/lib/instrument-bias-brief";
+import { resolveSummaryOverlays } from "@/lib/summary-chart-overlays";
 import type { SymbolLabel } from "@/lib/strategy-prep";
 
 const VALID: SymbolLabel[] = ["NQ", "ES", "GC"];
@@ -40,9 +41,11 @@ export async function GET(request: Request) {
     console.error("[bias/instrument-summary]", error);
     try {
       const ctx = await buildInstrumentBiasContext(label);
+      const line = formatInstrumentBiasDeterministic(ctx);
       return NextResponse.json(
         {
-          line: formatInstrumentBiasDeterministic(ctx),
+          line,
+          overlays: resolveSummaryOverlays(line, ctx),
           symbol: label,
           generatedAt: new Date().toISOString(),
           configured: false,
