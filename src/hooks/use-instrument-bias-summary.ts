@@ -65,7 +65,11 @@ export function useInstrumentBiasSummary(symbol: RadarTab) {
 
   const swr = useSWR<InstrumentSummaryPayload>(
     `/api/bias/instrument-summary?symbol=${symbol}`,
-    (url: string) => fetch(url).then((r) => r.json()),
+    (url: string) =>
+      fetch(url).then((r) => {
+        if (!r.ok) throw new Error("instrument summary failed");
+        return r.json();
+      }),
     {
       fallbackData: stored,
       refreshInterval: (latest) =>

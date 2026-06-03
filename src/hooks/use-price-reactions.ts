@@ -15,6 +15,8 @@ import type { InstrumentSummaryPayload } from "@/hooks/use-instrument-bias-summa
 import { CHART_TF_CONFIG } from "@/lib/chart-timeframe";
 import { chartCandlesSwrKey } from "@/lib/chart-candles-cache";
 
+const MAX_QUOTE_DELAY_SEC = 90;
+
 const summaryFetcher = (url: string) =>
   fetch(url).then((r) => {
     if (!r.ok) throw new Error("summary refresh failed");
@@ -35,6 +37,9 @@ export function usePriceReactions(
 
   useEffect(() => {
     if (!active || !liveQuote?.price || liveQuote.price <= 0) return;
+
+    // Delayed feeds (Yahoo ~10m) jump in big steps — skip reaction spam.
+    if ((liveQuote.delaySec ?? 0) > MAX_QUOTE_DELAY_SEC) return;
 
     const now = Date.now();
     historyRef.current = prunePriceHistory(
@@ -57,28 +62,26 @@ export function usePriceReactions(
       summaryKey,
       summaryFetcher(
         `${summaryKey}&fresh=1&reaction=${reactionParam}`
-      ),
+      ).catch(() => undefined),
       { revalidate: false }
     ).finally(() => {
       window.setTimeout(() => setLiveReaction(null), 12_000);
     });
 
-    void mutate(
-      "/api/bias/geopolitics",
-      fetch("/api/bias/geopolitics?fresh=1").then((r) => r.json()),
-      { revalidate: false }
-    );
+    void mutate("/api/bias/geopolitics");
 
     for (const tf of ["1H", "5m"] as const) {
       const cfg = CHART_TF_CONFIG[tf];
       const chartKey = chartCandlesSwrKey(ticker, cfg.interval, cfg.range);
       void mutate(
         chartKey,
-        fetch(`${chartKey}&fresh=1`).then((r) => r.json()),
+        fetch(`${chartKey}&fresh=1`)
+          .then((r) => (r.ok ? r.json() : Promise.reject()))
+          .catch(() => undefined),
         { revalidate: false }
       );
     }
-  }, [active, liveQuote?.fetchedAt, liveQuote?.price, mutate, symbol, ticker]);
+  }, [active, liveQuote?.fetchedAt, liveQuote?.price, liveQuote?.delaySec, mutate, symbol, ticker]);
 
   return { liveReaction };
 }

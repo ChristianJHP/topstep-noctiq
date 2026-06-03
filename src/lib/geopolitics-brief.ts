@@ -360,8 +360,8 @@ export async function getCachedGeopoliticsBrief(): Promise<GeopoliticsBriefPaylo
     : getCachedGeoBriefClosed();
 }
 
-/** Bypass unstable_cache — fresh AI brief + live headlines after a volatile move. */
+/** Refresh headlines + catalyst text without regenerating the AI brief. */
 export async function getFreshGeopoliticsBrief(): Promise<GeopoliticsBriefPayload> {
-  const brief = await generateGeopoliticsBrief();
-  return composeGeopoliticsPayload(brief);
+  const cached = await getCachedGeopoliticsBrief();
+  return composeGeopoliticsPayload(cached);
 }
