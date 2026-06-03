@@ -1737,11 +1737,17 @@
   .mini-chart-canvas-wrap {
     position: relative;
     width: 100%;
+    isolation: isolate;
+  }
+
+  .mini-chart-canvas-wrap .mini-chart-canvas {
+    position: relative;
+    z-index: 1;
   }
 
   .mini-chart-canvas--interactive {
     cursor: grab;
-    touch-action: pan-x pinch-zoom;
+    touch-action: none;
   }
 
   .mini-chart-canvas--interactive:active {
@@ -1753,6 +1759,7 @@
     inset: 0;
     overflow: hidden;
     pointer-events: none;
+    z-index: 2;
   }
 
   .chart-zone {

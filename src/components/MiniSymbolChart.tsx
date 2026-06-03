@@ -30,7 +30,6 @@ import {
   patchFormingBar,
   rejectionZonesForBars,
   sessionLinesForBars,
-  updateChartBarSpacing,
   type ChartTimeframe,
 } from "@/lib/chart-timeframe";
 import {
@@ -138,6 +137,9 @@ export function MiniSymbolChart({
   const userHasPannedRef = useRef(false);
   const programmaticFitRef = useRef(false);
   const chartDataKeyRef = useRef("");
+  const overlayFrameRef = useRef<number | null>(null);
+  const fitToContainerRef = useRef<(resetPan?: boolean) => void>(() => {});
+  const refreshOverlayRef = useRef<() => void>(() => {});
   const [rbZones, setRbZones] = useState<ChartPlotZone[]>([]);
   const [sessionLines, setSessionLines] = useState<ChartPlotLine[]>([]);
   const [mounted, setMounted] = useState(false);
@@ -177,20 +179,10 @@ export function MiniSymbolChart({
       barCountRef.current,
       isMobile
     );
-    programmaticFitRef.current = false;
+    requestAnimationFrame(() => {
+      programmaticFitRef.current = false;
+    });
     if (resetPan) userHasPannedRef.current = false;
-  }, [isMobile]);
-
-  const updateBarSpacingOnly = useCallback(() => {
-    const chart = chartRef.current;
-    const container = containerRef.current;
-    if (!chart || !container || !barCountRef.current) return;
-    updateChartBarSpacing(
-      chart,
-      container.clientWidth,
-      barCountRef.current,
-      isMobile
-    );
   }, [isMobile]);
 
   const refreshOverlay = useCallback(() => {
@@ -213,6 +205,21 @@ export function MiniSymbolChart({
       lastBarTimeRef.current
     );
   }, [overlays, rbZones, sessionLines]);
+
+  const scheduleOverlayRefresh = useCallback(() => {
+    if (overlayFrameRef.current != null) return;
+    overlayFrameRef.current = requestAnimationFrame(() => {
+      overlayFrameRef.current = null;
+      refreshOverlayRef.current();
+    });
+  }, []);
+
+  fitToContainerRef.current = fitToContainer;
+  refreshOverlayRef.current = refreshOverlay;
+
+  useEffect(() => {
+    scheduleOverlayRefresh();
+  }, [refreshOverlay, scheduleOverlayRefresh]);
 
   useEffect(() => {
     setMounted(true);
@@ -263,7 +270,7 @@ export function MiniSymbolChart({
         fixRightEdge: false,
       },
       crosshair: {
-        mode: CrosshairMode.Magnet,
+        mode: CrosshairMode.Normal,
         vertLine: {
           visible: true,
           labelVisible: true,
@@ -280,15 +287,15 @@ export function MiniSymbolChart({
         },
       },
       handleScroll: {
-        mouseWheel: true,
+        mouseWheel: false,
         pressedMouseMove: true,
         horzTouchDrag: true,
         vertTouchDrag: false,
       },
       handleScale: {
-        mouseWheel: false,
+        mouseWheel: true,
         pinch: true,
-        axisPressedMouseMove: false,
+        axisPressedMouseMove: true,
         axisDoubleClickReset: true,
       },
       kineticScroll: {
@@ -310,13 +317,13 @@ export function MiniSymbolChart({
     seriesRef.current = series;
 
     const onDblClick = () => {
-      fitToContainer(true);
-      refreshOverlay();
+      fitToContainerRef.current(true);
+      scheduleOverlayRefresh();
     };
     container.addEventListener("dblclick", onDblClick);
 
     const onVisibleRangeChange = () => {
-      refreshOverlay();
+      scheduleOverlayRefresh();
       if (!programmaticFitRef.current) {
         userHasPannedRef.current = true;
       }
@@ -329,12 +336,10 @@ export function MiniSymbolChart({
         height: container.clientHeight,
         layout: { attributionLogo: false },
       });
-      if (userHasPannedRef.current) {
-        updateBarSpacingOnly();
-      } else {
-        fitToContainer();
+      if (!userHasPannedRef.current) {
+        fitToContainerRef.current();
       }
-      refreshOverlay();
+      scheduleOverlayRefresh();
     };
 
     const ro = new ResizeObserver(resize);
@@ -348,12 +353,16 @@ export function MiniSymbolChart({
       chart
         .timeScale()
         .unsubscribeVisibleLogicalRangeChange(onVisibleRangeChange);
+      if (overlayFrameRef.current != null) {
+        cancelAnimationFrame(overlayFrameRef.current);
+        overlayFrameRef.current = null;
+      }
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
       linesRef.current = [];
     };
-  }, [mounted, isMobile, fitToContainer, updateBarSpacingOnly, refreshOverlay]);
+  }, [mounted, isMobile, scheduleOverlayRefresh]);
 
   useEffect(() => {
     const series = seriesRef.current;
@@ -384,8 +393,8 @@ export function MiniSymbolChart({
       );
     }
 
-    refreshOverlay();
-  }, [mergedPlot, refreshOverlay]);
+    scheduleOverlayRefresh();
+  }, [mergedPlot, scheduleOverlayRefresh]);
 
   useEffect(() => {
     if (!mounted || !seriesRef.current || !candles.length) return;
@@ -432,7 +441,7 @@ export function MiniSymbolChart({
       fitToContainer(true);
     }
 
-    refreshOverlay();
+    scheduleOverlayRefresh();
     setError(null);
   }, [
     candles,
@@ -442,7 +451,7 @@ export function MiniSymbolChart({
     mounted,
     ticker,
     fitToContainer,
-    refreshOverlay,
+    scheduleOverlayRefresh,
     symbolLabel,
   ]);
 

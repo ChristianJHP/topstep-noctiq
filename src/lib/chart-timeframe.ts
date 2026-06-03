@@ -242,6 +242,23 @@ export { sessionLinesForBars } from "@/lib/session-chart-lines";
 /** Empty bar slots after the forming candle so it isn't flush against the price scale. */
 export const CHART_RIGHT_OFFSET = 3;
 
+/** Default bars in view on load / reset — leaves history to pan into. */
+export const CHART_DEFAULT_VISIBLE_BARS = { mobile: 56, desktop: 80 };
+
+export function defaultVisibleLogicalRange(
+  barCount: number,
+  isMobile: boolean
+): { from: number; to: number } {
+  const target = isMobile
+    ? CHART_DEFAULT_VISIBLE_BARS.mobile
+    : CHART_DEFAULT_VISIBLE_BARS.desktop;
+  const shown = Math.min(barCount, target);
+  return {
+    from: Math.max(-0.5, barCount - shown - 0.5),
+    to: barCount - 0.5,
+  };
+}
+
 export function fitBarSpacing(
   containerWidth: number,
   barCount: number,
@@ -253,7 +270,7 @@ export function fitBarSpacing(
   return Math.max(3, plotW / slots);
 }
 
-/** Fill the plot width with the loaded bars and snap the viewport to them. */
+/** Fill the plot width with a recent window of bars (pan/zoom reveals the rest). */
 export function fitChartTimeScale(
   chart: {
     applyOptions: (opts: {
@@ -274,7 +291,9 @@ export function fitChartTimeScale(
 ): void {
   if (barCount <= 0 || containerWidth <= 0) return;
 
-  const spacing = fitBarSpacing(containerWidth, barCount, isMobile);
+  const range = defaultVisibleLogicalRange(barCount, isMobile);
+  const visibleBars = Math.max(1, Math.ceil(range.to - range.from));
+  const spacing = fitBarSpacing(containerWidth, visibleBars, isMobile);
 
   chart.applyOptions({
     timeScale: {
@@ -285,12 +304,7 @@ export function fitChartTimeScale(
     },
   });
 
-  // rightOffset already reserves margin after the last bar — don't extend the
-  // logical range past the data or the chart shows a large empty gap on the right.
-  chart.timeScale().setVisibleLogicalRange({
-    from: -0.5,
-    to: barCount - 0.5,
-  });
+  chart.timeScale().setVisibleLogicalRange(range);
 }
 
 /** Recompute bar width after resize without resetting scroll/zoom. */
