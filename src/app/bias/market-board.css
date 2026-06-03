@@ -1496,6 +1496,11 @@
     background: var(--card);
   }
 
+  .mr-symbol-panel .bias-summary--embedded {
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+
   .mr-tf-tabs {
     display: flex;
     gap: 0.25rem;

@@ -3,10 +3,8 @@
 import { useState } from "react";
 import type { MarketContext } from "@/lib/htf-status";
 import { MARKET_TICKERS } from "@/lib/chart-data";
-import type { TradingSessionLabel } from "@/lib/trading-session";
-import { MarketContextCard } from "@/components/radar/MarketContextCard";
+import { BiasSummary } from "@/components/BiasSummary";
 import { SymbolColumn } from "@/components/radar/SymbolColumn";
-import { ContextFeed } from "@/components/radar/ContextFeed";
 import { MarketNewsFeed } from "@/components/radar/MarketNewsFeed";
 import { usePrefetchChartCandles } from "@/hooks/use-prefetch-chart-candles";
 import { useLiveQuote } from "@/hooks/use-live-quote";
@@ -22,18 +20,12 @@ const TABS: { id: RadarTab; label: string }[] = [
 
 type MarketBoardProps = {
   markets: MarketContext;
-  fifteenMMs: number | null;
-  candlesPaused: boolean;
   chartCandles?: Record<string, ChartCandlesPayload>;
-  sessionLabel: TradingSessionLabel | "Closed";
 };
 
 export function MarketBoard({
   markets,
-  fifteenMMs,
-  candlesPaused,
   chartCandles,
-  sessionLabel,
 }: MarketBoardProps) {
   const [tab, setTab] = useState<RadarTab>("NQ");
   usePrefetchChartCandles(chartCandles);
@@ -67,15 +59,7 @@ export function MarketBoard({
           ))}
         </div>
 
-        <ContextFeed instrument={tab} />
-
-        <MarketContextCard
-          symbol={symbol}
-          session={sessionLabel}
-          fifteenMMs={fifteenMMs}
-          candlesPaused={candlesPaused}
-          liveQuote={liveQuote}
-        />
+        <BiasSummary embedded />
 
         <SymbolColumn symbol={symbol} liveQuote={liveQuote} />
 

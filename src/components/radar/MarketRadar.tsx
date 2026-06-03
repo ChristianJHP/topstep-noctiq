@@ -97,7 +97,7 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
             jhptrades.com
           </Link>
           <div className="mr-header-row">
-            <h1 className="mr-title">Market Context</h1>
+            <h1 className="mr-title">Market Bias</h1>
             <div className="mr-session-wrap">
               <span
                 className={
@@ -159,12 +159,7 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
         <>
           <MarketBoard
             markets={ctx}
-            fifteenMMs={fifteenM.remainingMs}
-            candlesPaused={oneH.paused}
             chartCandles={data?.chartCandles}
-            sessionLabel={
-              tradingSession.isMarketOpen ? tradingSession.label : "Closed"
-            }
           />
         </>
       ) : (
