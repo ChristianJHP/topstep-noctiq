@@ -19,7 +19,7 @@ import { sessionLinesForBars } from "@/lib/session-chart-lines";
 
 export type ChartTimeframe = "5m" | "15m" | "1H" | "4H";
 
-export const CHART_TIMEFRAMES: ChartTimeframe[] = ["5m", "15m", "1H", "4H"];
+export const CHART_TIMEFRAMES: ChartTimeframe[] = ["1H", "5m", "15m", "4H"];
 
 type TfConfig = {
   interval: "5m" | "15m" | "60m";

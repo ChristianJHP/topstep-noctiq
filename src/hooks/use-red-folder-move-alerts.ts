@@ -4,6 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { LiveQuote } from "@/lib/yahoo-live-quote";
 import { MARKET_TICKERS } from "@/lib/chart-data";
 import type { EconomicEvent } from "@/lib/events";
+import type { AlertSettings } from "@/lib/alert-settings";
+import { readAlertSettings } from "@/lib/alert-settings";
+import {
+  maybeFireBrowserNotification,
+  maybePlayAlertSound,
+} from "@/lib/alert-notify";
 import {
   createLiveTracker,
   eventAlertKey,
@@ -55,22 +61,16 @@ function writeFiredKeys(keys: Set<string>) {
   }
 }
 
-function fireBrowserNotification(alert: RedFolderMoveAlert) {
-  if (typeof window === "undefined" || typeof Notification === "undefined") {
-    return;
-  }
-  if (Notification.permission !== "granted") return;
-
+function fireRedFolderAlert(alert: RedFolderMoveAlert) {
+  const prefs = readAlertSettings();
+  maybePlayAlertSound(prefs);
   const delaySec = Math.round(alert.move.delayMs / 1000);
-  try {
-    new Notification(`Red folder · ${alert.event.title}`, {
-      body: `NQ ${alert.move.rangePts}pt move · ${delaySec}s after release`,
-      icon: "/icon.svg",
-      tag: `red-folder-move-${eventAlertKey(alert.event)}`,
-    });
-  } catch {
-    /* restricted contexts */
-  }
+  maybeFireBrowserNotification(
+    prefs,
+    `Red folder · ${alert.event.title}`,
+    `NQ ${alert.move.rangePts}pt move · ${delaySec}s after release`,
+    `red-folder-move-${eventAlertKey(alert.event)}`
+  );
 }
 
 async function fetchLiveNqQuote(): Promise<LiveQuote | null> {
@@ -80,12 +80,17 @@ async function fetchLiveNqQuote(): Promise<LiveQuote | null> {
   return (await res.json()) as LiveQuote;
 }
 
-export function useRedFolderMoveAlerts(events: EconomicEvent[]) {
+export function useRedFolderMoveAlerts(
+  events: EconomicEvent[],
+  settings: AlertSettings
+) {
   const [alerts, setAlerts] = useState<RedFolderMoveAlert[]>([]);
   const watchRef = useRef<Map<string, EconomicEvent>>(new Map());
   const trackerRef = useRef<Map<string, LiveMoveTracker>>(new Map());
   const firedRef = useRef<Set<string>>(readFiredKeys());
   const pollTimerRef = useRef<number | null>(null);
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
 
   useEffect(() => {
     const now = Date.now();
@@ -151,6 +156,7 @@ export function useRedFolderMoveAlerts(events: EconomicEvent[]) {
 
             const move = liveMoveHit(event, tracker, now);
             if (!move) continue;
+            if (!settingsRef.current.redFolderMoves) continue;
 
             firedRef.current.add(key);
             writeFiredKeys(firedRef.current);
@@ -163,7 +169,7 @@ export function useRedFolderMoveAlerts(events: EconomicEvent[]) {
             };
 
             setAlerts((prev) => [...prev.slice(-1), alert]);
-            fireBrowserNotification(alert);
+            fireRedFolderAlert(alert);
           }
         }
       }

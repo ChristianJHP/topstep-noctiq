@@ -21,7 +21,7 @@ export function SymbolColumn({
   liveQuote?: LiveQuote | null;
 }) {
   const isWide = useIsWideDesktop();
-  const [timeframe, setTimeframe] = useState<ChartTimeframe>("5m");
+  const [timeframe, setTimeframe] = useState<ChartTimeframe>("1H");
   const { settings: overlays, toggle } = useChartOverlaySettings();
   const label = symbol.label as SymbolLabel;
 

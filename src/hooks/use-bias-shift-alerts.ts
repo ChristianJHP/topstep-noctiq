@@ -8,6 +8,12 @@ import {
   type BiasShiftItem,
 } from "@/lib/bias-shift-summary";
 import type { HtfBias, SymbolLabel } from "@/lib/strategy-prep";
+import type { AlertSettings } from "@/lib/alert-settings";
+import { readAlertSettings } from "@/lib/alert-settings";
+import {
+  maybeFireBrowserNotification,
+  maybePlayAlertSound,
+} from "@/lib/alert-notify";
 
 export type { BiasShiftItem };
 
@@ -20,7 +26,6 @@ export type BiasShiftAlert = {
 };
 
 const BIAS_STORAGE_KEY = "jhptrades-bias-snapshot";
-const ALERTS_ENABLED_KEY = "jhptrades-bias-alerts-enabled";
 const SYMBOLS: SymbolLabel[] = ["NQ", "ES", "GC"];
 
 function contextLabel(b: HtfBias): string {
@@ -104,41 +109,6 @@ function writeStored(biases: Record<SymbolLabel, HtfBias>) {
   }
 }
 
-function readAlertsEnabled(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.localStorage.getItem(ALERTS_ENABLED_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
-
-function writeAlertsEnabled(enabled: boolean) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(ALERTS_ENABLED_KEY, String(enabled));
-  } catch {
-    /* ignore */
-  }
-}
-
-function fireBrowserNotification(alert: BiasShiftAlert) {
-  if (typeof window === "undefined" || typeof Notification === "undefined") {
-    return;
-  }
-  if (Notification.permission !== "granted") return;
-
-  try {
-    new Notification(formatBiasShiftTitle(alert), {
-      body: `${formatBiasShiftTimestamp(alert.at)} · ${formatBiasShiftBody(alert)}`,
-      icon: "/icon.svg",
-      tag: "bias-shift-batch",
-    });
-  } catch {
-    /* Safari / restricted contexts */
-  }
-}
-
 async function fetchShiftReason(
   markets: MarketContext,
   shifts: BiasShiftItem[]
@@ -161,26 +131,17 @@ async function fetchShiftReason(
   }
 }
 
-export function useBiasShiftAlerts(markets: MarketContext | null | undefined) {
+export function useBiasShiftAlerts(
+  markets: MarketContext | null | undefined,
+  settings: AlertSettings
+) {
   const [alerts, setAlerts] = useState<BiasShiftAlert[]>([]);
-  const [alertsEnabled, setAlertsEnabled] = useState(false);
-  const [notifyPermission, setNotifyPermission] = useState<
-    NotificationPermission | "unsupported"
-  >("default");
   const prevRef = useRef<Record<SymbolLabel, HtfBias> | null>(null);
   const seededRef = useRef(false);
   const marketsRef = useRef(markets);
+  const settingsRef = useRef(settings);
   marketsRef.current = markets;
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    setAlertsEnabled(readAlertsEnabled());
-    if (typeof Notification === "undefined") {
-      setNotifyPermission("unsupported");
-      return;
-    }
-    setNotifyPermission(Notification.permission);
-  }, []);
+  settingsRef.current = settings;
 
   const attachReason = useCallback(
     (alertId: string, shifts: BiasShiftItem[]) => {
@@ -200,15 +161,22 @@ export function useBiasShiftAlerts(markets: MarketContext | null | undefined) {
             a.id === alertId ? { ...a, reason, reasonLoading: false } : a
           )
         );
-        if (readAlertsEnabled()) {
-          fireBrowserNotification({
-            id: alertId,
-            shifts,
-            at: Date.now(),
-            reason,
-            reasonLoading: false,
-          });
-        }
+
+        const prefs = readAlertSettings();
+        const alert: BiasShiftAlert = {
+          id: alertId,
+          shifts,
+          at: Date.now(),
+          reason,
+          reasonLoading: false,
+        };
+        maybePlayAlertSound(prefs);
+        maybeFireBrowserNotification(
+          prefs,
+          formatBiasShiftTitle(alert),
+          `${formatBiasShiftTimestamp(alert.at)} · ${reason}`,
+          "bias-shift-batch"
+        );
       });
     },
     []
@@ -216,7 +184,7 @@ export function useBiasShiftAlerts(markets: MarketContext | null | undefined) {
 
   const pushGroupedAlert = useCallback(
     (shifts: BiasShiftItem[]) => {
-      if (shifts.length === 0) return;
+      if (shifts.length === 0 || !settingsRef.current.biasShifts) return;
 
       const alert: BiasShiftAlert = {
         id: `batch-${Date.now()}`,
@@ -238,7 +206,7 @@ export function useBiasShiftAlerts(markets: MarketContext | null | undefined) {
     const current = extractBiases(markets);
     const baseline = seededRef.current ? prevRef.current : readStored();
 
-    if (baseline) {
+    if (baseline && settings.biasShifts) {
       const shifts: BiasShiftItem[] = [];
       for (const symbol of SYMBOLS) {
         if (baseline[symbol] !== current[symbol]) {
@@ -257,44 +225,14 @@ export function useBiasShiftAlerts(markets: MarketContext | null | undefined) {
     prevRef.current = current;
     writeStored(current);
     seededRef.current = true;
-  }, [markets, pushGroupedAlert]);
+  }, [markets, settings.biasShifts, pushGroupedAlert]);
 
   const dismissAlert = useCallback((id: string) => {
     setAlerts((prev) => prev.filter((a) => a.id !== id));
   }, []);
 
-  const enableAlerts = useCallback(async () => {
-    writeAlertsEnabled(true);
-    setAlertsEnabled(true);
-
-    if (typeof window === "undefined" || typeof Notification === "undefined") {
-      return true;
-    }
-    if (Notification.permission === "granted") {
-      setNotifyPermission("granted");
-      return true;
-    }
-    if (Notification.permission === "denied") {
-      setNotifyPermission("denied");
-      return true;
-    }
-    const result = await Notification.requestPermission();
-    setNotifyPermission(result);
-    return true;
-  }, []);
-
-  const disableAlerts = useCallback(() => {
-    writeAlertsEnabled(false);
-    setAlertsEnabled(false);
-    setAlerts([]);
-  }, []);
-
   return {
     alerts,
-    alertsEnabled,
     dismissAlert,
-    notifyPermission,
-    enableAlerts,
-    disableAlerts,
   };
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import { getNextCandleClose } from "@/lib/candle-timers";
@@ -9,9 +10,13 @@ import { useCountdownTick } from "@/hooks/use-countdown-tick";
 import { usePageVisible } from "@/hooks/use-page-visible";
 import { useBiasShiftAlerts } from "@/hooks/use-bias-shift-alerts";
 import { useCandleCloseAlerts } from "@/hooks/use-candle-close-alerts";
+import { useAlertSettings } from "@/hooks/use-alert-settings";
 import { useSeedChartCandles } from "@/hooks/use-seed-chart-candles";
 import { BiasShiftToasts } from "@/components/radar/BiasShiftToasts";
-import { CandleAlertToggles } from "@/components/radar/CandleAlertToggles";
+import {
+  AlertSettingsButton,
+  AlertSettingsPanel,
+} from "@/components/radar/AlertSettingsPanel";
 import { CandleCloseToasts } from "@/components/radar/CandleCloseToasts";
 import { RedFolderMoveToasts } from "@/components/radar/RedFolderMoveToasts";
 import { MarketBoard } from "@/components/radar/MarketBoard";
@@ -20,6 +25,7 @@ import type { EconomicEvent } from "@/lib/events";
 import { CandleTimerStrip } from "@/components/radar/CandleTimerStrip";
 import { CalendarPanel } from "@/components/CalendarPanel";
 import { RadarLoader } from "@/components/radar/RadarLoader";
+import { anyAlertsEnabled } from "@/lib/alert-settings";
 
 type RadarData = Pick<
   RadarPayload,
@@ -42,6 +48,7 @@ function EtClock({ now }: { now: number }) {
 }
 
 export function MarketRadar({ initialData }: MarketRadarProps) {
+  const [alertSettingsOpen, setAlertSettingsOpen] = useState(false);
   const now = useCountdownTick();
   const pageVisible = usePageVisible();
 
@@ -64,19 +71,26 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
   const ctx = data?.markets;
 
   useSeedChartCandles(data?.chartCandles);
-  const { alerts, alertsEnabled, dismissAlert, enableAlerts, disableAlerts } =
-    useBiasShiftAlerts(ctx);
+
   const {
-    settings: candleAlertSettings,
-    toggle: toggleCandleAlert,
-    alerts: candleCloseAlerts,
-    dismissAlert: dismissCandleAlert,
-  } = useCandleCloseAlerts(now);
+    settings: alertSettings,
+    notifyPermission,
+    setBiasShifts,
+    toggleCandleClose,
+    setRedFolderMoves,
+    setSoundEnabled,
+    setBrowserNotifications,
+    requestBrowserNotifications,
+  } = useAlertSettings();
+
+  const { alerts, dismissAlert } = useBiasShiftAlerts(ctx, alertSettings);
+  const { alerts: candleCloseAlerts, dismissAlert: dismissCandleAlert } =
+    useCandleCloseAlerts(now, alertSettings);
 
   const redFolderEvents: EconomicEvent[] =
     data?.redFolderWeek ?? initialData?.redFolderWeek ?? [];
   const { alerts: redFolderMoveAlerts, dismissAlert: dismissRedFolderMove } =
-    useRedFolderMoveAlerts(redFolderEvents);
+    useRedFolderMoveAlerts(redFolderEvents, alertSettings);
 
   const showLoader = !ctx && isLoading;
 
@@ -125,28 +139,23 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
               fourHMs={fourH.remainingMs}
               candlesPaused={oneH.paused}
             />
-            {alertsEnabled ? (
-              <button
-                type="button"
-                className="mr-notify-on mr-notify-toggle"
-                onClick={disableAlerts}
-                title="Turn off context shift alerts"
-              >
-                Context on
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="mr-notify-btn"
-                onClick={() => void enableAlerts()}
-                title="Enable context shift alerts"
-              >
-                Live context
-              </button>
-            )}
-            <CandleAlertToggles
-              settings={candleAlertSettings}
-              onToggle={toggleCandleAlert}
+            <AlertSettingsButton
+              active={anyAlertsEnabled(alertSettings)}
+              onClick={() => setAlertSettingsOpen(true)}
+            />
+            <AlertSettingsPanel
+              open={alertSettingsOpen}
+              onClose={() => setAlertSettingsOpen(false)}
+              settings={alertSettings}
+              notifyPermission={notifyPermission}
+              onSetBiasShifts={setBiasShifts}
+              onToggleCandleClose={toggleCandleClose}
+              onSetRedFolderMoves={setRedFolderMoves}
+              onSetSoundEnabled={setSoundEnabled}
+              onSetBrowserNotifications={setBrowserNotifications}
+              onRequestBrowserNotifications={() =>
+                void requestBrowserNotifications()
+              }
             />
           </div>
           <EtClock now={now} />
