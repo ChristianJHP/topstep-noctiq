@@ -80,8 +80,13 @@ function SymbolPanel({
         visible={active}
         aiOverlays={aiOverlays}
         summaryKey={summaryKey}
+        tradeMap={summary.data?.tradeMap}
       />
-      <MarketNewsFeed instrument={id} />
+      <MarketNewsFeed
+        instrument={id}
+        newsImpact={summary.data?.tradeMap?.newsImpact}
+        newsLine={summary.data?.tradeMap?.newsLine}
+      />
     </div>
   );
 }

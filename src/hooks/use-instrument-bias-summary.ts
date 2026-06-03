@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 import useSWR from "swr";
 import { BIAS_SUMMARY_REVALIDATE_SEC } from "@/lib/bias-summary-config";
 import type { ChartOverlaySettings } from "@/lib/chart-overlay-types";
+import type { InstrumentTradeMap } from "@/lib/instrument-trade-map";
 import type { RadarTab } from "@/components/radar/MarketBoard";
 
 const DEFAULT_REVALIDATE_MS = BIAS_SUMMARY_REVALIDATE_SEC * 1000;
@@ -16,6 +17,7 @@ export type InstrumentSummaryPayload = {
   marketOpen?: boolean;
   revalidateSec?: number;
   overlays?: ChartOverlaySettings;
+  tradeMap?: InstrumentTradeMap;
 };
 
 type StoredSummary = {
@@ -25,7 +27,7 @@ type StoredSummary = {
 };
 
 function storageKey(symbol: RadarTab) {
-  return `jhp-instrument-bias-v1-${symbol}`;
+  return `jhp-instrument-bias-v2-${symbol}`;
 }
 
 function readStoredSummary(symbol: RadarTab): InstrumentSummaryPayload | undefined {
@@ -43,7 +45,7 @@ function readStoredSummary(symbol: RadarTab): InstrumentSummaryPayload | undefin
 }
 
 function writeStoredSummary(symbol: RadarTab, data: InstrumentSummaryPayload) {
-  if (typeof window === "undefined" || !data.line) return;
+  if (typeof window === "undefined" || !data.tradeMap?.headline) return;
   try {
     localStorage.setItem(
       storageKey(symbol),
@@ -78,7 +80,7 @@ export function useInstrumentBiasSummary(symbol: RadarTab) {
   );
 
   useEffect(() => {
-    if (swr.data?.line) writeStoredSummary(symbol, swr.data);
+    if (swr.data?.tradeMap?.headline) writeStoredSummary(symbol, swr.data);
   }, [swr.data, symbol]);
 
   return swr;

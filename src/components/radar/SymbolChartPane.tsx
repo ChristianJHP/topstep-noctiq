@@ -2,8 +2,9 @@
 
 import { useMemo } from "react";
 import type { SymbolContext } from "@/lib/htf-status";
-import { plotForTimeframe, type ChartTimeframe } from "@/lib/chart-timeframe";
+import { buildChartPlot, type ChartTimeframe } from "@/lib/chart-timeframe";
 import type { ChartOverlaySettings } from "@/lib/chart-overlay-types";
+import type { ChartFocusLevels } from "@/lib/instrument-trade-map";
 import type { LiveQuote } from "@/lib/yahoo-live-quote";
 import { MiniSymbolChart } from "@/components/MiniSymbolChart";
 
@@ -13,16 +14,18 @@ export function SymbolChartPane({
   overlays,
   liveQuote,
   visible = true,
+  chartFocus,
 }: {
   symbol: SymbolContext;
   timeframe: ChartTimeframe;
   overlays: ChartOverlaySettings;
   liveQuote?: LiveQuote | null;
   visible?: boolean;
+  chartFocus?: ChartFocusLevels;
 }) {
   const plot = useMemo(
-    () => plotForTimeframe(symbol, timeframe),
-    [symbol, timeframe]
+    () => buildChartPlot(symbol, timeframe, chartFocus, overlays),
+    [symbol, timeframe, chartFocus, overlays]
   );
   const currentPrice = liveQuote?.price ?? symbol.current;
 

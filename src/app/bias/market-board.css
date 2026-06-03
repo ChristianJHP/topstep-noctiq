@@ -1717,6 +1717,111 @@
     background: var(--card);
   }
 
+  .bias-summary--trade-map {
+    padding: 0.75rem 0.875rem 0.625rem;
+  }
+
+  .trade-map-headline {
+    margin: 0 0 0.375rem;
+    font-size: 0.9375rem;
+    font-weight: 650;
+    line-height: 1.35;
+    color: var(--foreground);
+    letter-spacing: -0.01em;
+  }
+
+  .trade-map-context {
+    margin: 0 0 0.625rem;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--muted);
+  }
+
+  .trade-map-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.375rem 0.75rem;
+    margin: 0;
+    padding: 0.5rem 0 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
+  }
+
+  @media (min-width: 520px) {
+    .trade-map-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+
+  .trade-map-item {
+    min-width: 0;
+  }
+
+  .trade-map-item dt {
+    margin: 0 0 0.125rem;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .trade-map-item dd {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--foreground);
+  }
+
+  .trade-map-val--bull {
+    color: #6bd68c;
+  }
+
+  .trade-map-val--bear {
+    color: #f2555a;
+  }
+
+  .trade-map-val--mixed {
+    color: #94a3b8;
+  }
+
+  .news-catalyst {
+    padding: 0.5rem 0.875rem 0.625rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  }
+
+  .news-catalyst-impact {
+    margin: 0 0 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: var(--foreground);
+  }
+
+  .news-catalyst-k {
+    display: block;
+    margin-bottom: 0.125rem;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .news-catalyst-line {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--muted);
+  }
+
+  .news-feed-list--secondary {
+    opacity: 0.88;
+  }
+
+  .news-feed-more--top {
+    margin: 0 0.875rem 0.5rem;
+  }
+
   .mr-tf-tabs {
     display: flex;
     gap: 0.25rem;
@@ -2027,11 +2132,15 @@
   }
 
   .chart-overlay-toggle {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.0625rem;
     font-size: 0.5rem;
     font-weight: 600;
     letter-spacing: 0.03em;
     text-transform: uppercase;
-    padding: 0.125rem 0.3125rem;
+    padding: 0.1875rem 0.375rem;
     border-radius: 4px;
     border: 1px solid rgba(148, 163, 184, 0.14);
     background: transparent;
@@ -2039,6 +2148,23 @@
     cursor: pointer;
     white-space: nowrap;
     transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+
+  .chart-overlay-toggle-k {
+    line-height: 1.1;
+  }
+
+  .chart-overlay-toggle-v {
+    font-size: 0.5625rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+    color: #94a3b8;
+    line-height: 1.15;
+  }
+
+  .chart-overlay-toggle--on .chart-overlay-toggle-v {
+    color: #cbd5e1;
   }
 
   .chart-overlay-toggle:hover {

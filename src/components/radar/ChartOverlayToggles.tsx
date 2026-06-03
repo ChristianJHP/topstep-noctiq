@@ -5,10 +5,12 @@ import {
   type ChartOverlayKey,
   type ChartOverlaySettings,
 } from "@/lib/chart-overlay-types";
+import type { OverlayHint } from "@/lib/instrument-trade-map";
 
 type ChartOverlayTogglesProps = {
   settings: ChartOverlaySettings;
   onToggle: (key: ChartOverlayKey) => void;
+  hints?: Partial<Record<ChartOverlayKey, OverlayHint>>;
 };
 
 const OVERLAY_ORDER: ChartOverlayKey[] = [
@@ -23,6 +25,7 @@ const OVERLAY_ORDER: ChartOverlayKey[] = [
 export function ChartOverlayToggles({
   settings,
   onToggle,
+  hints,
 }: ChartOverlayTogglesProps) {
   return (
     <div
@@ -33,6 +36,7 @@ export function ChartOverlayToggles({
       {OVERLAY_ORDER.map((key) => {
         const on = settings[key];
         const { short, label } = CHART_OVERLAY_LABELS[key];
+        const hint = hints?.[key]?.label;
         return (
           <button
             key={key}
@@ -42,7 +46,10 @@ export function ChartOverlayToggles({
             title={label}
             onClick={() => onToggle(key)}
           >
-            {short}
+            <span className="chart-overlay-toggle-k">{short}</span>
+            {hint ? (
+              <span className="chart-overlay-toggle-v">{hint}</span>
+            ) : null}
           </button>
         );
       })}

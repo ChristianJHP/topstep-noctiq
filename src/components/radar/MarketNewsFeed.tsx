@@ -9,8 +9,6 @@ import {
 import { NewsFeedSkeleton } from "@/components/radar/LiveSkeleton";
 import { useGeopoliticsFeed } from "@/hooks/use-geopolitics-feed";
 
-const VISIBLE = 3;
-
 function formatTime(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "—";
@@ -41,7 +39,17 @@ function labelClass(label: string): string {
   }
 }
 
-export function MarketNewsFeed({ instrument }: { instrument: InstrumentNewsLabel }) {
+type MarketNewsFeedProps = {
+  instrument: InstrumentNewsLabel;
+  newsImpact?: string;
+  newsLine?: string;
+};
+
+export function MarketNewsFeed({
+  instrument,
+  newsImpact,
+  newsLine,
+}: MarketNewsFeedProps) {
   const [expanded, setExpanded] = useState(false);
   const { feed: rawFeed, isLoading } = useGeopoliticsFeed();
 
@@ -50,26 +58,12 @@ export function MarketNewsFeed({ instrument }: { instrument: InstrumentNewsLabel
     [rawFeed, instrument]
   );
 
-  const visible = expanded ? feed : feed.slice(0, VISIBLE);
-  const hiddenCount = Math.max(0, feed.length - VISIBLE);
-
   if (isLoading && feed.length === 0) {
-    return <NewsFeedSkeleton rows={3} />;
+    return <NewsFeedSkeleton rows={2} />;
   }
 
-  if (feed.length === 0) {
-    return (
-      <section className="news-feed news-feed--compact live-enter" aria-label="Market news">
-        <header className="news-feed-head">
-          <h2 className="news-feed-title">News</h2>
-          <span className="news-feed-sub">{instrumentNewsSubtitle(instrument)}</span>
-        </header>
-        <p className="news-feed-muted">
-          Headlines unavailable — RSS may be blocked. Retry in a minute.
-        </p>
-      </section>
-    );
-  }
+  const impact = newsImpact ?? "Mixed";
+  const catalyst = newsLine ?? "No catalyst summary available.";
 
   return (
     <section className="news-feed news-feed--compact live-enter" aria-label="Market news">
@@ -77,51 +71,69 @@ export function MarketNewsFeed({ instrument }: { instrument: InstrumentNewsLabel
         <h2 className="news-feed-title">News</h2>
         <span className="news-feed-sub">{instrumentNewsSubtitle(instrument)}</span>
       </header>
-      <ul className="news-feed-list">
-        {visible.map((item, i) => (
-          <li
-            key={item.id}
-            className="news-feed-row live-stagger-in"
-            style={{ animationDelay: `${i * 0.05}s` }}
+
+      <div className="news-catalyst">
+        <p className="news-catalyst-impact">
+          <span className="news-catalyst-k">News impact</span>
+          {impact}
+        </p>
+        <p className="news-catalyst-line">{catalyst}</p>
+      </div>
+
+      {feed.length === 0 ? (
+        <p className="news-feed-muted">
+          Headlines unavailable — RSS may be blocked. Retry in a minute.
+        </p>
+      ) : (
+        <>
+          <button
+            type="button"
+            className="news-feed-more news-feed-more--top"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
           >
-            <div className="news-feed-tags">
-              <span className={`news-feed-tag ${labelClass(item.label)}`}>
-                {item.label}
-              </span>
-              {item.topics.map((topic) => (
-                <span key={topic} className="news-feed-topic">
-                  {topic}
-                </span>
+            {expanded ? "Hide headlines" : `Show ${feed.length} headlines`}
+          </button>
+
+          {expanded ? (
+            <ul className="news-feed-list news-feed-list--secondary">
+              {feed.map((item, i) => (
+                <li
+                  key={item.id}
+                  className="news-feed-row live-stagger-in"
+                  style={{ animationDelay: `${i * 0.04}s` }}
+                >
+                  <div className="news-feed-tags">
+                    <span className={`news-feed-tag ${labelClass(item.label)}`}>
+                      {item.label}
+                    </span>
+                    {item.topics.map((topic) => (
+                      <span key={topic} className="news-feed-topic">
+                        {topic}
+                      </span>
+                    ))}
+                  </div>
+                  {item.link ? (
+                    <a
+                      href={item.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="news-feed-text"
+                    >
+                      {item.text}
+                    </a>
+                  ) : (
+                    <p className="news-feed-text">{item.text}</p>
+                  )}
+                  <time className="news-feed-time" dateTime={item.publishedAt}>
+                    {formatTime(item.publishedAt)}
+                  </time>
+                </li>
               ))}
-            </div>
-            {item.link ? (
-              <a
-                href={item.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="news-feed-text"
-              >
-                {item.text}
-              </a>
-            ) : (
-              <p className="news-feed-text">{item.text}</p>
-            )}
-            <time className="news-feed-time" dateTime={item.publishedAt}>
-              {formatTime(item.publishedAt)}
-            </time>
-          </li>
-        ))}
-      </ul>
-      {hiddenCount > 0 ? (
-        <button
-          type="button"
-          className="news-feed-more"
-          onClick={() => setExpanded((v) => !v)}
-          aria-expanded={expanded}
-        >
-          {expanded ? "Show less" : `Show ${hiddenCount} more`}
-        </button>
-      ) : null}
+            </ul>
+          ) : null}
+        </>
+      )}
     </section>
   );
 }

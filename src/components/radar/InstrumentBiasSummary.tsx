@@ -42,6 +42,12 @@ const SYMBOL_LABEL: Record<RadarTab, string> = {
   GC: "Gold",
 };
 
+function biasClass(bias: string): string {
+  if (bias === "bullish") return "trade-map-val--bull";
+  if (bias === "bearish") return "trade-map-val--bear";
+  return "trade-map-val--mixed";
+}
+
 type InstrumentBiasSummaryProps = {
   symbol: RadarTab;
   data?: InstrumentSummaryPayload;
@@ -56,6 +62,7 @@ export function InstrumentBiasSummary({
   isValidating = false,
 }: InstrumentBiasSummaryProps) {
   const now = useCountdownTick(30_000);
+  const map = data?.tradeMap;
 
   const refreshMeta = formatRefreshMeta(
     data?.generatedAt,
@@ -63,30 +70,57 @@ export function InstrumentBiasSummary({
     revalidateMs(data)
   );
 
-  const isRefreshing = isValidating && Boolean(data?.line);
+  const isRefreshing = isValidating && Boolean(map?.headline);
 
   return (
     <section
-      className={`bias-summary bias-summary--embedded live-enter${
+      className={`bias-summary bias-summary--embedded bias-summary--trade-map live-enter${
         isRefreshing ? " bias-summary--refreshing" : ""
       }`}
       aria-live="polite"
     >
       <header className="bias-summary-head">
         <span className="bias-summary-label">
-          {data?.marketOpen === false ? "When open" : "Next few hours"} ·{" "}
+          {data?.marketOpen === false ? "When open" : "Trade map"} ·{" "}
           {SYMBOL_LABEL[symbol]}
         </span>
         {refreshMeta ? (
           <span className="bias-summary-timing">{refreshMeta}</span>
         ) : null}
       </header>
-      {isLoading && !data?.line ? (
+
+      {isLoading && !map?.headline ? (
         <BiasSummarySkeleton />
-      ) : data?.line ? (
-        <p className="bias-summary-text live-text-in" key={data.line.slice(0, 24)}>
-          {data.line}
-        </p>
+      ) : map?.headline ? (
+        <div className="trade-map live-text-in" key={map.headline.slice(0, 20)}>
+          <p className="trade-map-headline">{map.headline}</p>
+          <p className="trade-map-context">{map.context}</p>
+
+          <dl className="trade-map-grid">
+            <div className="trade-map-item">
+              <dt>Bias</dt>
+              <dd className={biasClass(map.bias)}>
+                {map.bias.charAt(0).toUpperCase() + map.bias.slice(1)}
+              </dd>
+            </div>
+            <div className="trade-map-item">
+              <dt>Key level</dt>
+              <dd>{map.keyLevel}</dd>
+            </div>
+            <div className="trade-map-item">
+              <dt>Draw</dt>
+              <dd>{map.draw}</dd>
+            </div>
+            <div className="trade-map-item">
+              <dt>Invalidation</dt>
+              <dd>{map.invalidation}</dd>
+            </div>
+            <div className="trade-map-item">
+              <dt>Confidence</dt>
+              <dd>{map.confidence}</dd>
+            </div>
+          </dl>
+        </div>
       ) : (
         <p className="bias-summary-text bias-summary-text--muted">
           Summary unavailable.

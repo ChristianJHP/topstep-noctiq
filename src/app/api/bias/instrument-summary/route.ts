@@ -41,10 +41,12 @@ export async function GET(request: Request) {
     console.error("[bias/instrument-summary]", error);
     try {
       const ctx = await buildInstrumentBiasContext(label);
-      const line = formatInstrumentBiasDeterministic(ctx);
+      const tradeMap = formatInstrumentBiasDeterministic(ctx);
+      const line = `${tradeMap.headline} ${tradeMap.context}`;
       return NextResponse.json(
         {
           line,
+          tradeMap,
           overlays: resolveSummaryOverlays(line, ctx),
           symbol: label,
           generatedAt: new Date().toISOString(),

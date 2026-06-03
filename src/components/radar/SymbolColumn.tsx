@@ -5,6 +5,7 @@ import type { SymbolContext } from "@/lib/htf-status";
 import { CHART_TIMEFRAMES, type ChartTimeframe } from "@/lib/chart-timeframe";
 import type { LiveQuote } from "@/lib/yahoo-live-quote";
 import type { ChartOverlaySettings } from "@/lib/chart-overlay-types";
+import type { InstrumentTradeMap } from "@/lib/instrument-trade-map";
 import { SymbolPrice } from "@/components/radar/SymbolPrice";
 import { useChartOverlaySettings } from "@/lib/chart-overlay-settings";
 import { CandleStateDots } from "@/components/radar/CandleStateDots";
@@ -28,12 +29,14 @@ export function SymbolColumn({
   visible = true,
   aiOverlays,
   summaryKey,
+  tradeMap,
 }: {
   symbol: SymbolContext;
   liveQuote?: LiveQuote | null;
   visible?: boolean;
   aiOverlays?: ChartOverlaySettings | null;
   summaryKey?: string | null;
+  tradeMap?: InstrumentTradeMap | null;
 }) {
   const isWide = useIsWideDesktop();
   const [timeframe, setTimeframe] = useState<ChartTimeframe>("1H");
@@ -71,7 +74,11 @@ export function SymbolColumn({
         <SymbolPrice symbol={symbol} liveQuote={liveQuote} />
       </div>
 
-      <ChartOverlayToggles settings={overlays} onToggle={toggle} />
+      <ChartOverlayToggles
+        settings={overlays}
+        onToggle={toggle}
+        hints={tradeMap?.overlayHints}
+      />
 
       {isWide ? (
         <div className="sym-col-charts-wide">
@@ -83,6 +90,7 @@ export function SymbolColumn({
               overlays={overlays}
               liveQuote={liveQuote}
               visible={visible}
+              chartFocus={tradeMap?.chartFocus}
             />
           ))}
         </div>
@@ -121,6 +129,7 @@ export function SymbolColumn({
                     overlays={overlays}
                     liveQuote={liveQuote}
                     visible={visible && active}
+                    chartFocus={tradeMap?.chartFocus}
                   />
                 </div>
               );

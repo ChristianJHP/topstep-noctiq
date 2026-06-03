@@ -21,6 +21,11 @@ import {
   resolveSummaryOverlays,
 } from "@/lib/summary-chart-overlays";
 import type { ChartOverlaySettings } from "@/lib/chart-overlay-types";
+import {
+  buildTradeMapFromContext,
+  mergeTradeMapWithAi,
+  type InstrumentTradeMap,
+} from "@/lib/instrument-trade-map";
 
 export type InstrumentBiasPayload = {
   line: string;
@@ -30,6 +35,7 @@ export type InstrumentBiasPayload = {
   marketOpen: boolean;
   revalidateSec: number;
   overlays: ChartOverlaySettings;
+  tradeMap: InstrumentTradeMap;
 };
 
 export type InstrumentBiasContext = {
@@ -169,48 +175,44 @@ export async function buildInstrumentBiasContext(
 
 function buildPrompt(ctx: InstrumentBiasContext): string {
   const closed = !ctx.marketOpen;
+  const base = buildTradeMapFromContext(ctx);
 
-  return `You write ONE sentence for ${ctx.symbol} futures — the perceived directional bias for the next 2–3 hours and WHY (not trade advice).
+  return `You refine a compact trade map for ${ctx.symbol} futures (not trade advice).
 
 INPUT JSON:
 ${JSON.stringify(ctx)}
 
-Return ONLY valid JSON: {"line": "", "overlays": {"draw": false, "fvg": false, "rejection": false, "cisd": false, "session": false, "levels": false}}
+DETERMINISTIC DRAFT:
+${JSON.stringify(base)}
 
-Set each overlays.* key to true ONLY if that concept appears in your sentence (draw on liquidity, FVG/gap, rejection block, CISD, session name, HTF levels/PD/premium/discount). Otherwise false.
-
-The sentence must weave in relevant drivers from JSON only, such as:
-${closed
-    ? `- Markets closed: last known HTF bias, PD array (premiumDiscount), sessionLabel, and headline/geo context for the next open.`
-    : `- perceivedBias lean and HTF 1H/4H candle alignment.
-- premiumDiscount vs the 4H range (PD array).
-- drawOnLiquidity if present.
-- Active sessionLabel (Asia/London/NY).
-- topHeadlines, geo.war, geo.trump, or geo.marketsTone if they explain the lean for this symbol.
-- relativeStrength / smt for NQ or ES when relevant.
-- nextRedFolder within ~6h if material.`}
-
-Rules:
-- Exactly ONE sentence, max 45 words. Plain English.
-- Speculative lean is OK ("may grind", "bias favors", "watch for") — no entries, stops, or targets.
-- Use ONLY JSON facts. Do not invent prices or headlines.
-- If a driver is missing, omit it rather than guessing.`;
+Return ONLY valid JSON:
+{
+  "headline": "",
+  "context": "",
+  "newsImpact": "",
+  "newsLine": "",
+  "invalidation": "",
+  "overlays": {"draw": false, "fvg": false, "rejection": false, "cisd": false, "session": false, "levels": false}
 }
 
-function clampLine(text: string, maxWords = 45, maxChars = 280): string {
-  let t = text.replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
-  const words = t.split(" ").filter(Boolean);
-  if (words.length > maxWords) {
-    t = `${words.slice(0, maxWords).join(" ")}…`;
-  }
-  if (t.length > maxChars) {
-    t = `${t.slice(0, maxChars - 1).trim()}…`;
-  }
-  return t;
+Rules:
+- headline: one line like "Gold bias: Bearish below 4520." Use ONLY JSON prices.
+- context: max 2 short sentences. Mechanical — PD array, HTF, draw, FVG. No fluff.
+- newsImpact: short label e.g. "Mixed / slightly gold-supportive"
+- newsLine: one sentence catalyst read from headlines/geo
+- invalidation: e.g. "Hold above 4527" — use JSON keyLevels/drawOnLiquidity
+- overlays: true ONLY for concepts you reference in headline/context
+${closed ? "- Markets closed: frame for next open." : ""}
+- Use ONLY JSON facts. Do not invent levels or headlines.`;
 }
 
 function parseAiResponse(text: string): {
-  line: string | null;
+  tradeMapAi: Partial<
+    Pick<
+      InstrumentTradeMap,
+      "headline" | "context" | "newsImpact" | "newsLine" | "invalidation"
+    >
+  > | null;
   overlays: Partial<ChartOverlaySettings> | null;
 } {
   try {
@@ -219,63 +221,62 @@ function parseAiResponse(text: string): {
       .replace(/```\n?/g, "")
       .trim();
     const parsed = JSON.parse(cleaned) as {
+      headline?: string;
+      context?: string;
+      newsImpact?: string;
+      newsLine?: string;
+      invalidation?: string;
       line?: string;
       overlays?: unknown;
     };
-    if (typeof parsed.line !== "string" || !parsed.line.trim()) {
-      return { line: null, overlays: null };
+
+    const headline = parsed.headline?.trim() || parsed.line?.trim();
+    const context = parsed.context?.trim() || parsed.line?.trim();
+
+    if (!headline && !context) {
+      return { tradeMapAi: null, overlays: null };
     }
+
     return {
-      line: clampLine(parsed.line),
+      tradeMapAi: {
+        headline: headline || undefined,
+        context: context || undefined,
+        newsImpact: parsed.newsImpact?.trim(),
+        newsLine: parsed.newsLine?.trim(),
+        invalidation: parsed.invalidation?.trim(),
+      },
       overlays: parseModelOverlays(parsed.overlays),
     };
   } catch {
-    return { line: null, overlays: null };
+    return { tradeMapAi: null, overlays: null };
   }
+}
+
+function payloadFromContext(
+  ctx: InstrumentBiasContext,
+  base: Omit<InstrumentBiasPayload, "line" | "overlays" | "tradeMap">,
+  tradeMap: InstrumentTradeMap
+): InstrumentBiasPayload {
+  const summaryText = `${tradeMap.headline} ${tradeMap.context}`;
+  return {
+    ...base,
+    line: summaryText,
+    tradeMap,
+    overlays: resolveSummaryOverlays(summaryText, ctx),
+  };
 }
 
 export function formatInstrumentBiasDeterministic(
   ctx: InstrumentBiasContext
-): string {
-  if (!ctx.marketOpen) {
-    return clampLine(
-      `${ctx.symbol} closed (${ctx.sessionLabel}) — last ${ctx.price.toLocaleString()}; ${ctx.perceivedBias} HTF (${ctx.htf.fourHour} 4H, ${ctx.htf.oneHour} 1H) heading into reopen.`
-    );
-  }
-
-  const bits: string[] = [
-    `${ctx.symbol} ${ctx.perceivedBias} lean next few hours`,
-    `${ctx.htf.fourHour} 4H / ${ctx.htf.oneHour} 1H`,
-    `${ctx.premiumDiscount} vs 4H range`,
-    `${ctx.sessionLabel} session`,
-  ];
-
-  if (ctx.drawOnLiquidity) {
-    bits.push(
-      `draw ${ctx.drawOnLiquidity.side} ${ctx.drawOnLiquidity.level.toLocaleString()}`
-    );
-  }
-
-  if (ctx.topHeadlines[0]) {
-    bits.push(`headline: ${ctx.topHeadlines[0].slice(0, 55)}`);
-  } else if (ctx.geo.trump) {
-    bits.push(`Trump: ${ctx.geo.trump.slice(0, 45)}`);
-  } else if (/war|strike|iran|russia|sanction/i.test(ctx.geo.war)) {
-    bits.push(ctx.geo.war.slice(0, 50));
-  }
-
-  if (ctx.relativeStrength && (ctx.symbol === "NQ" || ctx.symbol === "ES")) {
-    bits.push(ctx.relativeStrength.slice(0, 40));
-  }
-
-  return clampLine(`${bits.join("; ")}.`);
+): InstrumentTradeMap {
+  return buildTradeMapFromContext(ctx);
 }
 
 async function generateInstrumentBiasBrief(
   label: SymbolLabel
 ): Promise<InstrumentBiasPayload> {
   const ctx = await buildInstrumentBiasContext(label);
-  const fallback = formatInstrumentBiasDeterministic(ctx);
+  const draft = buildTradeMapFromContext(ctx);
   const generatedAt = new Date().toISOString();
   const marketOpen = ctx.marketOpen;
   const revalidateSec = marketOpen
@@ -291,49 +292,43 @@ async function generateInstrumentBiasBrief(
   };
 
   if (!isAiGatewayConfigured()) {
-    return {
-      line: fallback,
-      overlays: resolveSummaryOverlays(fallback, ctx),
-      ...base,
-    };
+    return payloadFromContext(ctx, base, draft);
   }
 
   const model = getBiasSummaryModel();
   if (!model) {
-    return {
-      line: fallback,
-      overlays: resolveSummaryOverlays(fallback, ctx),
-      ...base,
-    };
+    return payloadFromContext(ctx, base, draft);
   }
 
   try {
     const { text } = await generateText({
       model,
       prompt: buildPrompt(ctx),
-      maxOutputTokens: 180,
+      maxOutputTokens: 260,
     });
     const parsed = parseAiResponse(text);
-    const line = parsed.line ?? fallback;
+    const tradeMap = mergeTradeMapWithAi(draft, parsed.tradeMapAi);
+    const summaryText = `${tradeMap.headline} ${tradeMap.context}`;
     return {
-      line,
-      overlays: resolveSummaryOverlays(line, ctx, parsed.overlays),
       ...base,
+      line: summaryText,
+      tradeMap,
+      overlays: resolveSummaryOverlays(
+        summaryText,
+        ctx,
+        parsed.overlays
+      ),
     };
   } catch (error) {
     console.error(`[instrument-bias/${label}]`, error);
-    return {
-      line: fallback,
-      overlays: resolveSummaryOverlays(fallback, ctx),
-      ...base,
-    };
+    return payloadFromContext(ctx, base, draft);
   }
 }
 
 function cacheFor(label: SymbolLabel) {
   const open = unstable_cache(
     () => generateInstrumentBiasBrief(label),
-    [`instrument-bias-v1-${label}-open`],
+    [`instrument-bias-v2-${label}-open`],
     {
       revalidate: BIAS_SUMMARY_REVALIDATE_SEC,
       tags: ["instrument-bias", `instrument-bias-${label}`],
@@ -341,7 +336,7 @@ function cacheFor(label: SymbolLabel) {
   );
   const closed = unstable_cache(
     () => generateInstrumentBiasBrief(label),
-    [`instrument-bias-v1-${label}-closed`],
+    [`instrument-bias-v2-${label}-closed`],
     {
       revalidate: BIAS_SUMMARY_CLOSED_REVALIDATE_SEC,
       tags: ["instrument-bias", `instrument-bias-${label}`],

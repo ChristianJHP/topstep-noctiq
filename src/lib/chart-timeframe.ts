@@ -17,6 +17,9 @@ import {
   relevantRejectionBlocksForChart,
 } from "@/lib/rejection-block-detect";
 import { sessionLinesForBars } from "@/lib/session-chart-lines";
+import type { ChartOverlaySettings } from "@/lib/chart-overlay-types";
+import type { ChartFocusLevels } from "@/lib/instrument-trade-map";
+import { filterChartPlot } from "@/lib/market-analysis";
 
 export type ChartTimeframe = "5m" | "15m" | "1H" | "4H";
 
@@ -227,6 +230,108 @@ export function plotForTimeframe(
   }
 
   return { lines, zones: fvgZones };
+}
+
+/** Only the 2–3 levels that matter for the trade map — no ICT Christmas lights. */
+export function plotFocusFromTradeMap(
+  symbol: SymbolContext,
+  focus: ChartFocusLevels,
+  timeframe: ChartTimeframe
+): SymbolChartPlot {
+  const lines: ChartPlotLine[] = [];
+  const zones: SymbolChartPlot["zones"] = [];
+  const zoneStart = Math.floor(Date.now() / 1000) - 86400 * 4;
+  const tf = timeframe === "4H" ? "4H" : "1H";
+
+  if (focus.drawLevel != null && focus.drawSide) {
+    const drawLine = drawPlotLine(focus.drawSide, focus.drawLevel);
+    drawLine.label = focus.drawSide === "sell-side" ? "Draw ↓" : "Draw ↑";
+    lines.push(drawLine);
+  }
+
+  if (focus.keyLevelLow != null && focus.keyLevelHigh != null) {
+    const low = Math.min(focus.keyLevelLow, focus.keyLevelHigh);
+    const high = Math.max(focus.keyLevelLow, focus.keyLevelHigh);
+    const minSpan = symbol.label === "GC" ? 0.25 : 2;
+    if (high - low >= minSpan) {
+      zones.push({
+        top: high,
+        bottom: low,
+        type: "bearish",
+        timeframe: tf,
+        kind: "fvg",
+        label: "Reclaim zone",
+        startTime: zoneStart,
+      });
+    } else {
+      lines.push({
+        price: high,
+        color: "rgba(148, 163, 184, 0.65)",
+        style: "dashed",
+        label: "Key level",
+        role: "level",
+      });
+    }
+  }
+
+  if (focus.invalidationLevel != null) {
+    lines.push({
+      price: focus.invalidationLevel,
+      color: "rgba(242, 85, 90, 0.55)",
+      style: "dashed",
+      label: "Invalidation",
+      role: "level",
+    });
+  }
+
+  return { lines, zones };
+}
+
+function plotPriceKey(line: ChartPlotLine): string {
+  return `${line.role}-${Math.round(line.price * 100)}`;
+}
+
+/** Minimal focus plot + optional overlay expansion. */
+export function buildChartPlot(
+  symbol: SymbolContext,
+  timeframe: ChartTimeframe,
+  focus: ChartFocusLevels | undefined,
+  overlays: ChartOverlaySettings
+): SymbolChartPlot {
+  const extended = plotForTimeframe(symbol, timeframe);
+  const base = focus
+    ? plotFocusFromTradeMap(symbol, focus, timeframe)
+    : extended;
+
+  const extras = filterChartPlot(extended, overlays);
+  const lineKeys = new Set(base.lines.map(plotPriceKey));
+  const lines = [...base.lines];
+
+  for (const line of extras.lines) {
+    const key = plotPriceKey(line);
+    if (lineKeys.has(key)) continue;
+    if (line.role === "draw" && !overlays.draw) continue;
+    if (line.role === "level" && !overlays.levels) continue;
+    if (line.role === "cisd" && !overlays.cisd) continue;
+    if (line.role === "session" && !overlays.session) continue;
+    lineKeys.add(key);
+    lines.push(line);
+  }
+
+  const zoneKeys = new Set(
+    base.zones.map((z) => `${z.kind}-${Math.round(z.bottom * 100)}`)
+  );
+  const zones = [...base.zones];
+  for (const zone of extras.zones) {
+    const key = `${zone.kind}-${Math.round(zone.bottom * 100)}`;
+    if (zoneKeys.has(key)) continue;
+    if (zone.kind === "fvg" && !overlays.fvg) continue;
+    if (zone.kind === "rejection" && !overlays.rejection) continue;
+    zoneKeys.add(key);
+    zones.push(zone);
+  }
+
+  return { lines, zones };
 }
 
 /** RB scan window — only recent structure matters for overlay picks. */
