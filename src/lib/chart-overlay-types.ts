@@ -26,5 +26,5 @@ export const DEFAULT_CHART_OVERLAYS: ChartOverlaySettings = {
   rejection: true,
   cisd: false,
   session: true,
-  levels: false,
+  levels: true,
 };

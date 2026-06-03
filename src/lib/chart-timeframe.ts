@@ -32,24 +32,24 @@ type TfConfig = {
 export const CHART_TF_CONFIG: Record<ChartTimeframe, TfConfig> = {
   "5m": {
     interval: "5m",
-    range: "5d",
-    barCount: { mobile: 72, desktop: 120 },
+    range: "1mo",
+    barCount: { mobile: 320, desktop: 600 },
     refreshCapMs: 45_000,
   },
   "15m": {
     interval: "15m",
-    range: "7d",
-    barCount: { mobile: 64, desktop: 96 },
+    range: "1mo",
+    barCount: { mobile: 160, desktop: 280 },
   },
   "1H": {
     interval: "60m",
-    range: "3mo",
-    barCount: { mobile: 48, desktop: 72 },
+    range: "6mo",
+    barCount: { mobile: 96, desktop: 160 },
   },
   "4H": {
     interval: "60m",
-    range: "3mo",
-    barCount: { mobile: 40, desktop: 56 },
+    range: "6mo",
+    barCount: { mobile: 72, desktop: 120 },
   },
 };
 

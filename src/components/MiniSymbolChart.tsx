@@ -158,7 +158,7 @@ export function MiniSymbolChart({
     tfConfig.refreshCapMs
   );
 
-  const { candles: candles15m } = useChartCandles(ticker, "15m", "7d");
+  const { candles: candles15m } = useChartCandles(ticker, "15m", "1mo");
 
   const mergedPlot = useMemo(() => {
     const combined: SymbolChartPlot = {
