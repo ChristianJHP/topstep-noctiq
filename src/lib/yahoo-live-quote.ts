@@ -1,22 +1,11 @@
 import { MARKET_TICKERS } from "@/lib/chart-data";
+import {
+  quoteAgeSec,
+  withQuoteMeta,
+  type LiveQuote,
+} from "@/lib/live-quote-types";
 
-export type LiveQuote = {
-  ticker: string;
-  price: number;
-  /** Prior settlement — matches TradingView / Yahoo day-change %. */
-  previousClose: number | null;
-  /** Unix seconds — when Yahoo last updated the quote. */
-  quoteTime: number;
-  /** Forming 1m bar at quoteTime (if available). */
-  bar: {
-    time: number;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-  } | null;
-  fetchedAt: number;
-};
+export type { LiveQuote, LiveQuoteBar, LiveQuoteSource } from "@/lib/live-quote-types";
 
 type YahooChartResult = {
   meta?: {
@@ -36,6 +25,7 @@ type YahooChartResult = {
   };
 };
 
+/** Yahoo =F chart API — free but ~10 minute delayed on CME futures. */
 export async function fetchYahooLiveQuote(
   ticker: string = MARKET_TICKERS.NQ
 ): Promise<LiveQuote> {
@@ -102,7 +92,9 @@ export async function fetchYahooLiveQuote(
   const previousClose =
     meta?.previousClose ?? meta?.chartPreviousClose ?? null;
 
-  return {
+  const fetchedAt = Date.now();
+
+  return withQuoteMeta({
     ticker,
     price,
     previousClose:
@@ -111,6 +103,15 @@ export async function fetchYahooLiveQuote(
         : null,
     quoteTime,
     bar,
-    fetchedAt: Date.now(),
-  };
+    fetchedAt,
+    source: "yahoo",
+  });
+}
+
+/** True when quote is older than acceptable for live UI (Yahoo ~600s). */
+export function isLiveQuoteStale(
+  quote: LiveQuote,
+  maxAgeSec = 90
+): boolean {
+  return quoteAgeSec(quote.quoteTime, quote.fetchedAt) > maxAgeSec;
 }

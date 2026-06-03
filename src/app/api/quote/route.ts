@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MARKET_TICKERS } from "@/lib/chart-data";
-import { fetchYahooLiveQuote } from "@/lib/yahoo-live-quote";
+import { fetchLiveQuote } from "@/lib/live-quote-fetch";
 
-export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
@@ -10,7 +9,7 @@ export async function GET(request: NextRequest) {
     request.nextUrl.searchParams.get("ticker") ?? MARKET_TICKERS.NQ;
 
   try {
-    const quote = await fetchYahooLiveQuote(ticker);
+    const quote = await fetchLiveQuote(ticker);
     return NextResponse.json(quote, {
       headers: {
         "Cache-Control": "no-store, max-age=0",

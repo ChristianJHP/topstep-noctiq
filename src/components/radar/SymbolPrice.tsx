@@ -42,6 +42,15 @@ export function SymbolPrice({
     return <PriceSkeleton />;
   }
 
+  const delaySec = liveQuote?.delaySec;
+  const showDelay = delaySec != null && delaySec > 90;
+  const delayLabel =
+    delaySec != null && delaySec >= 60
+      ? `~${Math.round(delaySec / 60)}m delayed`
+      : delaySec != null && delaySec > 90
+        ? `${delaySec}s delayed`
+        : null;
+
   return (
     <div className="sym-col-price-wrap">
       <p
@@ -50,6 +59,16 @@ export function SymbolPrice({
       >
         {formatPrice(price)}
       </p>
+      {showDelay && delayLabel ? (
+        <p className="sym-col-price-delay" title={`Source: ${liveQuote?.source ?? "unknown"}`}>
+          {delayLabel}
+        </p>
+      ) : liveQuote?.source === "databento" || liveQuote?.source === "projectx" ? (
+        <p className="sym-col-price-live">
+          <span className="live-pulse-dot" aria-hidden />
+          Live
+        </p>
+      ) : null}
       {change ? (
         <p
           className={`sym-col-price-change${

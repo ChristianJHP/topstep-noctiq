@@ -7,6 +7,8 @@ import {
   BIAS_SUMMARY_REVALIDATE_SEC,
 } from "@/lib/bias-summary-config";
 import { fetchCalendarMeta, pickNextHighImpact } from "@/lib/events";
+import { MARKET_TICKERS } from "@/lib/chart-data";
+import { fetchLiveQuote } from "@/lib/live-quote-fetch";
 import { getMarketSession, isFuturesSessionOpen } from "@/lib/futures-session";
 import { computeMarketContext, type SymbolContext } from "@/lib/htf-status";
 import { getCachedGeopoliticsBrief } from "@/lib/geopolitics-brief";
@@ -81,6 +83,24 @@ function pickSymbol(
   return ctx.nq;
 }
 
+function tickerForLabel(label: SymbolLabel): string {
+  if (label === "ES") return MARKET_TICKERS.ES;
+  if (label === "GC") return MARKET_TICKERS.GC;
+  return MARKET_TICKERS.NQ;
+}
+
+async function livePriceForLabel(label: SymbolLabel): Promise<number | null> {
+  try {
+    const live = await fetchLiveQuote(tickerForLabel(label));
+    if (live.price > 0 && live.delaySec <= 120) {
+      return Math.round(live.price);
+    }
+  } catch {
+    /* fall back to candle close */
+  }
+  return null;
+}
+
 function premiumDiscountFromPct(pct: number): "premium" | "discount" | "equilibrium" {
   if (pct >= 62) return "premium";
   if (pct <= 38) return "discount";
@@ -116,9 +136,12 @@ export async function buildInstrumentBiasContext(
     relativeStrength = geo.markets.slice(0, 80);
   }
 
+  const livePrice =
+    session.isOpen ? await livePriceForLabel(label) : null;
+
   return {
     symbol: label,
-    price: Math.round(symbol.current),
+    price: livePrice ?? Math.round(symbol.current),
     marketOpen: session.isOpen,
     sessionLabel: tradingSession.isMarketOpen
       ? tradingSession.label

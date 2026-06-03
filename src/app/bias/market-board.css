@@ -2037,6 +2037,30 @@
     color: var(--muted);
   }
 
+  .sym-col-price-delay {
+    margin: 0;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #f59e0b;
+    line-height: 1;
+  }
+
+  .sym-col-price-live {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.3125rem;
+    margin: 0;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #38bdf8;
+    line-height: 1;
+  }
+
   @media (min-width: 640px) {
     .sym-col-price {
       font-size: 1.5rem;
