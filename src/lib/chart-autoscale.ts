@@ -1,21 +1,29 @@
 import type { SymbolChartPlot } from "@/lib/market-analysis";
 import type { OhlcBar } from "@/lib/ohlc-aggregate";
 
-/** Drop bad ticks that would flatten the whole chart. */
-export function sanitizeChartBars(bars: OhlcBar[]): OhlcBar[] {
+/** Drop bad ticks — anchor on live/recent price, not global median (futures roll). */
+export function sanitizeChartBars(
+  bars: OhlcBar[],
+  anchorPrice?: number
+): OhlcBar[] {
   if (bars.length < 8) return bars;
 
-  const closes = bars.map((b) => b.close).sort((a, b) => a - b);
-  const median = closes[Math.floor(closes.length / 2)] ?? closes[0];
-  const ranges = bars.map((b) => Math.max(b.high - b.low, 0.01)).sort((a, b) => a - b);
+  const anchor =
+    anchorPrice && anchorPrice > 0
+      ? anchorPrice
+      : bars[bars.length - 1]!.close;
+
+  const ranges = bars
+    .map((b) => Math.max(b.high - b.low, 0.01))
+    .sort((a, b) => a - b);
   const typicalRange = ranges[Math.floor(ranges.length / 2)] ?? 4;
-  const maxDist = Math.max(typicalRange * 12, median * 0.025, 40);
+  const maxDist = Math.max(typicalRange * 8, anchor * 0.055, anchor > 2000 ? 320 : 48);
 
   return bars.filter((b) => {
     if (!Number.isFinite(b.open + b.high + b.low + b.close)) return false;
     const bodyMid = (b.open + b.close) / 2;
-    if (Math.abs(bodyMid - median) > maxDist) return false;
-    if (b.high - b.low > maxDist * 2) return false;
+    if (Math.abs(bodyMid - anchor) > maxDist) return false;
+    if (b.high - b.low > maxDist * 2.5) return false;
     return true;
   });
 }

@@ -1,5 +1,6 @@
 import type { OhlcBar } from "@/lib/ohlc-aggregate";
 import { aggregate1h, aggregate4h } from "@/lib/ohlc-aggregate";
+import { trimFuturesCandleSeries } from "@/lib/futures-candle-trim";
 import type { Candle } from "@/lib/chart-data";
 import type { ChartOverlaySettings } from "@/lib/chart-overlay-types";
 import {
@@ -308,8 +309,9 @@ export function analyzeSymbolMarket(
   priorH4Low: number,
   current: number
 ): SymbolMarketAnalysis {
-  const bars4h = aggregate4h(candles);
-  const bars1h = aggregate1h(candles);
+  const trimmed = trimFuturesCandleSeries(candles, current);
+  const bars4h = aggregate4h(trimmed);
+  const bars1h = aggregate1h(trimmed);
 
   const fvgs4h = detectFairValueGaps(bars4h, "4H");
   const fvgs1h = detectFairValueGaps(bars1h, "1H");

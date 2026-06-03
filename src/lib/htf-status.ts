@@ -5,6 +5,7 @@ import {
 } from "@/lib/chart-candles-cache";
 import { chartCacheKey } from "@/lib/chart-candles-store";
 import { aggregate1h, aggregate4h, type OhlcBar } from "@/lib/ohlc-aggregate";
+import { trimFuturesCandleSeries } from "@/lib/futures-candle-trim";
 import { analyzeSymbolMarket, type SymbolMarketAnalysis } from "@/lib/market-analysis";
 import { computeDayChange, type DayChange } from "@/lib/day-change";
 
@@ -245,11 +246,12 @@ async function computeSymbol(
   const candles =
     prefetched ??
     (await getCachedChartCandles(ticker, "60m", "1y")).candles;
-  const bars4h = aggregate4h(candles);
-  const bars1h = aggregate1h(candles);
+  const trimmed = trimFuturesCandleSeries(candles);
+  const bars4h = aggregate4h(trimmed);
+  const bars1h = aggregate1h(trimmed);
 
   return {
-    context: buildSymbolContext(label, ticker, candles, bars4h, bars1h),
+    context: buildSymbolContext(label, ticker, trimmed, bars4h, bars1h),
     bars1h,
     bars4h,
   };

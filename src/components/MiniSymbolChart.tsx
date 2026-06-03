@@ -164,11 +164,13 @@ export function MiniSymbolChart({
 
   const bars = useMemo(() => {
     if (!candles.length) return [];
+    const anchor = currentPrice ?? candles[candles.length - 1]?.close;
     const raw = sanitizeChartBars(
-      barsForTimeframe(candles, timeframe, barLimit)
+      barsForTimeframe(candles, timeframe, barLimit, anchor),
+      anchor
     );
     return raw.length ? raw : [];
-  }, [candles, timeframe, barLimit]);
+  }, [candles, timeframe, barLimit, currentPrice]);
 
   const rbZones = useMemo(() => {
     if (!bars.length) return [];

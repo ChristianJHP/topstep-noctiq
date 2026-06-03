@@ -1,4 +1,5 @@
 import type { Candle } from "@/lib/chart-data";
+import { trimFuturesCandleSeries } from "@/lib/futures-candle-trim";
 import { aggregate1h, aggregate4h, type OhlcBar } from "@/lib/ohlc-aggregate";
 import { candleSymbolBias, type SymbolContext } from "@/lib/htf-status";
 import {
@@ -67,15 +68,21 @@ export function candlesToBars(candles: Candle[]): OhlcBar[] {
 export function barsForTimeframe(
   candles: Candle[],
   timeframe: ChartTimeframe,
-  limit: number
+  limit: number,
+  anchorPrice?: number
 ): OhlcBar[] {
+  let source = candles;
+  if (timeframe === "1H" || timeframe === "4H") {
+    source = trimFuturesCandleSeries(candles, anchorPrice);
+  }
+
   let bars: OhlcBar[];
   if (timeframe === "4H") {
-    bars = aggregate4h(candles);
+    bars = aggregate4h(source);
   } else if (timeframe === "1H") {
-    bars = aggregate1h(candles);
+    bars = aggregate1h(source);
   } else {
-    bars = candlesToBars(candles);
+    bars = candlesToBars(source);
   }
   return bars.slice(-limit);
 }
@@ -88,6 +95,9 @@ export function patchFormingBar(
   if (!livePrice || livePrice <= 0 || bars.length === 0) return bars;
 
   const last = bars[bars.length - 1]!;
+  const maxPatch = Math.max(last.close * 0.025, last.close > 2000 ? 140 : 24);
+  if (Math.abs(livePrice - last.close) > maxPatch) return bars;
+
   return [
     ...bars.slice(0, -1),
     {
