@@ -76,6 +76,8 @@ type MiniSymbolChartProps = {
   timeframe: ChartTimeframe;
   overlays?: ChartOverlaySettings;
   currentPrice?: number;
+  /** When a keep-alive panel becomes visible, nudge the chart to measure. */
+  visible?: boolean;
 };
 
 function syncZoneOverlay(
@@ -124,6 +126,7 @@ export function MiniSymbolChart({
   timeframe,
   overlays,
   currentPrice,
+  visible = true,
 }: MiniSymbolChartProps) {
   const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -141,8 +144,6 @@ export function MiniSymbolChart({
   const overlayFrameRef = useRef<number | null>(null);
   const fitToContainerRef = useRef<(resetPan?: boolean) => void>(() => {});
   const refreshOverlayRef = useRef<() => void>(() => {});
-  const [rbZones, setRbZones] = useState<ChartPlotZone[]>([]);
-  const [sessionLines, setSessionLines] = useState<ChartPlotLine[]>([]);
   const [mounted, setMounted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -160,6 +161,27 @@ export function MiniSymbolChart({
   );
 
   const { candles: candles15m } = useChartCandles(ticker, "15m", "1mo");
+
+  const bars = useMemo(() => {
+    if (!candles.length) return [];
+    const raw = sanitizeChartBars(
+      barsForTimeframe(candles, timeframe, barLimit)
+    );
+    return raw.length ? raw : [];
+  }, [candles, timeframe, barLimit]);
+
+  const rbZones = useMemo(() => {
+    if (!bars.length) return [];
+    const price = bars[bars.length - 1]?.close ?? 0;
+    if (price <= 0) return [];
+    return rejectionZonesForBars(bars, timeframe, price, 2, symbolLabel);
+  }, [bars, timeframe, symbolLabel]);
+
+  const sessionLines = useMemo(() => {
+    if (!candles15m.length) return [];
+    const sessBars = barsForTimeframe(candles15m, "15m", barLimit);
+    return sessionLinesForBars(sessBars);
+  }, [candles15m, barLimit]);
 
   const mergedPlot = useMemo(() => {
     const combined: SymbolChartPlot = {
@@ -366,6 +388,25 @@ export function MiniSymbolChart({
   }, [mounted, isMobile, scheduleOverlayRefresh]);
 
   useEffect(() => {
+    if (!visible || !mounted) return;
+    const chart = chartRef.current;
+    const container = containerRef.current;
+    if (!chart || !container?.clientWidth) return;
+
+    requestAnimationFrame(() => {
+      chart.applyOptions({
+        width: container.clientWidth,
+        height: container.clientHeight,
+        layout: { attributionLogo: false },
+      });
+      if (!userHasPannedRef.current) {
+        fitToContainerRef.current();
+      }
+      scheduleOverlayRefresh();
+    });
+  }, [visible, mounted, scheduleOverlayRefresh]);
+
+  useEffect(() => {
     const series = seriesRef.current;
     if (!series) return;
 
@@ -398,35 +439,17 @@ export function MiniSymbolChart({
   }, [mergedPlot, scheduleOverlayRefresh]);
 
   useEffect(() => {
-    if (!mounted || !seriesRef.current || !candles.length) return;
-
-    let bars = sanitizeChartBars(
-      barsForTimeframe(candles, timeframe, barLimit)
-    );
-    if (bars.length === 0) return;
+    if (!mounted || !seriesRef.current || !bars.length) return;
 
     const livePrice = currentPrice ?? bars[bars.length - 1]!.close;
-    bars = patchFormingBar(bars, livePrice);
+    const patched = patchFormingBar(bars, livePrice);
 
-    barCountRef.current = bars.length;
-    lastBarTimeRef.current = bars[bars.length - 1]!.time;
-
-    const price = livePrice;
-    setRbZones(
-      rejectionZonesForBars(bars, timeframe, price, 2, symbolLabel)
-    );
-
-    if (candles15m.length) {
-      const sessBars = barsForTimeframe(candles15m, "15m", barLimit);
-      setSessionLines(sessionLinesForBars(sessBars));
-    } else {
-      setSessionLines([]);
-    }
-
-    lastBarRef.current = bars[bars.length - 1] ?? null;
+    barCountRef.current = patched.length;
+    lastBarTimeRef.current = patched[patched.length - 1]!.time;
+    lastBarRef.current = patched[patched.length - 1] ?? null;
 
     seriesRef.current.setData(
-      bars.map((b) => ({
+      patched.map((b) => ({
         time: b.time as UTCTimestamp,
         open: b.open,
         high: b.high,
@@ -445,15 +468,12 @@ export function MiniSymbolChart({
     scheduleOverlayRefresh();
     setError(null);
   }, [
-    candles,
-    candles15m,
-    timeframe,
-    barLimit,
+    bars,
     mounted,
     ticker,
+    timeframe,
     fitToContainer,
     scheduleOverlayRefresh,
-    symbolLabel,
   ]);
 
   /** Live quote tick — update forming candle only (no full chart rebuild). */

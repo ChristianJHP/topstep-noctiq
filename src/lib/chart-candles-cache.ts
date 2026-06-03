@@ -106,7 +106,7 @@ export function chartCandlesSwrKey(
 export const CHART_PREFETCH_SPECS = [
   { interval: "5m", range: "1mo" },
   { interval: "15m", range: "1mo" },
-  { interval: "60m", range: "6mo" },
+  { interval: "60m", range: "1y" },
 ] as const;
 
 const TICKERS = Object.values(MARKET_TICKERS);
@@ -134,4 +134,17 @@ export function seedKeyFromCacheKey(cacheKey: string): string | null {
   const [ticker, interval, range] = cacheKey.split("|");
   if (!ticker || !interval || !range) return null;
   return chartCandlesSwrKey(ticker, interval, range);
+}
+
+/** Map radar bundle keys to SWR fallback entries for instant first paint. */
+export function buildChartCandlesSwrFallback(
+  chartCandles?: Record<string, ChartCandlesPayload>
+): Record<string, ChartCandlesPayload> {
+  if (!chartCandles) return {};
+  const out: Record<string, ChartCandlesPayload> = {};
+  for (const [cacheKey, payload] of Object.entries(chartCandles)) {
+    const swrKey = seedKeyFromCacheKey(cacheKey);
+    if (swrKey && payload.candles.length) out[swrKey] = payload;
+  }
+  return out;
 }

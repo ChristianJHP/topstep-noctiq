@@ -1696,6 +1696,22 @@
     background: var(--card);
   }
 
+  .mr-symbol-stacks {
+    position: relative;
+  }
+
+  .mr-symbol-panel--hidden {
+    display: none !important;
+  }
+
+  .sym-tf-stacks {
+    position: relative;
+  }
+
+  .sym-tf-panel--hidden {
+    display: none !important;
+  }
+
   .mr-symbol-panel .bias-summary--embedded {
     border-bottom: 1px solid var(--border);
     background: var(--card);

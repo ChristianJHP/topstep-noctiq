@@ -244,7 +244,7 @@ async function computeSymbol(
 ): Promise<{ context: SymbolContext; bars1h: OhlcBar[]; bars4h: OhlcBar[] }> {
   const candles =
     prefetched ??
-    (await getCachedChartCandles(ticker, "60m", "3mo")).candles;
+    (await getCachedChartCandles(ticker, "60m", "1y")).candles;
   const bars4h = aggregate4h(candles);
   const bars1h = aggregate1h(candles);
 
@@ -259,7 +259,7 @@ function candlesFromPrefetch(
   chartCandles: Record<string, ChartCandlesPayload>,
   ticker: string
 ): Candle[] | undefined {
-  const key = chartCacheKey(ticker, "60m", "3mo");
+  const key = chartCacheKey(ticker, "60m", "1y");
   const payload = chartCandles[key];
   return payload?.candles?.length ? payload.candles : undefined;
 }

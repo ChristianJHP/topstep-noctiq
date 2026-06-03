@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import { useSWRConfig } from "swr";
 import type { ChartCandlesPayload } from "@/lib/chart-candles-cache";
 import { seedKeyFromCacheKey } from "@/lib/chart-candles-cache";
@@ -11,7 +11,7 @@ export function useSeedChartCandles(
 ) {
   const { mutate } = useSWRConfig();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!chartCandles) return;
 
     for (const [cacheKey, payload] of Object.entries(chartCandles)) {

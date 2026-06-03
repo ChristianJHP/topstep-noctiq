@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import useSWR from "swr";
+import { useMemo, useState } from "react";
+import useSWR, { SWRConfig } from "swr";
 import Link from "next/link";
 import { getNextCandleClose } from "@/lib/candle-timers";
 import { getTradingSessionInfo } from "@/lib/trading-session";
 import type { RadarPayload } from "@/lib/radar-payload";
+import { buildChartCandlesSwrFallback } from "@/lib/chart-candles-cache";
 import { useCountdownTick } from "@/hooks/use-countdown-tick";
 import { usePageVisible } from "@/hooks/use-page-visible";
 import { useBiasShiftAlerts } from "@/hooks/use-bias-shift-alerts";
@@ -94,7 +95,16 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
 
   const showLoader = !ctx && isLoading;
 
+  const chartSwrFallback = useMemo(
+    () =>
+      buildChartCandlesSwrFallback(
+        data?.chartCandles ?? initialData?.chartCandles
+      ),
+    [data?.chartCandles, initialData?.chartCandles]
+  );
+
   return (
+    <SWRConfig value={{ fallback: chartSwrFallback }}>
     <div className="mr-page">
       <BiasShiftToasts alerts={alerts} onDismiss={dismissAlert} />
       <CandleCloseToasts
@@ -183,5 +193,6 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
         </p>
       )}
     </div>
+    </SWRConfig>
   );
 }

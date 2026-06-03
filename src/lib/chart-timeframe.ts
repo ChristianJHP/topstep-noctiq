@@ -43,13 +43,13 @@ export const CHART_TF_CONFIG: Record<ChartTimeframe, TfConfig> = {
   },
   "1H": {
     interval: "60m",
-    range: "6mo",
-    barCount: { mobile: 96, desktop: 160 },
+    range: "1y",
+    barCount: { mobile: 600, desktop: 2500 },
   },
   "4H": {
     interval: "60m",
-    range: "6mo",
-    barCount: { mobile: 72, desktop: 120 },
+    range: "1y",
+    barCount: { mobile: 480, desktop: 1200 },
   },
 };
 
@@ -219,6 +219,9 @@ export function plotForTimeframe(
   return { lines, zones: fvgZones };
 }
 
+/** RB scan window — only recent structure matters for overlay picks. */
+const RB_DETECT_MAX_BARS = 480;
+
 export function rejectionZonesForBars(
   bars: OhlcBar[],
   chartTf: ChartTimeframe,
@@ -227,7 +230,11 @@ export function rejectionZonesForBars(
   symbolLabel?: string
 ): SymbolChartPlot["zones"] {
   if (!bars.length || current <= 0) return [];
-  const blocks = detectRejectionBlocks(bars);
+  const scanBars =
+    bars.length > RB_DETECT_MAX_BARS
+      ? bars.slice(-RB_DETECT_MAX_BARS)
+      : bars;
+  const blocks = detectRejectionBlocks(scanBars);
   const picked = relevantRejectionBlocksForChart(
     blocks,
     current,

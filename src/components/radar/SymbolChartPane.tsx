@@ -12,11 +12,13 @@ export function SymbolChartPane({
   timeframe,
   overlays,
   liveQuote,
+  visible = true,
 }: {
   symbol: SymbolContext;
   timeframe: ChartTimeframe;
   overlays: ChartOverlaySettings;
   liveQuote?: LiveQuote | null;
+  visible?: boolean;
 }) {
   const plot = useMemo(
     () => plotForTimeframe(symbol, timeframe),
@@ -37,6 +39,7 @@ export function SymbolChartPane({
           timeframe={timeframe}
           overlays={overlays}
           currentPrice={currentPrice}
+          visible={visible}
         />
       </div>
     </div>

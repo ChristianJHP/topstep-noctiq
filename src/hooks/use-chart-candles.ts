@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import useSWR from "swr";
 import type { Candle } from "@/lib/chart-data";
 import { CHART_CANDLES_REVALIDATE_OPEN_SEC } from "@/lib/chart-cache-config";
@@ -63,16 +63,10 @@ export function useChartCandles(
 ) {
   const pageVisible = usePageVisible();
   const swrKey = chartCandlesSwrKey(ticker, interval, range);
-  const [storedFallback, setStoredFallback] = useState<
-    ChartCandlesPayload | undefined
-  >(undefined);
-
-  useEffect(() => {
-    setStoredFallback(readLocal(swrKey));
-  }, [swrKey]);
+  const localFallback = useMemo(() => readLocal(swrKey), [swrKey]);
 
   const swr = useSWR<ChartCandlesPayload>(swrKey, fetcher, {
-    fallbackData: storedFallback,
+    fallbackData: localFallback,
     dedupingInterval: CHART_CANDLES_REVALIDATE_OPEN_SEC * 1000,
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
