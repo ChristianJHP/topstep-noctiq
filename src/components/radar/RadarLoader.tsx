@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { BiasSummarySkeleton, NewsFeedSkeleton } from "@/components/radar/LiveSkeleton";
 
 const STEPS = [
   "Connecting to CME futures",
@@ -64,6 +65,10 @@ export function RadarLoader() {
             ))}
           </div>
 
+          <div className="mr-loader-bias" aria-hidden>
+            <BiasSummarySkeleton />
+          </div>
+
           <div className="mr-loader-chart-wrap">
             <div className="mr-loader-chart-top">
               <span className="mr-loader-shimmer mr-loader-shimmer--dots" />
@@ -104,6 +109,8 @@ export function RadarLoader() {
               <span className="mr-loader-shimmer mr-loader-shimmer--line" />
             </div>
           </div>
+
+          <NewsFeedSkeleton rows={2} />
         </div>
 
         <p className="mr-loader-status">

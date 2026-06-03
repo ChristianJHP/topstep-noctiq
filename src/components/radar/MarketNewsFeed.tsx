@@ -6,6 +6,7 @@ import {
   instrumentNewsSubtitle,
   type InstrumentNewsLabel,
 } from "@/lib/instrument-news";
+import { NewsFeedSkeleton } from "@/components/radar/LiveSkeleton";
 import { useGeopoliticsFeed } from "@/hooks/use-geopolitics-feed";
 
 const VISIBLE = 3;
@@ -53,18 +54,12 @@ export function MarketNewsFeed({ instrument }: { instrument: InstrumentNewsLabel
   const hiddenCount = Math.max(0, feed.length - VISIBLE);
 
   if (isLoading && feed.length === 0) {
-    return (
-      <section
-        className="news-feed news-feed--loading news-feed--placeholder"
-        aria-label="Market news"
-        aria-busy="true"
-      />
-    );
+    return <NewsFeedSkeleton rows={3} />;
   }
 
   if (feed.length === 0) {
     return (
-      <section className="news-feed news-feed--compact" aria-label="Market news">
+      <section className="news-feed news-feed--compact live-enter" aria-label="Market news">
         <header className="news-feed-head">
           <h2 className="news-feed-title">News</h2>
           <span className="news-feed-sub">{instrumentNewsSubtitle(instrument)}</span>
@@ -77,14 +72,18 @@ export function MarketNewsFeed({ instrument }: { instrument: InstrumentNewsLabel
   }
 
   return (
-    <section className="news-feed news-feed--compact" aria-label="Market news">
+    <section className="news-feed news-feed--compact live-enter" aria-label="Market news">
       <header className="news-feed-head">
         <h2 className="news-feed-title">News</h2>
         <span className="news-feed-sub">{instrumentNewsSubtitle(instrument)}</span>
       </header>
       <ul className="news-feed-list">
-        {visible.map((item) => (
-          <li key={item.id} className="news-feed-row">
+        {visible.map((item, i) => (
+          <li
+            key={item.id}
+            className="news-feed-row live-stagger-in"
+            style={{ animationDelay: `${i * 0.05}s` }}
+          >
             <div className="news-feed-tags">
               <span className={`news-feed-tag ${labelClass(item.label)}`}>
                 {item.label}

@@ -113,15 +113,20 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
           <div className="mr-header-row">
             <h1 className="mr-title">Market Bias</h1>
             <div className="mr-session-wrap">
-              <span
-                className={
-                  tradingSession.isMarketOpen
-                    ? "mr-session mr-session--open"
-                    : "mr-session mr-session--closed"
-                }
-              >
-                {tradingSession.label}
-              </span>
+              <div className="mr-session-live-row">
+                {tradingSession.isMarketOpen ? (
+                  <span className="live-pulse-dot" aria-hidden />
+                ) : null}
+                <span
+                  className={
+                    tradingSession.isMarketOpen
+                      ? "mr-session mr-session--open"
+                      : "mr-session mr-session--closed"
+                  }
+                >
+                  {tradingSession.label}
+                </span>
+              </div>
               <span className="mr-session-countdown" suppressHydrationWarning>
                 {tradingSession.countdown}
               </span>
@@ -165,14 +170,15 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
       {showLoader ? (
         <RadarLoader />
       ) : ctx ? (
-        <>
+        <div className="live-enter">
           <MarketBoard
             markets={ctx}
             chartCandles={data?.chartCandles}
           />
-        </>
+        </div>
       ) : (
-        <p className="geo-strip-muted" style={{ padding: "1rem" }}>
+        <p className="geo-strip-muted live-retry" style={{ padding: "1rem" }}>
+          <span className="live-pulse-dot live-pulse-dot--muted" aria-hidden />
           Market data unavailable — retrying…
         </p>
       )}

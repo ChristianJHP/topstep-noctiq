@@ -38,6 +38,7 @@ import {
 } from "@/lib/chart-autoscale";
 import { useChartCandles } from "@/hooks/use-chart-candles";
 import { useIsMobile } from "@/hooks/use-is-mobile";
+import { ChartSkeleton } from "@/components/radar/LiveSkeleton";
 import {
   formatChartEtCrosshair,
   formatChartEtTickMark,
@@ -485,15 +486,11 @@ export function MiniSymbolChart({
   }, [fetchError, candles.length]);
 
   if (error || (isLoading && !candles.length)) {
-    return (
-      <div className="mini-chart-canvas flex items-center justify-center text-[10px] text-[var(--muted)]">
-        —
-      </div>
-    );
+    return <ChartSkeleton />;
   }
 
   return (
-    <div className="mini-chart-stack">
+    <div className="mini-chart-stack live-enter">
       <div className="mini-chart-canvas-wrap">
         <div
           ref={containerRef}

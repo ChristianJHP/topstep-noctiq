@@ -42,7 +42,7 @@ export function MarketBoard({
     tab === "NQ" ? markets.nq : tab === "ES" ? markets.es : markets.gold;
 
   return (
-    <section className="mr-board">
+    <section className="mr-board live-enter">
       <div className="mr-symbol-panel">
         <div className="mr-tabs" role="tablist" aria-label="Symbol">
           {TABS.map(({ id, label }) => (
