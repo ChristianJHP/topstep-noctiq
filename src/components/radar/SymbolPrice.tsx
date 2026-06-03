@@ -42,18 +42,8 @@ export function SymbolPrice({
     return <PriceSkeleton />;
   }
 
-  const delaySec = liveQuote?.delaySec;
-  const showDelay = delaySec != null && delaySec > 90;
-  const delayLabel =
-    delaySec != null && delaySec >= 60
-      ? `~${Math.round(delaySec / 60)}m delayed`
-      : delaySec != null && delaySec > 90
-        ? `${delaySec}s delayed`
-        : null;
-  const delayTitle =
-    liveQuote?.source === "yahoo"
-      ? "Yahoo =F feed is ~10 minutes behind — live sources unavailable"
-      : `Source: ${liveQuote?.source ?? "unknown"}`;
+  const showLive =
+    liveQuote?.source === "databento" || liveQuote?.source === "projectx";
 
   return (
     <div className="sym-col-price-wrap">
@@ -63,11 +53,7 @@ export function SymbolPrice({
       >
         {formatPrice(price)}
       </p>
-      {showDelay && delayLabel ? (
-        <p className="sym-col-price-delay" title={delayTitle}>
-          {delayLabel}
-        </p>
-      ) : liveQuote?.source === "databento" || liveQuote?.source === "projectx" ? (
+      {showLive ? (
         <p className="sym-col-price-live">
           <span className="live-pulse-dot" aria-hidden />
           Live
