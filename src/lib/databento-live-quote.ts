@@ -78,7 +78,7 @@ export async function fetchDatabentoLiveQuote(
   if (!apiKey || !symbol) return null;
 
   const end = new Date(Date.now() + 60_000);
-  const start = new Date(Date.now() - 10 * 60_000);
+  const start = new Date(Date.now() - 5 * 60_000);
 
   const params = new URLSearchParams({
     dataset: DATASET,

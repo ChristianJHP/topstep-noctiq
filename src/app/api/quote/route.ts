@@ -3,6 +3,7 @@ import { MARKET_TICKERS } from "@/lib/chart-data";
 import { fetchLiveQuote } from "@/lib/live-quote-fetch";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 export async function GET(request: NextRequest) {
   const ticker =

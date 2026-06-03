@@ -10,11 +10,87 @@ const TICKER_TO_SEARCH: Record<string, string> = {
   [MARKET_TICKERS.GC]: "GC",
 };
 
+type PxContract = {
+  id?: string;
+  name?: string;
+  description?: string;
+  symbolId?: string;
+  activeContract?: boolean;
+};
+
 type TokenCache = { token: string; expires: number };
 type ContractCache = { id: string; expires: number };
 
 let tokenCache: TokenCache | null = null;
 const contractCache = new Map<string, ContractCache>();
+
+function parseContracts(data: unknown): PxContract[] {
+  if (Array.isArray(data)) return data as PxContract[];
+  if (data && typeof data === "object") {
+    const o = data as Record<string, unknown>;
+    if (Array.isArray(o.contracts)) return o.contracts as PxContract[];
+    if (Array.isArray(o.results)) return o.results as PxContract[];
+    if (o.id) return [o as PxContract];
+  }
+  return [];
+}
+
+function parseBars(data: unknown): Array<{
+  t?: string;
+  o?: number;
+  h?: number;
+  l?: number;
+  c?: number;
+}> {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object") {
+    const o = data as Record<string, unknown>;
+    if (Array.isArray(o.bars)) return o.bars as ReturnType<typeof parseBars>;
+  }
+  return [];
+}
+
+function pickContract(
+  contracts: PxContract[],
+  searchText: string
+): PxContract | null {
+  const active = contracts.filter((c) => c.activeContract !== false);
+  const pool = active.length ? active : contracts;
+
+  if (searchText === "NQ") {
+    return (
+      pool.find((c) => c.symbolId === "F.US.ENQ") ??
+      pool.find((c) =>
+        c.description?.toLowerCase().includes("nasdaq-100")
+      ) ??
+      pool.find((c) => c.name?.startsWith("NQ") && !c.name?.startsWith("NQG")) ??
+      pool[0] ??
+      null
+    );
+  }
+
+  if (searchText === "ES") {
+    return (
+      pool.find((c) => c.symbolId === "F.US.ES") ??
+      pool.find((c) => c.description?.toLowerCase().includes("e-mini s&p")) ??
+      pool.find((c) => c.name?.startsWith("ES")) ??
+      pool[0] ??
+      null
+    );
+  }
+
+  if (searchText === "GC") {
+    return (
+      pool.find((c) => c.symbolId === "F.US.GCE") ??
+      pool.find((c) => c.description?.toLowerCase().includes("gold")) ??
+      pool.find((c) => c.name?.startsWith("GC")) ??
+      pool[0] ??
+      null
+    );
+  }
+
+  return pool[0] ?? null;
+}
 
 async function getToken(): Promise<string | null> {
   const username = process.env.PROJECTX_USERNAME;
@@ -38,8 +114,12 @@ async function getToken(): Promise<string | null> {
 
   if (!res.ok) return null;
 
-  const data = (await res.json()) as { token?: string; authToken?: string };
-  const token = data.token ?? data.authToken;
+  const data: unknown = await res.json();
+  const token =
+    typeof data === "string"
+      ? data
+      : ((data as { token?: string; authToken?: string }).token ??
+        (data as { token?: string; authToken?: string }).authToken);
   if (!token) return null;
 
   tokenCache = { token, expires: Date.now() + 50 * 60_000 };
@@ -53,31 +133,21 @@ async function getContractId(
   const cached = contractCache.get(searchText);
   if (cached && cached.expires > Date.now()) return cached.id;
 
+  // Topstep combine uses sim subscription — live:false is the real-time sim feed.
   const res = await fetch(`${BASE_URL}/Contract/search`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ searchText, live: true }),
+    body: JSON.stringify({ searchText, live: false }),
     cache: "no-store",
   });
 
   if (!res.ok) return null;
 
-  const data = (await res.json()) as {
-    contracts?: Array<{ id?: string; name?: string; symbol?: string }>;
-  };
-
-  const contracts = data.contracts ?? [];
-  const match =
-    contracts.find(
-      (c) =>
-        c.name?.includes(searchText) ||
-        c.symbol?.includes(searchText) ||
-        c.name?.includes(`/${searchText}`)
-    ) ?? contracts[0];
-
+  const contracts = parseContracts(await res.json());
+  const match = pickContract(contracts, searchText);
   const id = match?.id;
   if (!id) return null;
 
@@ -88,23 +158,13 @@ async function getContractId(
   return id;
 }
 
-type PxBar = { t?: string; o?: number; h?: number; l?: number; c?: number };
-
-/** TopstepX sim/live bars — real-time when ProjectX credentials are configured. */
-export async function fetchProjectXLiveQuote(
-  ticker: string
-): Promise<LiveQuote | null> {
-  const searchText = TICKER_TO_SEARCH[ticker];
-  if (!searchText) return null;
-
-  const token = await getToken();
-  if (!token) return null;
-
-  const contractId = await getContractId(token, searchText);
-  if (!contractId) return null;
-
+async function fetchBars(
+  token: string,
+  contractId: string,
+  live: boolean
+): Promise<ReturnType<typeof parseBars>> {
   const endTime = new Date().toISOString();
-  const startTime = new Date(Date.now() - 30 * 60_000).toISOString();
+  const startTime = new Date(Date.now() - 15 * 60_000).toISOString();
 
   const res = await fetch(`${BASE_URL}/History/retrieveBars`, {
     method: "POST",
@@ -114,21 +174,22 @@ export async function fetchProjectXLiveQuote(
     },
     body: JSON.stringify({
       contractId,
-      live: true,
+      live,
       startTime,
       endTime,
       unit: 2,
       unitNumber: 1,
-      limit: 5,
+      limit: 3,
       includePartialBar: true,
     }),
     cache: "no-store",
   });
 
-  if (!res.ok) return null;
+  if (!res.ok) return [];
+  return parseBars(await res.json());
+}
 
-  const data = (await res.json()) as { bars?: PxBar[] };
-  const bars = data.bars ?? [];
+function barsToQuote(ticker: string, bars: ReturnType<typeof parseBars>): LiveQuote | null {
   const last = bars[bars.length - 1];
   if (!last?.c || last.c <= 0) return null;
 
@@ -147,15 +208,36 @@ export async function fetchProjectXLiveQuote(
         }
       : null;
 
-  const fetchedAt = Date.now();
-
   return withQuoteMeta({
     ticker,
     price: last.c,
     previousClose: null,
     quoteTime,
     bar,
-    fetchedAt,
+    fetchedAt: Date.now(),
     source: "projectx",
   });
+}
+
+/** TopstepX sim bars — real-time on combine; use live:false per ProjectX docs. */
+export async function fetchProjectXLiveQuote(
+  ticker: string
+): Promise<LiveQuote | null> {
+  const searchText = TICKER_TO_SEARCH[ticker];
+  if (!searchText) return null;
+
+  const token = await getToken();
+  if (!token) return null;
+
+  const contractId = await getContractId(token, searchText);
+  if (!contractId) return null;
+
+  // Sim feed first (Topstep combine), then exchange live subscription.
+  for (const live of [false, true] as const) {
+    const bars = await fetchBars(token, contractId, live);
+    const quote = barsToQuote(ticker, bars);
+    if (quote && quote.delaySec <= 120) return quote;
+  }
+
+  return null;
 }
