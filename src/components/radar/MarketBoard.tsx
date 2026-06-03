@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { MarketContext } from "@/lib/htf-status";
 import { MARKET_TICKERS } from "@/lib/chart-data";
-import { BiasSummary } from "@/components/BiasSummary";
+import { InstrumentBiasSummary } from "@/components/radar/InstrumentBiasSummary";
 import { SymbolColumn } from "@/components/radar/SymbolColumn";
 import { MarketNewsFeed } from "@/components/radar/MarketNewsFeed";
 import { usePrefetchChartCandles } from "@/hooks/use-prefetch-chart-candles";
@@ -59,7 +59,7 @@ export function MarketBoard({
           ))}
         </div>
 
-        <BiasSummary embedded />
+        <InstrumentBiasSummary symbol={tab} />
 
         <SymbolColumn symbol={symbol} liveQuote={liveQuote} />
 

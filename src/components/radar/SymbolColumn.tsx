@@ -3,13 +3,11 @@
 import { useState } from "react";
 import type { SymbolContext } from "@/lib/htf-status";
 import { CHART_TIMEFRAMES, type ChartTimeframe } from "@/lib/chart-timeframe";
-import type { SymbolLabel } from "@/lib/strategy-prep";
 import type { LiveQuote } from "@/lib/yahoo-live-quote";
 import { SymbolPrice } from "@/components/radar/SymbolPrice";
 import { useChartOverlaySettings } from "@/lib/chart-overlay-settings";
 import { CandleStateDots } from "@/components/radar/CandleStateDots";
 import { ChartOverlayToggles } from "@/components/radar/ChartOverlayToggles";
-import { LevelsSummary } from "@/components/radar/LevelsSummary";
 import { SymbolChartPane } from "@/components/radar/SymbolChartPane";
 import { useIsWideDesktop } from "@/hooks/use-is-wide-desktop";
 
@@ -23,7 +21,6 @@ export function SymbolColumn({
   const isWide = useIsWideDesktop();
   const [timeframe, setTimeframe] = useState<ChartTimeframe>("1H");
   const { settings: overlays, toggle } = useChartOverlaySettings();
-  const label = symbol.label as SymbolLabel;
 
   return (
     <div className={`sym-col sym-col--solo${isWide ? " sym-col--wide" : ""}`}>
@@ -72,7 +69,6 @@ export function SymbolColumn({
         </>
       )}
 
-      <LevelsSummary symbol={label} />
     </div>
   );
 }
