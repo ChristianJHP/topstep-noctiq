@@ -240,7 +240,7 @@ export function rejectionZonesForBars(
 export { sessionLinesForBars } from "@/lib/session-chart-lines";
 
 /** Empty bar slots after the forming candle so it isn't flush against the price scale. */
-export const CHART_RIGHT_OFFSET = 8;
+export const CHART_RIGHT_OFFSET = 3;
 
 export function fitBarSpacing(
   containerWidth: number,
@@ -285,8 +285,38 @@ export function fitChartTimeScale(
     },
   });
 
+  // rightOffset already reserves margin after the last bar — don't extend the
+  // logical range past the data or the chart shows a large empty gap on the right.
   chart.timeScale().setVisibleLogicalRange({
     from: -0.5,
-    to: barCount - 1 + CHART_RIGHT_OFFSET,
+    to: barCount - 0.5,
+  });
+}
+
+/** Recompute bar width after resize without resetting scroll/zoom. */
+export function updateChartBarSpacing(
+  chart: {
+    applyOptions: (opts: {
+      timeScale: {
+        barSpacing: number;
+        minBarSpacing: number;
+        maxBarSpacing: number;
+      };
+    }) => void;
+  },
+  containerWidth: number,
+  barCount: number,
+  isMobile: boolean
+): void {
+  if (barCount <= 0 || containerWidth <= 0) return;
+
+  const spacing = fitBarSpacing(containerWidth, barCount, isMobile);
+
+  chart.applyOptions({
+    timeScale: {
+      barSpacing: spacing,
+      minBarSpacing: 2,
+      maxBarSpacing: 48,
+    },
   });
 }

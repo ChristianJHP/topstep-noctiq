@@ -30,6 +30,7 @@ import {
   patchFormingBar,
   rejectionZonesForBars,
   sessionLinesForBars,
+  updateChartBarSpacing,
   type ChartTimeframe,
 } from "@/lib/chart-timeframe";
 import {
@@ -134,6 +135,9 @@ export function MiniSymbolChart({
   const plotRef = useRef(plot);
   const barCountRef = useRef(0);
   const lastBarRef = useRef<OhlcBar | null>(null);
+  const userHasPannedRef = useRef(false);
+  const programmaticFitRef = useRef(false);
+  const chartDataKeyRef = useRef("");
   const [rbZones, setRbZones] = useState<ChartPlotZone[]>([]);
   const [sessionLines, setSessionLines] = useState<ChartPlotLine[]>([]);
   const [mounted, setMounted] = useState(false);
@@ -162,11 +166,26 @@ export function MiniSymbolChart({
     return overlays ? filterChartPlot(combined, overlays) : combined;
   }, [plot, overlays, rbZones, sessionLines]);
 
-  const fitToContainer = useCallback(() => {
+  const fitToContainer = useCallback((resetPan = false) => {
     const chart = chartRef.current;
     const container = containerRef.current;
     if (!chart || !container || !barCountRef.current) return;
+    programmaticFitRef.current = true;
     fitChartTimeScale(
+      chart,
+      container.clientWidth,
+      barCountRef.current,
+      isMobile
+    );
+    programmaticFitRef.current = false;
+    if (resetPan) userHasPannedRef.current = false;
+  }, [isMobile]);
+
+  const updateBarSpacingOnly = useCallback(() => {
+    const chart = chartRef.current;
+    const container = containerRef.current;
+    if (!chart || !container || !barCountRef.current) return;
+    updateChartBarSpacing(
       chart,
       container.clientWidth,
       barCountRef.current,
@@ -261,7 +280,7 @@ export function MiniSymbolChart({
         },
       },
       handleScroll: {
-        mouseWheel: false,
+        mouseWheel: true,
         pressedMouseMove: true,
         horzTouchDrag: true,
         vertTouchDrag: false,
@@ -291,10 +310,17 @@ export function MiniSymbolChart({
     seriesRef.current = series;
 
     const onDblClick = () => {
-      fitToContainer();
+      fitToContainer(true);
       refreshOverlay();
     };
     container.addEventListener("dblclick", onDblClick);
+
+    const onVisibleRangeChange = () => {
+      refreshOverlay();
+      if (!programmaticFitRef.current) {
+        userHasPannedRef.current = true;
+      }
+    };
 
     const resize = () => {
       if (!container.clientWidth || !container.clientHeight) return;
@@ -303,25 +329,31 @@ export function MiniSymbolChart({
         height: container.clientHeight,
         layout: { attributionLogo: false },
       });
-      fitToContainer();
+      if (userHasPannedRef.current) {
+        updateBarSpacingOnly();
+      } else {
+        fitToContainer();
+      }
       refreshOverlay();
     };
 
     const ro = new ResizeObserver(resize);
     ro.observe(container);
-    chart.timeScale().subscribeVisibleLogicalRangeChange(refreshOverlay);
+    chart.timeScale().subscribeVisibleLogicalRangeChange(onVisibleRangeChange);
     resize();
 
     return () => {
       container.removeEventListener("dblclick", onDblClick);
       ro.disconnect();
-      chart.timeScale().unsubscribeVisibleLogicalRangeChange(refreshOverlay);
+      chart
+        .timeScale()
+        .unsubscribeVisibleLogicalRangeChange(onVisibleRangeChange);
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
       linesRef.current = [];
     };
-  }, [mounted, isMobile, fitToContainer, refreshOverlay]);
+  }, [mounted, isMobile, fitToContainer, updateBarSpacingOnly, refreshOverlay]);
 
   useEffect(() => {
     const series = seriesRef.current;
@@ -352,9 +384,8 @@ export function MiniSymbolChart({
       );
     }
 
-    fitToContainer();
     refreshOverlay();
-  }, [mergedPlot, fitToContainer, refreshOverlay]);
+  }, [mergedPlot, refreshOverlay]);
 
   useEffect(() => {
     if (!mounted || !seriesRef.current || !candles.length) return;
@@ -393,7 +424,14 @@ export function MiniSymbolChart({
         close: b.close,
       }))
     );
-    fitToContainer();
+
+    const dataKey = `${ticker}:${timeframe}`;
+    const isNewChartContext = chartDataKeyRef.current !== dataKey;
+    chartDataKeyRef.current = dataKey;
+    if (isNewChartContext) {
+      fitToContainer(true);
+    }
+
     refreshOverlay();
     setError(null);
   }, [
@@ -402,6 +440,7 @@ export function MiniSymbolChart({
     timeframe,
     barLimit,
     mounted,
+    ticker,
     fitToContainer,
     refreshOverlay,
     symbolLabel,
