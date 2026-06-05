@@ -78,8 +78,10 @@ export function useInstrumentBiasSummary(symbol: RadarTab) {
           : DEFAULT_REVALIDATE_MS,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      dedupingInterval: DEFAULT_REVALIDATE_MS,
+      dedupingInterval: 60_000,
       keepPreviousData: true,
+      errorRetryCount: 3,
+      errorRetryInterval: 5_000,
     }
   );
 

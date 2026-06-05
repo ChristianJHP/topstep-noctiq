@@ -9,9 +9,14 @@ import {
 import { fetchCalendarMeta, pickNextHighImpact } from "@/lib/events";
 import { MARKET_TICKERS } from "@/lib/chart-data";
 import { tryLivePrice } from "@/lib/live-quote-fetch";
+import { withTimeout } from "@/lib/fetch-timeout";
+import { formatGeopoliticsDeterministic } from "@/lib/geopolitics-brief";
+import {
+  buildMarketNewsFeed,
+  gatherGeopoliticsSources,
+} from "@/lib/geopolitics-sources";
 import { getMarketSession, isFuturesSessionOpen } from "@/lib/futures-session";
 import { computeMarketContext, type SymbolContext } from "@/lib/htf-status";
-import { getCachedGeopoliticsBrief } from "@/lib/geopolitics-brief";
 import { filterNewsForInstrument } from "@/lib/instrument-news";
 import {
   computeSymbolPrep,
@@ -93,6 +98,18 @@ async function livePriceForLabel(label: SymbolLabel): Promise<number | null> {
   return tryLivePrice(tickerForLabel(label));
 }
 
+async function quickGeoForContext() {
+  const sources = await gatherGeopoliticsSources();
+  const strings = formatGeopoliticsDeterministic(sources);
+  const feed = buildMarketNewsFeed(sources);
+  return {
+    feed,
+    war: strings.war,
+    trump: strings.trump,
+    markets: strings.markets,
+  };
+}
+
 function premiumDiscountFromPct(pct: number): "premium" | "discount" | "equilibrium" {
   if (pct >= 62) return "premium";
   if (pct <= 38) return "discount";
@@ -102,10 +119,15 @@ function premiumDiscountFromPct(pct: number): "premium" | "discount" | "equilibr
 export async function buildInstrumentBiasContext(
   label: SymbolLabel
 ): Promise<InstrumentBiasContext> {
-  const [market, geo, cal] = await Promise.all([
-    computeMarketContext(),
-    getCachedGeopoliticsBrief(),
+  const [market, cal, geo] = await Promise.all([
+    withTimeout(computeMarketContext(), 18_000, "market context"),
     fetchCalendarMeta(),
+    withTimeout(quickGeoForContext(), 8_000, "geo sources").catch(() => ({
+      feed: [] as Awaited<ReturnType<typeof buildMarketNewsFeed>>,
+      war: "",
+      trump: null as string | null,
+      markets: "",
+    })),
   ]);
 
   const symbol = pickSymbol(label, market);
@@ -167,8 +189,8 @@ export async function buildInstrumentBiasContext(
     smt: label === "GC" ? null : market.smt?.message ?? null,
     topHeadlines: headlines,
     geo: {
-      war: geo.war.text,
-      trump: geo.trump?.text ?? null,
+      war: geo.war,
+      trump: geo.trump,
       marketsTone: geo.markets,
     },
     nextRedFolder: next
@@ -369,6 +391,26 @@ export async function getCachedInstrumentBiasBrief(
 ): Promise<InstrumentBiasPayload> {
   const c = caches[label];
   return isFuturesSessionOpen() ? c.open() : c.closed();
+}
+
+/** Fast deterministic trade map — no AI, no 30m cache. */
+export async function getDeterministicInstrumentBiasBrief(
+  label: SymbolLabel
+): Promise<InstrumentBiasPayload> {
+  const ctx = await buildInstrumentBiasContext(label);
+  const tradeMap = buildTradeMapFromContext(ctx);
+  const summaryText = `${tradeMap.headline} ${tradeMap.context}`;
+  const marketOpen = ctx.marketOpen;
+  return {
+    symbol: label,
+    generatedAt: new Date().toISOString(),
+    configured: isAiGatewayConfigured(),
+    marketOpen,
+    revalidateSec: marketOpen ? 60 : BIAS_SUMMARY_CLOSED_REVALIDATE_SEC,
+    line: summaryText,
+    tradeMap,
+    overlays: resolveSummaryOverlays(summaryText, ctx),
+  };
 }
 
 /** Bypass 30m cache — fresh structure + prices after a volatile move. */

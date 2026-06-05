@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server";
 import { biasSummaryCacheControl } from "@/lib/bias-summary-config";
+import { withTimeout } from "@/lib/fetch-timeout";
 import { isFuturesSessionOpen } from "@/lib/futures-session";
 import {
-  buildInstrumentBiasContext,
-  formatInstrumentBiasDeterministic,
   getCachedInstrumentBiasBrief,
+  getDeterministicInstrumentBiasBrief,
   getFreshInstrumentBiasBrief,
 } from "@/lib/instrument-bias-brief";
-import { resolveSummaryOverlays } from "@/lib/summary-chart-overlays";
 import type { SymbolLabel } from "@/lib/strategy-prep";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
 const VALID: SymbolLabel[] = ["NQ", "ES", "GC"];
+const CACHED_BRIEF_TIMEOUT_MS = 25_000;
 
 function parseSymbol(raw: string | null): SymbolLabel | null {
   if (raw === "NQ" || raw === "ES" || raw === "GC") return raw;
@@ -35,46 +38,56 @@ export async function GET(request: Request) {
 
   if (fresh) {
     try {
-      const payload = await getFreshInstrumentBiasBrief(label, reaction);
+      const payload = await withTimeout(
+        getFreshInstrumentBiasBrief(label, reaction),
+        20_000,
+        "fresh instrument brief"
+      );
       return NextResponse.json(payload, {
         headers: { "Cache-Control": "no-store" },
       });
     } catch (error) {
       console.error("[bias/instrument-summary fresh]", error);
+      try {
+        const fallback = await getDeterministicInstrumentBiasBrief(label);
+        return NextResponse.json(
+          { ...fallback, stale: true },
+          { headers: { "Cache-Control": "no-store" } }
+        );
+      } catch {
+        /* fall through to cached path */
+      }
     }
   }
 
   const cacheControl = biasSummaryCacheControl(marketClosed);
 
   try {
-    const payload = await getCachedInstrumentBiasBrief(label);
+    const payload = await withTimeout(
+      getCachedInstrumentBiasBrief(label),
+      CACHED_BRIEF_TIMEOUT_MS,
+      "cached instrument brief"
+    );
     return NextResponse.json(payload, {
       headers: { "Cache-Control": cacheControl },
     });
   } catch (error) {
     console.error("[bias/instrument-summary]", error);
     try {
-      const ctx = await buildInstrumentBiasContext(label);
-      const tradeMap = formatInstrumentBiasDeterministic(ctx);
-      const line = `${tradeMap.headline} ${tradeMap.context}`;
+      const payload = await getDeterministicInstrumentBiasBrief(label);
       return NextResponse.json(
-        {
-          line,
-          tradeMap,
-          overlays: resolveSummaryOverlays(line, ctx),
-          symbol: label,
-          generatedAt: new Date().toISOString(),
-          configured: false,
-          marketOpen: ctx.marketOpen,
-          stale: true,
-          revalidateSec: 60,
-        },
+        { ...payload, stale: true },
         { headers: { "Cache-Control": "public, max-age=60" } }
       );
-    } catch {
+    } catch (inner) {
+      console.error("[bias/instrument-summary deterministic]", inner);
       return NextResponse.json(
-        { line: "Bias summary unavailable.", symbol: label, error: "unavailable" },
-        { status: 503, headers: { "Cache-Control": "public, max-age=60" } }
+        {
+          line: "Bias summary temporarily unavailable.",
+          symbol: label,
+          error: "unavailable",
+        },
+        { status: 503, headers: { "Cache-Control": "public, max-age=30" } }
       );
     }
   }
