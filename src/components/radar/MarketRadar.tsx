@@ -58,7 +58,7 @@ export function MarketRadar({ initialData }: MarketRadarProps) {
     (url: string) => fetch(url).then((r) => r.json()),
     {
       fallbackData: initialData ?? undefined,
-      revalidateOnMount: !initialData?.markets,
+      revalidateOnMount: true,
       refreshInterval: pageVisible ? 30_000 : 0,
       keepPreviousData: true,
       dedupingInterval: 15_000,
