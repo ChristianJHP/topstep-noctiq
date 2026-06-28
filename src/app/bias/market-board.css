@@ -2166,6 +2166,26 @@
     border: 1px dashed rgba(251, 146, 60, 0.88);
   }
 
+  .chart-zone--draw-range {
+    z-index: 0;
+  }
+
+  .chart-zone--draw-range.chart-zone--bullish {
+    background: rgba(96, 165, 250, 0.09);
+    border-top: 1px dashed rgba(96, 165, 250, 0.45);
+    border-bottom: 1px dashed rgba(96, 165, 250, 0.45);
+    border-left: none;
+    border-right: none;
+  }
+
+  .chart-zone--draw-range.chart-zone--bearish {
+    background: rgba(251, 146, 60, 0.09);
+    border-top: 1px dashed rgba(251, 146, 60, 0.45);
+    border-bottom: 1px dashed rgba(251, 146, 60, 0.45);
+    border-left: none;
+    border-right: none;
+  }
+
   .chart-overlay-toggles {
     display: flex;
     flex-wrap: nowrap;

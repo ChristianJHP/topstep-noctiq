@@ -39,9 +39,9 @@ export function SymbolColumn({
   tradeMap?: InstrumentTradeMap | null;
 }) {
   const isWide = useIsWideDesktop();
-  const [timeframe, setTimeframe] = useState<ChartTimeframe>("1H");
+  const [timeframe, setTimeframe] = useState<ChartTimeframe>("15m");
   const [mountedTfs, setMountedTfs] = useState<ReadonlySet<ChartTimeframe>>(
-    () => new Set(["1H"])
+    () => new Set(["15m"])
   );
   const { settings: overlays, toggle } = useChartOverlaySettings(
     aiOverlays,
